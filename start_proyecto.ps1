@@ -9,7 +9,7 @@ Write-Host ""
 # Verificar que estamos en la carpeta correcta
 if (-Not (Test-Path "backend") -or -Not (Test-Path "frontend")) {
     Write-Host "Error: No se encuentran las carpetas backend o frontend" -ForegroundColor Red
-    Write-Host "Asegúrate de estar en la carpeta raíz del proyecto" -ForegroundColor Red
+    Write-Host "Asegurate de estar en la carpeta raiz del proyecto" -ForegroundColor Red
     exit 1
 }
 
@@ -17,9 +17,9 @@ if (-Not (Test-Path "backend") -or -Not (Test-Path "frontend")) {
 Write-Host "Verificando Node.js..." -ForegroundColor Yellow
 try {
     $nodeVersion = node --version
-    Write-Host "✓ Node.js $nodeVersion encontrado" -ForegroundColor Green
+    Write-Host "Node.js $nodeVersion encontrado" -ForegroundColor Green
 } catch {
-    Write-Host "✗ Node.js no encontrado" -ForegroundColor Red
+    Write-Host "Node.js no encontrado" -ForegroundColor Red
     Write-Host "Por favor instala Node.js desde https://nodejs.org/" -ForegroundColor Red
     exit 1
 }
@@ -28,9 +28,9 @@ try {
 Write-Host "Verificando Python..." -ForegroundColor Yellow
 try {
     $pythonVersion = python --version
-    Write-Host "✓ $pythonVersion encontrado" -ForegroundColor Green
+    Write-Host "$pythonVersion encontrado" -ForegroundColor Green
 } catch {
-    Write-Host "✗ Python no encontrado" -ForegroundColor Red
+    Write-Host "Python no encontrado" -ForegroundColor Red
     exit 1
 }
 
@@ -51,7 +51,7 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$PWD\frontend
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Green
-Write-Host "  ✓ Servicios iniciados correctamente  " -ForegroundColor Green
+Write-Host "  Servicios iniciados correctamente  " -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "Servicios disponibles en:" -ForegroundColor Cyan
@@ -65,5 +65,5 @@ Write-Host "  Password: admin123" -ForegroundColor White
 Write-Host ""
 Write-Host "Para detener los servicios, cierra las ventanas de PowerShell" -ForegroundColor Yellow
 Write-Host ""
-Write-Host "Presiona Enter para cerrar esta ventana..."
+Write-Host "Presiona Enter para cerrar..." -ForegroundColor Gray
 Read-Host
