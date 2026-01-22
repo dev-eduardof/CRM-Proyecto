@@ -1,0 +1,1756 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planificación CRM - Sistema de Gestión de Talleres</title>
+    <style>
+        @media print {
+            @page {
+                size: A4;
+                margin: 2cm;
+            }
+            body {
+                font-size: 10pt;
+            }
+            h1, h2, h3 {
+                page-break-after: avoid;
+            }
+            table {
+                page-break-inside: avoid;
+            }
+        }
+        body {
+            font-family: 'Segoe UI', Arial, 'Helvetica Neue', sans-serif;
+            font-size: 11pt;
+            line-height: 1.6;
+            color: #333;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fff;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 4px solid #3498db;
+            padding-bottom: 15px;
+            margin-top: 30px;
+            font-size: 24pt;
+        }
+        h2 {
+            color: #34495e;
+            border-bottom: 2px solid #95a5a6;
+            padding-bottom: 10px;
+            margin-top: 30px;
+            font-size: 18pt;
+        }
+        h3 {
+            color: #555;
+            margin-top: 20px;
+            font-size: 14pt;
+        }
+        h4 {
+            color: #666;
+            margin-top: 15px;
+            font-size: 12pt;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+            font-size: 10pt;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', 'Consolas', monospace;
+            font-size: 10pt;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            border-left: 4px solid #3498db;
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        blockquote {
+            border-left: 4px solid #3498db;
+            padding-left: 20px;
+            margin-left: 0;
+            color: #555;
+            font-style: italic;
+            background-color: #f8f9fa;
+            padding: 10px 20px;
+        }
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 40px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        hr {
+            border: none;
+            border-top: 2px solid #ecf0f1;
+            margin: 40px 0;
+        }
+        .page-break {
+            page-break-before: always;
+        }
+        strong {
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+    <table>
+<thead>
+<tr>
+<th>Aspecto</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Duración Total del Desarrollo</strong></td>
+<td>12 semanas (3 meses)</td>
+</tr>
+<tr>
+<td><strong>Estrategia</strong></td>
+<td>División en 2 fases principales de desarrollo</td>
+</tr>
+<tr>
+<td><strong>Fase 1 (MVP)</strong></td>
+<td>6 semanas - Sistema funcional básico</td>
+</tr>
+<tr>
+<td><strong>Fase 2 (Avanzado)</strong></td>
+<td>6 semanas - Funcionalidades completas</td>
+</tr>
+<tr>
+<td><strong>Entregable Fase 1</strong></td>
+<td>Sistema operativo para recibir y procesar trabajos</td>
+</tr>
+<tr>
+<td><strong>Entregable Fase 2</strong></td>
+<td>Sistema completo con reportes y notificaciones WhatsApp</td>
+</tr>
+<tr>
+<td><strong>Post-Desarrollo</strong></td>
+<td>Testeo, Seguridad e Implementación (después de los 3 meses)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="objetivos-del-proyecto">Objetivos del Proyecto</h3>
+<ul>
+<li>Digitalizar completamente el proceso de recepción de trabajos</li>
+<li>Permitir seguimiento en tiempo real del estado de cada orden de trabajo</li>
+<li>Controlar pagos, anticipos y gastos del negocio</li>
+<li>Generar reportes detallados y análisis de utilidades</li>
+<li>Facilitar la comunicación con clientes mediante notificaciones automáticas</li>
+</ul>
+<h3 id="ventajas-de-la-division-en-2-fases">Ventajas de la División en 2 Fases</h3>
+<p>✅ <strong>Fase 1 (MVP):</strong> Permite comenzar a operar el sistema en 6 semanas con funcionalidades esenciales<br />
+✅ <strong>Fase 2 (Avanzado):</strong> Completa todas las funcionalidades avanzadas y reportes en las siguientes 6 semanas<br />
+✅ <strong>Reducción de Riesgos:</strong> El cliente puede validar el sistema tempranamente y ajustar requerimientos<br />
+✅ <strong>Entrega Incremental:</strong> Valor entregado desde la semana 6, no solo al final del proyecto</p>
+<hr />
+<h3 id="presupuesto-y-estructura-de-pagos">Presupuesto y Estructura de Pagos</h3>
+<table>
+<thead>
+<tr>
+<th>Concepto</th>
+<th>Monto</th>
+<th>Porcentaje</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Presupuesto Total del Proyecto</strong></td>
+<td><strong>$65,000 MXN</strong></td>
+<td><strong>100%</strong></td>
+</tr>
+</tbody>
+</table>
+<h4 id="estructura-de-pagos">Estructura de Pagos</h4>
+<table>
+<thead>
+<tr>
+<th>Pago</th>
+<th>Monto</th>
+<th>Porcentaje</th>
+<th>Momento de Pago</th>
+<th>Condiciones</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Pago Inicial</strong></td>
+<td>$30,000 MXN</td>
+<td>46.15%</td>
+<td>Al inicio del proyecto</td>
+<td>Al firmar contrato y comenzar Fase 1</td>
+</tr>
+<tr>
+<td><strong>Pago Intermedio</strong></td>
+<td>$20,000 MXN</td>
+<td>30.77%</td>
+<td>Fase de pruebas</td>
+<td>Al completar desarrollo (Fin de Fase 2) e iniciar fase de testeo</td>
+</tr>
+<tr>
+<td><strong>Pago Final</strong></td>
+<td>$15,000 MXN</td>
+<td>23.08%</td>
+<td>Entrega final</td>
+<td>Al completar testeo, seguridad e implementación</td>
+</tr>
+</tbody>
+</table>
+<h4 id="detalle-de-pagos">Detalle de Pagos</h4>
+<p><strong>Pago 1 - Inicio ($30,000 MXN):</strong>
+- Se realiza al firmar el contrato
+- Permite iniciar la Fase 1 (MVP)
+- Cubre las primeras 6 semanas de desarrollo</p>
+<p><strong>Pago 2 - Fase de Pruebas ($20,000 MXN):</strong>
+- Se realiza al completar el desarrollo (Fin de Fase 2 - Semana 12)
+- Al entregar el sistema funcional completo
+- Antes de iniciar la fase de testeo</p>
+<p><strong>Pago 3 - Entrega Final ($15,000 MXN):</strong>
+- Se realiza al completar testeo, seguridad e implementación
+- Sistema desplegado y funcionando en producción
+- Documentación completa entregada
+- Usuarios capacitados</p>
+<p><strong>Nota:</strong> Los pagos deben realizarse dentro de los 5 días hábiles posteriores a la entrega de cada hito.</p>
+<hr />
+<h2 id="2-analisis-de-necesidades">2. ANÁLISIS DE NECESIDADES</h2>
+<h3 id="21-modulos-identificados">2.1 Módulos Identificados</h3>
+<h4 id="modulo-1-recepcion-tablettelefono">Módulo 1: Recepción (Tablet/Teléfono)</h4>
+<ul>
+<li>Gestión de permisos (crear, editar, solicitar eliminación)</li>
+<li>Captura de información del trabajo</li>
+<li>Gestión de clientes (existentes y nuevos)</li>
+<li>Sistema de prioridades y fechas promesa</li>
+<li>Categorización de trabajos</li>
+<li>Asignación a técnicos</li>
+<li>Generación de folio OT</li>
+</ul>
+<h4 id="modulo-2-impresion-de-tickets">Módulo 2: Impresión de Tickets</h4>
+<ul>
+<li>Ticket con información completa</li>
+<li>Logo y datos del negocio</li>
+<li>Información de anticipos</li>
+</ul>
+<h4 id="modulo-3-panel-de-tecnicos">Módulo 3: Panel de Técnicos</h4>
+<ul>
+<li>Vista de tareas asignadas</li>
+<li>Control de estatus de trabajos</li>
+<li>Registro de materiales utilizados</li>
+<li>Gestión de OTIs y operaciones</li>
+<li>Subtareas</li>
+</ul>
+<h4 id="modulo-4-recepcion-post-trabajo">Módulo 4: Recepción Post-Trabajo</h4>
+<ul>
+<li>Revisión de trabajos terminados</li>
+<li>Creación de borrador con precios</li>
+<li>Aprobación administrativa</li>
+<li>Notificación a clientes (WhatsApp/Email)</li>
+</ul>
+<h4 id="modulo-5-caja">Módulo 5: Caja</h4>
+<ul>
+<li>Registro de pagos</li>
+<li>Control de anticipos</li>
+<li>Cortes de caja</li>
+<li>Gestión de gastos</li>
+</ul>
+<h4 id="modulo-6-auxiliar-administrativo">Módulo 6: Auxiliar Administrativo</h4>
+<ul>
+<li>Panel de ingresos/egresos</li>
+<li>Gestión de cuentas por cobrar/pagar</li>
+</ul>
+<h4 id="modulo-7-reportes">Módulo 7: Reportes</h4>
+<ul>
+<li>Trabajos entrantes/salientes</li>
+<li>Pagados/entregados</li>
+<li>Movimientos de caja</li>
+<li>Filtros avanzados</li>
+<li>Cálculo de comisiones</li>
+</ul>
+<h4 id="modulo-8-administracion">Módulo 8: Administración</h4>
+<ul>
+<li>Gestión de usuarios y roles</li>
+<li>Reportes ejecutivos</li>
+<li>Monitoreo de operaciones</li>
+<li>Configuración del sistema</li>
+</ul>
+<hr />
+<h2 id="3-arquitectura-tecnica-propuesta">3. ARQUITECTURA TÉCNICA PROPUESTA</h2>
+<h3 id="31-stack-tecnologico">3.1 Stack Tecnológico</h3>
+<h4 id="frontend">Frontend</h4>
+<ul>
+<li><strong>React.js</strong> (aplicación web responsive para tablet/teléfono y escritorio)</li>
+<li><strong>React Router</strong> para navegación</li>
+<li><strong>Material-UI</strong> o <strong>Ant Design</strong> para componentes UI</li>
+<li>Diseño responsive y moderno (funciona en tablets, teléfonos y escritorio)</li>
+<li><strong>React-PDF</strong> para generación de tickets y reportes</li>
+</ul>
+<h4 id="backend">Backend</h4>
+<ul>
+<li><strong>Python 3.9+</strong> con <strong>FastAPI</strong> </li>
+<li>API RESTful</li>
+<li>Autenticación JWT (JSON Web Tokens)</li>
+<li><strong>SQLAlchemy</strong> como ORM</li>
+<li><strong>Pydantic</strong> para validación de datos</li>
+</ul>
+<h4 id="base-de-datos">Base de Datos</h4>
+<ul>
+<li><strong>MariaDB</strong> (base de datos relacional SQL)</li>
+<li>Relaciones normalizadas</li>
+<li>Migraciones con <strong>Alembic</strong></li>
+</ul>
+<h4 id="servicios-adicionales">Servicios Adicionales</h4>
+<ul>
+<li><strong>Almacenamiento de imágenes</strong>: Sistema de archivos local inicialmente (carpeta <code>uploads/</code>)</li>
+<li><strong>Notificaciones push</strong>: Firebase Cloud Messaging</li>
+<li><strong>WhatsApp</strong>: API Externa (Twilio API, WhatsApp Business API, o similar)</li>
+<li>Notificación automática a clientes cuando el trabajo está terminado</li>
+<li>Integración mediante API REST externa</li>
+<li>Envío de mensajes con detalles del trabajo y precio final</li>
+<li><strong>Email</strong>: SMTP local o servicio como SendGrid (Fase 2)</li>
+<li><strong>Generación de PDFs</strong>: <strong>ReportLab</strong> o <strong>WeasyPrint</strong> (Python)</li>
+<li><strong>Impresión</strong>: Integración con impresoras térmicas vía API</li>
+</ul>
+<h3 id="32-infraestructura">3.2 Infraestructura</h3>
+<h4 id="fase-inicial-desarrollo-y-pruebas">Fase Inicial (Desarrollo y Pruebas)</h4>
+<ul>
+<li><strong>Servidor local</strong> (desarrollo y pruebas iniciales)</li>
+<li><strong>Base de datos local</strong> (MariaDB en servidor local)</li>
+<li><strong>Almacenamiento local</strong> (carpeta de archivos en servidor: <code>uploads/</code>)</li>
+<li><strong>Servidor de desarrollo</strong>: FastAPI con Uvicorn</li>
+<li><strong>Frontend</strong>: React con Vite o Create React App</li>
+<li><strong>Servidor web local</strong>: Desarrollo en <code>localhost:3000</code> (React) y <code>localhost:8000</code> (FastAPI)</li>
+</ul>
+<h4 id="requisitos-del-servidor-local">Requisitos del Servidor Local</h4>
+<p><strong>Hardware Mínimo Recomendado:</strong>
+- CPU: 4 núcleos
+- RAM: 8 GB
+- Disco: 100 GB (para base de datos y archivos)
+- Conexión: Red local estable</p>
+<p><strong>Software Requerido:</strong>
+- Python 3.9 o superior
+- Node.js 18+ y npm
+- MariaDB 10.6+ 
+  - Compatible con MySQL
+  - Soporta relaciones complejas y transacciones ACID
+  - Ideal para servidor local
+- Git para control de versiones</p>
+<h4 id="fase-de-produccion-post-mvp">Fase de Producción (Post-MVP)</h4>
+<ul>
+<li>Migración a servidor dedicado o VPS</li>
+<li>Backup automático diario</li>
+<li>SSL/HTTPS (Let's Encrypt)</li>
+<li>Monitoreo básico</li>
+<li>Opcional: CDN para imágenes si se requiere escalabilidad</li>
+</ul>
+<hr />
+<h2 id="4-estructura-de-base-de-datos">4. ESTRUCTURA DE BASE DE DATOS</h2>
+<h3 id="40-sistema-de-base-de-datos">4.0 Sistema de Base de Datos</h3>
+<p><strong>MariaDB</strong> será utilizado como sistema de gestión de base de datos relacional SQL. MariaDB es:
+- Compatible con MySQL (mismo motor)
+- Open source y gratuito
+- Ideal para servidores locales
+- Soporta relaciones complejas y transacciones
+- Compatible con SQLAlchemy ORM de Python</p>
+<h3 id="41-entidades-principales">4.1 Entidades Principales</h3>
+<ol>
+<li><strong>Usuarios</strong></li>
+<li>Roles: Administrador, Recepción, Técnico, Auxiliar, Jefe de Taller</li>
+<li>
+<p>Autenticación y permisos</p>
+</li>
+<li>
+<p><strong>Clientes</strong></p>
+</li>
+<li>Datos de contacto</li>
+<li>
+<p>Historial de trabajos</p>
+</li>
+<li>
+<p><strong>OrdenesTrabajo (OT)</strong></p>
+</li>
+<li>Folio único</li>
+<li>Estatus, prioridad, fechas</li>
+<li>Precio estimado, anticipo</li>
+<li>
+<p>Fotos, notas, observaciones</p>
+</li>
+<li>
+<p><strong>Tareas y Subtareas</strong></p>
+</li>
+<li>Relación con OT</li>
+<li>
+<p>Estatus individual</p>
+</li>
+<li>
+<p><strong>OTIs (Operaciones Técnicas Internas)</strong></p>
+</li>
+<li>Operaciones relacionadas</li>
+<li>
+<p>Usuario que las agregó</p>
+</li>
+<li>
+<p><strong>Materiales</strong></p>
+</li>
+<li>Materiales utilizados por trabajo</li>
+<li>
+<p>Costos</p>
+</li>
+<li>
+<p><strong>Pagos</strong></p>
+</li>
+<li>Tipos de pago</li>
+<li>Anticipos</li>
+<li>
+<p>Pagos completos</p>
+</li>
+<li>
+<p><strong>Gastos</strong></p>
+</li>
+<li>Gastos por trabajo</li>
+<li>
+<p>Gastos generales</p>
+</li>
+<li>
+<p><strong>Categorías y Subcategorías</strong></p>
+</li>
+<li>
+<p>Tipos de trabajo personalizables</p>
+</li>
+<li>
+<p><strong>Notificaciones</strong></p>
+<ul>
+<li>Push, email, WhatsApp</li>
+</ul>
+</li>
+<li>
+<p><strong>Reportes</strong></p>
+<ul>
+<li>Historial de reportes generados</li>
+</ul>
+</li>
+</ol>
+<hr />
+<h2 id="5-funcionalidades-detalladas-por-modulo">5. FUNCIONALIDADES DETALLADAS POR MÓDULO</h2>
+<h3 id="51-modulo-de-recepcion">5.1 Módulo de Recepción</h3>
+<h4 id="pantalla-principal">Pantalla Principal</h4>
+<ul>
+<li>Formulario de recepción</li>
+<li>Cámara para foto de pieza</li>
+<li>Selector de cliente (autocompletado)</li>
+<li>Checkbox "Cliente nuevo" → formulario</li>
+<li>Selector de tipo de permiso</li>
+<li>Precio sugerido (opcional)</li>
+<li>Status: Recibido / Diagnóstico</li>
+<li>Etiquetas: Urgente / No prioridad</li>
+<li>Fecha promesa (calendario)</li>
+<li>Categoría y subcategoría</li>
+<li>Descripción y observaciones</li>
+<li>Asignación a técnico</li>
+<li>Botón "Agregar subtarea"</li>
+</ul>
+<h4 id="validaciones">Validaciones</h4>
+<ul>
+<li>Si precio estimado ≥ $1,500 → solicitar anticipo 50%</li>
+<li>Generación automática de folio OT</li>
+</ul>
+<h4 id="permisos">Permisos</h4>
+<ul>
+<li>Crear, editar, solicitar eliminación (requiere aprobación)</li>
+</ul>
+<h3 id="52-modulo-de-impresion">5.2 Módulo de Impresión</h3>
+<h4 id="ticket-incluye">Ticket Incluye</h4>
+<ul>
+<li>Fecha y hora de recepción</li>
+<li>Nombre de quien recibió</li>
+<li>Folio OT</li>
+<li>Datos del cliente</li>
+<li>Descripción del trabajo</li>
+<li>Precio estimado</li>
+<li>Anticipo (si aplica)</li>
+<li>Logo del negocio</li>
+<li>QR para seguimiento</li>
+</ul>
+<h3 id="53-panel-de-tecnicos">5.3 Panel de Técnicos</h3>
+<h4 id="vista-principal">Vista Principal</h4>
+<ul>
+<li>Lista de OT asignadas</li>
+<li>Filtros: prioridad, fecha compromiso, estatus</li>
+<li>Indicadores visuales de urgencia</li>
+</ul>
+<h4 id="acciones-por-ot">Acciones por OT</h4>
+<ul>
+<li>Cambiar estatus:</li>
+<li>En espera</li>
+<li>Proceso</li>
+<li>Pausa (interna) → motivo requerido</li>
+<li>Revisión</li>
+<li>Terminado (en espera de revisión)</li>
+<li>Agregar subtareas</li>
+<li>Agregar OTIs con operaciones</li>
+<li>Registrar materiales utilizados</li>
+<li>Agregar notas</li>
+</ul>
+<h4 id="notificaciones">Notificaciones</h4>
+<ul>
+<li>Nueva OT asignada</li>
+<li>Recordatorios de fechas compromiso</li>
+</ul>
+<h3 id="54-recepcion-post-trabajo">5.4 Recepción Post-Trabajo</h3>
+<h4 id="flujo">Flujo</h4>
+<ol>
+<li>Técnico marca "Terminado"</li>
+<li>Recepción recibe notificación</li>
+<li>Revisión del trabajo</li>
+<li>Foto de salida</li>
+<li>Crear borrador con precios por tarea</li>
+<li>Enviar borrador a Admin1</li>
+<li>Admin1 aprueba o solicita cambios</li>
+<li>Aprobación → notificación automática al cliente (WhatsApp/Email)</li>
+<li>Gestión de garantía si aplica</li>
+</ol>
+<h4 id="pantalla-de-borrador">Pantalla de Borrador</h4>
+<ul>
+<li>Lista de OTIs y operaciones</li>
+<li>Campo de precio por tarea</li>
+<li>Campo de notas</li>
+<li>Botón "Enviar a aprobación"</li>
+</ul>
+<h3 id="55-modulo-de-caja">5.5 Módulo de Caja</h3>
+<h4 id="funcionalidades">Funcionalidades</h4>
+<ul>
+<li>Registro de pagos por OT</li>
+<li>Tipos: Efectivo, Tarjeta, Transferencia, Cheque</li>
+<li>Fecha, hora, usuario que registra</li>
+<li>Corte de caja diario</li>
+<li>Registro de gastos</li>
+<li>Relación con anticipos</li>
+</ul>
+<h3 id="56-modulo-auxiliar">5.6 Módulo Auxiliar</h3>
+<h4 id="panel">Panel</h4>
+<ul>
+<li>Dashboard de ingresos/egresos</li>
+<li>Gráficos de flujo de caja</li>
+<li>Cuentas por cobrar</li>
+<li>Cuentas por pagar</li>
+<li>Filtros por fecha</li>
+</ul>
+<h3 id="57-modulo-de-reportes">5.7 Módulo de Reportes</h3>
+<h4 id="reportes-disponibles">Reportes Disponibles</h4>
+<ol>
+<li>Trabajos entrantes/salientes</li>
+<li>Pagados vs entregados</li>
+<li>Movimientos de caja</li>
+<li>Utilidad por trabajo</li>
+<li>Gastos por trabajo</li>
+<li>Reporte por cliente</li>
+<li>Venta por fecha</li>
+<li>Venta por cliente</li>
+</ol>
+<h4 id="filtros">Filtros</h4>
+<ul>
+<li>Cliente</li>
+<li>Técnico</li>
+<li>Tipo de urgencia</li>
+<li>Categoría</li>
+<li>Rango de fechas</li>
+</ul>
+<h4 id="calculo-de-comisiones">Cálculo de Comisiones</h4>
+<ul>
+<li>Base: utilidad después de gastos</li>
+<li>Reglas:</li>
+<li>≥ $25,000 quincenal → $1,000 comisión</li>
+<li>≥ $30,000 quincenal → $2,000 comisión</li>
+<li>Usuario específico puede modificar gastos</li>
+</ul>
+<h3 id="58-modulo-de-administracion">5.8 Módulo de Administración</h3>
+<h4 id="gestion-de-usuarios">Gestión de Usuarios</h4>
+<ul>
+<li>Crear, editar, desactivar usuarios</li>
+<li>Asignación de roles</li>
+<li>Hasta 3 responsables</li>
+</ul>
+<h4 id="configuracion">Configuración</h4>
+<ul>
+<li>Datos del negocio (nombre, logo, RFC)</li>
+<li>Números de teléfono</li>
+<li>Configuración de notificaciones</li>
+<li>Parámetros de comisiones</li>
+</ul>
+<h4 id="monitoreo">Monitoreo</h4>
+<ul>
+<li>Dashboard de operaciones</li>
+<li>Métricas en tiempo real</li>
+<li>Alertas</li>
+</ul>
+<hr />
+<h2 id="6-flujo-de-trabajo-completo">6. FLUJO DE TRABAJO COMPLETO</h2>
+<div class="codehilite"><pre><span></span><code><span class="mf">1.</span><span class="w"> </span><span class="n">RECEPCIÓN</span>
+<span class="w">   </span><span class="err">↓</span>
+<span class="w">   </span><span class="n">Cliente</span><span class="w"> </span><span class="n">llega</span><span class="w"> </span><span class="n">con</span><span class="w"> </span><span class="n">trabajo</span>
+<span class="w">   </span><span class="err">↓</span>
+<span class="w">   </span><span class="n">Recepción</span><span class="w"> </span><span class="n">captura</span><span class="w"> </span><span class="n">datos</span><span class="w"> </span><span class="n">en</span><span class="w"> </span><span class="nb">tab</span><span class="kd">let</span><span class="o">/</span><span class="n">teléfono</span>
+<span class="w">   </span><span class="err">↓</span>
+<span class="w">   </span><span class="n">Si</span><span class="w"> </span><span class="n">precio</span><span class="w"> </span><span class="err">≥</span><span class="w"> </span><span class="err">$</span><span class="mf">1</span><span class="p">,</span><span class="mf">500</span><span class="w"> </span><span class="err">→</span><span class="w"> </span><span class="n">Solicita</span><span class="w"> </span><span class="n">anticipo</span><span class="w"> </span><span class="mf">50</span><span class="err">%</span>
+<span class="w">   </span><span class="err">↓</span>
+<span class="w">   </span><span class="n">Genera</span><span class="w"> </span><span class="n">folio</span><span class="w"> </span><span class="n">OT</span>
+<span class="w">   </span><span class="err">↓</span>
+<span class="w">   </span><span class="n">Asigna</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">técnico</span>
+<span class="w">   </span><span class="err">↓</span>
+<span class="w">   </span><span class="n">Imprime</span><span class="w"> </span><span class="n">ticket</span>
+<span class="w">   </span><span class="err">↓</span>
+<span class="w">   </span><span class="ow">Not</span><span class="kr">if</span><span class="n">ica</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">técnico</span>
+
+<span class="mf">2.</span><span class="w"> </span><span class="n">TÉCNICO</span>
+<span class="w">   </span><span class="err">↓</span>
+<span class="w">   </span><span class="n">Recibe</span><span class="w"> </span><span class="ow">not</span><span class="kr">if</span><span class="n">icación</span>
+<span class="w">   </span><span class="err">↓</span>
+<span class="w">   </span><span class="n">Revisa</span><span class="w"> </span><span class="n">OT</span><span class="w"> </span><span class="n">asignada</span>
+<span class="w">   </span><span class="err">↓</span>
+<span class="w">   </span><span class="n">Cambia</span><span class="w"> </span><span class="n">estatus</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="s">&quot;Proceso&quot;</span>
+<span class="w">   </span><span class="err">↓</span>
+<span class="w">   </span><span class="n">Trabaja</span><span class="w"> </span><span class="n">en</span><span class="w"> </span><span class="n">el</span><span class="w"> </span><span class="n">proyecto</span>
+<span class="w">   </span><span class="err">↓</span>
+<span class="w">   </span><span class="n">Registra</span><span class="w"> </span><span class="n">materiales</span><span class="w"> </span><span class="n">utilizados</span>
+<span class="w">   </span><span class="err">↓</span>
+<span class="w">   </span><span class="n">Agrega</span><span class="w"> </span><span class="n">OTIs</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="n">operaciones</span>
+<span class="w">   </span><span class="err">↓</span>
+<span class="w">   </span><span class="n">Marca</span><span class="w"> </span><span class="n">como</span><span class="w"> </span><span class="s">&quot;Terminado&quot;</span>
+<span class="w">   </span><span class="err">↓</span>
+<span class="w">   </span><span class="ow">Not</span><span class="kr">if</span><span class="n">ica</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">recepción</span>
+
+<span class="mf">3.</span><span class="w"> </span><span class="n">RECEPCIÓN</span><span class="w"> </span><span class="nb">POS</span><span class="n">T</span><span class="o">-</span><span class="n">TRABAJO</span>
+<span class="w">   </span><span class="err">↓</span>
+<span class="w">   </span><span class="n">Revisa</span><span class="w"> </span><span class="n">trabajo</span><span class="w"> </span><span class="n">terminado</span>
+<span class="w">   </span><span class="err">↓</span>
+<span class="w">   </span><span class="kr">To</span><span class="n">ma</span><span class="w"> </span><span class="n">foto</span><span class="w"> </span><span class="n">de</span><span class="w"> </span><span class="n">salida</span>
+<span class="w">   </span><span class="err">↓</span>
+<span class="w">   </span><span class="n">Crea</span><span class="w"> </span><span class="n">borrador</span><span class="w"> </span><span class="n">con</span><span class="w"> </span><span class="n">precios</span>
+<span class="w">   </span><span class="err">↓</span>
+<span class="w">   </span><span class="n">Envía</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">Admin1</span>
+
+<span class="mf">4.</span><span class="w"> </span><span class="n">ADMINISTRACIÓN</span>
+<span class="w">   </span><span class="err">↓</span>
+<span class="w">   </span><span class="n">Admin1</span><span class="w"> </span><span class="n">revisa</span><span class="w"> </span><span class="n">borrador</span>
+<span class="w">   </span><span class="err">↓</span>
+<span class="w">   </span><span class="n">Aprueba</span><span class="w"> </span><span class="n">o</span><span class="w"> </span><span class="n">solicita</span><span class="w"> </span><span class="n">cambios</span>
+<span class="w">   </span><span class="err">↓</span>
+<span class="w">   </span><span class="n">Si</span><span class="w"> </span><span class="n">aprueba</span><span class="w"> </span><span class="err">→</span><span class="w"> </span><span class="ow">Not</span><span class="kr">if</span><span class="n">ica</span><span class="w"> </span><span class="n">al</span><span class="w"> </span><span class="n">cliente</span>
+
+<span class="mf">5.</span><span class="w"> </span><span class="n">CLIENTE</span>
+<span class="w">   </span><span class="err">↓</span>
+<span class="w">   </span><span class="n">Recibe</span><span class="w"> </span><span class="ow">not</span><span class="kr">if</span><span class="n">icación</span><span class="w"> </span><span class="p">(</span><span class="n">WhatsApp</span><span class="o">/</span><span class="n">Email</span><span class="p">)</span>
+<span class="w">   </span><span class="err">↓</span>
+<span class="w">   </span><span class="n">Ve</span><span class="w"> </span><span class="n">detalles</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="n">precio</span><span class="w"> </span><span class="n">final</span>
+<span class="w">   </span><span class="err">↓</span>
+<span class="w">   </span><span class="n">Acude</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">pagar</span>
+
+<span class="mf">6.</span><span class="w"> </span><span class="n">CAJA</span>
+<span class="w">   </span><span class="err">↓</span>
+<span class="w">   </span><span class="n">Registra</span><span class="w"> </span><span class="n">pago</span>
+<span class="w">   </span><span class="err">↓</span>
+<span class="w">   </span><span class="n">Entrega</span><span class="w"> </span><span class="n">trabajo</span>
+<span class="w">   </span><span class="err">↓</span>
+<span class="w">   </span><span class="n">Marca</span><span class="w"> </span><span class="n">OT</span><span class="w"> </span><span class="n">como</span><span class="w"> </span><span class="s">&quot;Finalizada&quot;</span>
+</code></pre></div>
+
+<hr />
+<h2 id="7-plan-de-implementacion-en-2-fases-12-semanas-3-meses">7. PLAN DE IMPLEMENTACIÓN EN 2 FASES (12 SEMANAS - 3 MESES)</h2>
+<h3 id="71-estrategia-de-division-del-proyecto">7.1 Estrategia de División del Proyecto</h3>
+<p>El proyecto se ha dividido en <strong>2 fases principales</strong> para optimizar el tiempo de desarrollo y permitir una entrega funcional temprana:</p>
+<h4 id="fase-1-mvp-producto-minimo-viable-6-semanas"><strong>FASE 1: MVP (Producto Mínimo Viable) - 6 semanas</strong></h4>
+<p><strong>Objetivo:</strong> Sistema funcional básico que permita operar el taller</p>
+<h4 id="fase-2-funcionalidades-avanzadas-6-semanas"><strong>FASE 2: Funcionalidades Avanzadas - 6 semanas</strong></h4>
+<p><strong>Objetivo:</strong> Completar funcionalidades avanzadas, reportes y optimizaciones</p>
+<hr />
+<h3 id="72-fase-1-mvp-semanas-1-6">7.2 FASE 1: MVP (Semanas 1-6)</h3>
+<h4 id="semana-1-2-analisis-diseno-e-infraestructura-base"><strong>Semana 1-2: Análisis, Diseño e Infraestructura Base</strong></h4>
+<p><strong>Entregables:</strong>
+- ✅ Análisis detallado de requerimientos Fase 1
+- ✅ Diseño de base de datos (estructura completa)
+- ✅ Mockups de interfaces principales
+- ✅ Configuración de servidor y base de datos
+- ✅ Configuración de repositorio Git
+- ✅ Setup de servicios básicos (Storage, Email básico)</p>
+<p><strong>Módulos:</strong>
+- Backend: Estructura base con Python/FastAPI, autenticación JWT, modelos de datos con SQLAlchemy
+- Frontend: Setup de proyecto React con Vite, configuración responsive
+- Base de datos: Instalación y configuración MariaDB en servidor local
+- Servidor: Configuración de servidor local para desarrollo</p>
+<hr />
+<h4 id="semana-3-4-backend-core-recepcion-basica"><strong>Semana 3-4: Backend Core + Recepción Básica</strong></h4>
+<p><strong>Entregables:</strong>
+- ✅ API REST completa para módulos básicos
+- ✅ Autenticación y permisos por rol
+- ✅ CRUD de Usuarios, Clientes, OT
+- ✅ Sistema de categorías y subcategorías
+- ✅ Generación de folios OT
+- ✅ Validación de anticipos (≥$1,500 → 50%)</p>
+<p><strong>Módulos Backend:</strong>
+- <code>/api/auth</code> - Autenticación
+- <code>/api/users</code> - Gestión de usuarios
+- <code>/api/clients</code> - Gestión de clientes
+- <code>/api/ot</code> - Órdenes de trabajo (CRUD básico)
+- <code>/api/categories</code> - Categorías de trabajo
+- <code>/api/upload</code> - Subida de imágenes</p>
+<p><strong>Módulos Frontend React:</strong>
+- Login y autenticación
+- Pantalla de recepción responsive (formulario completo, optimizado para tablet/teléfono)
+- Selector de cliente con autocompletado
+- Formulario cliente nuevo
+- Captura de foto de pieza (usando cámara del dispositivo)
+- Generación de folio OT
+- Diseño responsive para tablets y teléfonos</p>
+<hr />
+<h4 id="semana-5-panel-tecnico-impresion-de-tickets"><strong>Semana 5: Panel Técnico + Impresión de Tickets</strong></h4>
+<p><strong>Entregables:</strong>
+- ✅ Panel de técnicos (vista de OT asignadas)
+- ✅ Cambio de estatus de trabajos
+- ✅ Registro básico de materiales
+- ✅ Sistema de impresión de tickets (PDF)
+- ✅ Integración con impresoras</p>
+<p><strong>Módulos Backend:</strong>
+- <code>/api/technicians</code> - Endpoints para técnicos
+- <code>/api/materials</code> - Gestión de materiales
+- <code>/api/tickets</code> - Generación de tickets PDF</p>
+<p><strong>Módulos Frontend React:</strong>
+- Panel técnico responsive (lista de OT, cambio de estatus, optimizado para tablet)
+- Formulario de materiales
+- Vista de impresión de tickets
+- Generador de PDFs (React-PDF)</p>
+<hr />
+<h4 id="semana-6-caja-basica-administracion-basica"><strong>Semana 6: Caja Básica + Administración Básica</strong></h4>
+<p><strong>Entregables:</strong>
+- ✅ Módulo de caja (registro de pagos)
+- ✅ Control de anticipos
+- ✅ Corte de caja diario
+- ✅ Panel administrativo básico
+- ✅ Gestión de usuarios y roles</p>
+<p><strong>Módulos Backend:</strong>
+- <code>/api/payments</code> - Registro de pagos
+- <code>/api/cash-register</code> - Cortes de caja
+- <code>/api/admin</code> - Administración básica</p>
+<p><strong>Módulos Frontend Web:</strong>
+- Panel de caja
+- Registro de pagos
+- Corte de caja
+- Panel administrativo (gestión de usuarios)</p>
+<p><strong>🎯 HITO FASE 1:</strong> Sistema MVP funcional - El taller puede operar con funcionalidades básicas</p>
+<hr />
+<h3 id="73-fase-2-funcionalidades-avanzadas-semanas-7-12">7.3 FASE 2: Funcionalidades Avanzadas (Semanas 7-12)</h3>
+<h4 id="semana-7-8-recepcion-post-trabajo-notificaciones"><strong>Semana 7-8: Recepción Post-Trabajo + Notificaciones</strong></h4>
+<p><strong>Entregables:</strong>
+- ✅ Flujo completo de recepción post-trabajo
+- ✅ Sistema de borradores con precios
+- ✅ Aprobación administrativa
+- ✅ Integración WhatsApp con API Externa
+  - Configuración de credenciales de API externa
+  - Servicio de envío de mensajes WhatsApp
+  - Plantilla de mensaje para notificación a cliente
+  - Manejo de errores y reintentos
+- ✅ Notificaciones por Email
+- ✅ Notificaciones push (Firebase) - Opcional</p>
+<p><strong>Módulos Backend:</strong>
+- <code>/api/post-work</code> - Recepción post-trabajo
+- <code>/api/drafts</code> - Gestión de borradores
+- <code>/api/approvals</code> - Sistema de aprobaciones
+- <code>/api/notifications</code> - Notificaciones (WhatsApp, Email, Push)
+  - <code>/api/notifications/whatsapp</code> - Integración con API externa de WhatsApp
+  - Manejo de tokens y autenticación API externa
+  - Logs de notificaciones enviadas
+  - Cola de mensajes para reintentos</p>
+<p><strong>Módulos Frontend:</strong>
+- Pantalla de recepción post-trabajo
+- Creación y edición de borradores
+- Panel de aprobaciones (Admin)
+- Configuración de notificaciones (credenciales API WhatsApp)
+- Vista de historial de notificaciones enviadas</p>
+<p><strong>Flujo de Notificación WhatsApp:</strong>
+1. Admin aprueba borrador de trabajo terminado
+2. Sistema genera mensaje con detalles (folio OT, precio, descripción)
+3. Sistema llama a API externa de WhatsApp
+4. API externa envía mensaje al número del cliente
+5. Sistema registra notificación enviada en BD
+6. Cliente recibe mensaje en WhatsApp</p>
+<hr />
+<h4 id="semana-9-10-otis-subtareas-y-funcionalidades-tecnicas-avanzadas"><strong>Semana 9-10: OTIs, Subtareas y Funcionalidades Técnicas Avanzadas</strong></h4>
+<p><strong>Entregables:</strong>
+- ✅ Sistema completo de OTIs (Operaciones Técnicas Internas)
+- ✅ Gestión de subtareas
+- ✅ Motivo de pausa (interna)
+- ✅ Foto de salida
+- ✅ Gestión de garantías
+- ✅ Reasignación de trabajos</p>
+<p><strong>Módulos Backend:</strong>
+- <code>/api/otis</code> - Operaciones técnicas internas
+- <code>/api/subtasks</code> - Gestión de subtareas
+- <code>/api/warranties</code> - Gestión de garantías
+- <code>/api/reassignments</code> - Reasignación de OT</p>
+<p><strong>Módulos Frontend:</strong>
+- Agregar OTIs y operaciones (técnico)
+- Gestión de subtareas
+- Formulario de pausa con motivo
+- Foto de salida
+- Panel de garantías</p>
+<hr />
+<h4 id="semana-11-reportes-y-dashboard-auxiliar"><strong>Semana 11: Reportes y Dashboard Auxiliar</strong></h4>
+<p><strong>Entregables:</strong>
+- ✅ Módulo completo de reportes
+- ✅ Dashboard auxiliar (ingresos/egresos)
+- ✅ Cálculo automático de comisiones
+- ✅ Filtros avanzados
+- ✅ Exportación de reportes (PDF/Excel)</p>
+<p><strong>Módulos Backend:</strong>
+- <code>/api/reports</code> - Generación de reportes
+- <code>/api/commissions</code> - Cálculo de comisiones
+- <code>/api/analytics</code> - Análisis y métricas</p>
+<p><strong>Módulos Frontend Web:</strong>
+- Panel de reportes completo
+- Dashboard auxiliar con gráficos
+- Filtros avanzados
+- Exportación de reportes
+- Visualización de comisiones</p>
+<p><strong>Reportes Incluidos:</strong>
+- Trabajos entrantes/salientes
+- Pagados vs entregados
+- Movimientos de caja
+- Utilidad por trabajo
+- Gastos por trabajo
+- Reporte por cliente
+- Venta por fecha
+- Venta por cliente</p>
+<hr />
+<h4 id="semana-12-integracion-final-y-optimizacion"><strong>Semana 12: Integración Final y Optimización</strong></h4>
+<p><strong>Entregables:</strong>
+- ✅ Integración completa de todos los módulos
+- ✅ Optimización de consultas a base de datos
+- ✅ Optimización de rendimiento del frontend
+- ✅ Corrección de bugs críticos
+- ✅ Validación de flujos completos</p>
+<p><strong>🎯 HITO FASE 2:</strong> Sistema completo funcional - Todas las funcionalidades implementadas</p>
+<hr />
+<h3 id="74-fases-post-desarrollo-despues-de-los-3-meses">7.4 FASES POST-DESARROLLO (Después de los 3 Meses)</h3>
+<p><em>Una vez completado el desarrollo del proyecto en 3 meses (12 semanas), se realizarán las siguientes fases:</em></p>
+<h4 id="fase-de-testeo-completo"><strong>Fase de Testeo Completo</strong></h4>
+<p><strong>Entregables:</strong>
+- ✅ Suite completa de pruebas funcionales
+- ✅ Pruebas de integración
+- ✅ Pruebas de carga y rendimiento
+- ✅ Pruebas de seguridad básicas
+- ✅ Pruebas de usabilidad
+- ✅ Reporte de bugs y correcciones
+<strong>Entregables:</strong>
+- ✅ Suite completa de pruebas funcionales
+- ✅ Pruebas de integración
+- ✅ Pruebas de carga y rendimiento
+- ✅ Pruebas de seguridad básicas
+- ✅ Pruebas de usabilidad
+- ✅ Reporte de bugs y correcciones</p>
+<p><strong>Actividades de Testeo:</strong></p>
+<p><strong>1. Pruebas Funcionales:</strong>
+- ✅ Todos los módulos funcionan correctamente
+- ✅ Flujos completos de usuario (recepción → técnico → post-trabajo → caja)
+- ✅ Validación de reglas de negocio (anticipos, comisiones)
+- ✅ Generación de reportes correcta
+- ✅ Notificaciones WhatsApp se envían correctamente</p>
+<p><strong>2. Pruebas de Integración:</strong>
+- ✅ API externa de WhatsApp funciona correctamente
+- ✅ Integración con base de datos MariaDB
+- ✅ Subida y almacenamiento de imágenes
+- ✅ Generación de PDFs (tickets y reportes)
+- ✅ Autenticación y permisos por rol</p>
+<p><strong>3. Pruebas de Carga:</strong>
+- ✅ Sistema soporta múltiples usuarios simultáneos
+- ✅ Base de datos responde correctamente bajo carga
+- ✅ API responde en tiempos aceptables (&lt; 500ms)
+- ✅ Frontend se mantiene responsive</p>
+<p><strong>4. Pruebas de Seguridad:</strong>
+- ✅ Autenticación JWT funciona correctamente
+- ✅ Permisos por rol se respetan
+- ✅ Datos sensibles están protegidos
+- ✅ Validación de entrada de datos
+- ✅ Protección contra inyección SQL</p>
+<p><strong>5. Pruebas de Usabilidad:</strong>
+- ✅ Interfaz es intuitiva en tablets y teléfonos
+- ✅ Formularios son fáciles de completar
+- ✅ Navegación es clara y lógica
+- ✅ Mensajes de error son comprensibles</p>
+<hr />
+<h4 id="fase-de-seguridad-del-servidor-y-hardening"><strong>Fase de Seguridad del Servidor y Hardening</strong></h4>
+<p><strong>Entregables:</strong>
+- ✅ Servidor configurado con medidas de seguridad
+- ✅ Firewall configurado
+- ✅ SSL/HTTPS implementado
+- ✅ Backups automáticos configurados
+- ✅ Monitoreo básico implementado
+- ✅ Documentación de seguridad</p>
+<p><strong>Actividades de Seguridad:</strong></p>
+<p><strong>1. Configuración del Servidor:</strong>
+- ✅ Actualización de sistema operativo y paquetes
+- ✅ Configuración de firewall (UFW o iptables)
+  - Puerto 80 (HTTP) - redirige a HTTPS
+  - Puerto 443 (HTTPS)
+  - Puerto 3306 (MariaDB) - solo acceso local
+  - Puerto 8000 (FastAPI) - solo acceso local o VPN
+- ✅ Deshabilitación de servicios innecesarios
+- ✅ Configuración de límites de recursos (ulimit)</p>
+<p><strong>2. Seguridad de Base de Datos:</strong>
+- ✅ Usuario de aplicación con permisos mínimos necesarios
+- ✅ Contraseñas seguras y rotación de contraseñas
+- ✅ Acceso remoto deshabilitado (solo localhost)
+- ✅ Backup automático diario configurado
+- ✅ Encriptación de datos sensibles en BD
+- ✅ Logs de auditoría habilitados</p>
+<p><strong>3. Seguridad de la Aplicación:</strong>
+- ✅ SSL/HTTPS con Let's Encrypt
+- ✅ Headers de seguridad HTTP (HSTS, CSP, X-Frame-Options)
+- ✅ Rate limiting en API
+- ✅ Validación y sanitización de entrada
+- ✅ Protección CSRF
+- ✅ Encriptación de datos sensibles en tránsito</p>
+<p><strong>4. Seguridad de Archivos:</strong>
+- ✅ Permisos de archivos restringidos (uploads/)
+- ✅ Validación de tipos de archivo
+- ✅ Escaneo de malware (opcional)
+- ✅ Límite de tamaño de archivos</p>
+<p><strong>5. Monitoreo y Logs:</strong>
+- ✅ Logs de acceso y errores configurados
+- ✅ Monitoreo de recursos del servidor (CPU, RAM, disco)
+- ✅ Alertas de seguridad configuradas
+- ✅ Logs de auditoría de acciones críticas</p>
+<p><strong>6. Backup y Recuperación:</strong>
+- ✅ Backup automático diario de base de datos
+- ✅ Backup de archivos (uploads/)
+- ✅ Script de restauración probado
+- ✅ Plan de recuperación ante desastres documentado</p>
+<p><strong>7. Actualizaciones y Mantenimiento:</strong>
+- ✅ Proceso de actualización de seguridad documentado
+- ✅ Parches de seguridad aplicados regularmente
+- ✅ Monitoreo de vulnerabilidades</p>
+<hr />
+<h4 id="fase-de-despliegue-final-y-capacitacion"><strong>Fase de Despliegue Final y Capacitación</strong></h4>
+<p><strong>Entregables:</strong>
+- ✅ Sistema desplegado en producción
+- ✅ Configuración de producción completada
+- ✅ Capacitación a usuarios realizada
+- ✅ Documentación completa entregada
+- ✅ Soporte post-implementación iniciado</p>
+<p><strong>Actividades:</strong>
+- Despliegue final en servidor de producción
+- Configuración de dominio y DNS
+- Verificación de funcionamiento en producción
+- Sesiones de capacitación por módulo:
+  - Recepción (uso de tablet/teléfono)
+  - Técnicos (panel de trabajos)
+  - Caja (registro de pagos)
+  - Administración (gestión y reportes)
+- Manual de usuario completo
+- Videos tutoriales
+- Documentación técnica
+- Inicio de soporte post-implementación (30 días)</p>
+<p><strong>🎯 HITO FINAL:</strong> Sistema completo, seguro y en producción</p>
+<hr />
+<h2 id="8-diagrama-de-cronograma-gantt">8. DIAGRAMA DE CRONOGRAMA (GANTT)</h2>
+<h3 id="cronograma-visual-por-semanas">Cronograma Visual por Semanas</h3>
+<div class="codehilite"><pre><span></span><code>FASE 1: MVP (6 semanas)
+═══════════════════════════════════════════════════════════════════
+Semana 1-2: [████████████████████] Análisis, Diseño, Infraestructura
+Semana 3-4: [████████████████████] Backend Core + Recepción Básica
+Semana 5:   [████████] Panel Técnico + Impresión Tickets
+Semana 6:   [████████] Caja Básica + Administración Básica
+            └─🎯 MVP FUNCIONAL
+
+FASE 2: Avanzado (6 semanas)
+═══════════════════════════════════════════════════════════════════
+Semana 7-8: [████████████████████] Post-Trabajo + Notificaciones WhatsApp
+Semana 9-10:[████████████████████] OTIs + Subtareas + Avanzado
+Semana 11:  [████████] Reportes + Dashboard Auxiliar
+Semana 12:  [████████] Integración + Optimización
+            └─🎯 PROYECTO PRINCIPAL COMPLETO (3 MESES)
+
+NOTA: Las fases de Testeo, Seguridad y Despliegue se realizarán 
+posteriormente, fuera del periodo principal de 3 meses.
+</code></pre></div>
+
+<h3 id="cronograma-detallado-por-actividad">Cronograma Detallado por Actividad</h3>
+<div class="codehilite"><pre><span></span><code>MES 1 (Semanas 1-4)
+═══════════════════════════════════════════════════════════════════
+Semana 1:   [████] Análisis y Diseño
+Semana 2:   [████] Setup Infraestructura
+Semana 3:   [████] Backend API Core
+Semana 4:   [████] App Recepción Móvil
+
+MES 2 (Semanas 5-8)
+═══════════════════════════════════════════════════════════════════
+Semana 5:   [████] Panel Técnico + Tickets
+Semana 6:   [████] Caja + Admin (🎯 MVP)
+Semana 7:   [████] Post-Trabajo
+Semana 8:   [████] Notificaciones
+
+MES 3 (Semanas 9-12)
+═══════════════════════════════════════════════════════════════════
+Semana 9:   [████] OTIs + Subtareas
+Semana 10:  [████] Funcionalidades Avanzadas
+Semana 11:  [████] Reportes + Dashboard
+Semana 12:  [████] Integración + Optimización
+            └─🎯 PROYECTO PRINCIPAL COMPLETO (3 MESES)
+
+NOTA: Fases adicionales (Testeo, Seguridad, Despliegue) 
+se realizarán posteriormente, fuera del periodo de 3 meses.
+</code></pre></div>
+
+<h3 id="diagrama-de-dependencias">Diagrama de Dependencias</h3>
+<div class="codehilite"><pre><span></span><code>                    ┌─────────────┐
+                    │  Semana 1-2 │
+                    │ Análisis y  │
+                    │   Diseño    │
+                    └──────┬──────┘
+                           │
+        ┌──────────────────┼──────────────────┐
+        │                  │                  │
+   ┌────▼────┐        ┌────▼────┐      ┌────▼────┐
+   │Semana 3 │        │Semana 3 │      │Semana 2 │
+   │ Backend │        │  Front  │      │   BD    │
+   │   API   │        │  Mobile │      │  Setup  │
+   └────┬────┘        └────┬────┘      └────┬────┘
+        │                  │                  │
+        └──────────────────┼──────────────────┘
+                           │
+                    ┌──────▼──────┐
+                    │  Semana 4   │
+                    │ Integración │
+                    │   Básica    │
+                    └──────┬──────┘
+                           │
+        ┌──────────────────┼──────────────────┐
+        │                  │                  │
+   ┌────▼────┐        ┌────▼────┐      ┌────▼────┐
+   │Semana 5 │        │Semana 6 │      │Semana 6 │
+   │Técnicos │        │  Caja   │      │  Admin  │
+   └────┬────┘        └────┬────┘      └────┬────┘
+        │                  │                  │
+        └──────────────────┼──────────────────┘
+                           │
+                    ┌──────▼──────┐
+                    │   🎯 MVP    │
+                    │  FUNCIONAL  │
+                    └──────┬──────┘
+                           │
+                    ┌──────▼──────┐
+                    │  FASE 2     │
+                    │  (Sem 7-12) │
+                    └─────────────┘
+</code></pre></div>
+
+<hr />
+<h2 id="9-diagrama-de-arquitectura-y-modulos">9. DIAGRAMA DE ARQUITECTURA Y MÓDULOS</h2>
+<h3 id="arquitectura-general-del-sistema">Arquitectura General del Sistema</h3>
+<div class="codehilite"><pre><span></span><code><span class="err">┌─────────────────────────────────────────────────────────────────┐</span>
+<span class="err">│</span><span class="w">                    </span><span class="n">SISTEMA</span><span class="w"> </span><span class="n">CRM</span><span class="w"> </span><span class="n">TALLERES</span><span class="w">                          </span><span class="err">│</span>
+<span class="err">│</span><span class="w">                    </span><span class="p">(</span><span class="mi">15</span><span class="w"> </span><span class="n">Semanas</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="n">Fases</span><span class="p">)</span><span class="w">                        </span><span class="err">│</span>
+<span class="err">└─────────────────────────────────────────────────────────────────┘</span>
+<span class="w">                              </span><span class="err">│</span>
+<span class="w">        </span><span class="err">┌─────────────────────┼─────────────────────┐</span>
+<span class="w">        </span><span class="err">│</span><span class="w">                     </span><span class="err">│</span><span class="w">                     </span><span class="err">│</span>
+<span class="w">   </span><span class="err">┌────▼────┐</span><span class="w">          </span><span class="err">┌─────▼─────┐</span><span class="w">        </span><span class="err">┌─────▼─────┐</span>
+<span class="w">   </span><span class="err">│</span><span class="w">  </span><span class="n">FASE</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="err">│</span><span class="w">          </span><span class="err">│</span><span class="w">  </span><span class="n">FASE</span><span class="w"> </span><span class="mi">1</span><span class="w">   </span><span class="err">│</span><span class="w">        </span><span class="err">│</span><span class="w">  </span><span class="n">FASE</span><span class="w"> </span><span class="mi">1</span><span class="w">   </span><span class="err">│</span>
+<span class="w">   </span><span class="err">│</span><span class="w">  </span><span class="n">MVP</span><span class="w">    </span><span class="err">│</span><span class="w">          </span><span class="err">│</span><span class="w">  </span><span class="n">MVP</span><span class="w">      </span><span class="err">│</span><span class="w">        </span><span class="err">│</span><span class="w">  </span><span class="n">MVP</span><span class="w">      </span><span class="err">│</span>
+<span class="w">   </span><span class="err">│</span><span class="w">         </span><span class="err">│</span><span class="w">          </span><span class="err">│</span><span class="w">           </span><span class="err">│</span><span class="w">        </span><span class="err">│</span><span class="w">           </span><span class="err">│</span>
+<span class="w">   </span><span class="err">│</span><span class="w"> </span><span class="n">Recepción</span><span class="err">│</span><span class="w">         </span><span class="err">│</span><span class="w"> </span><span class="n">Técnicos</span><span class="w">  </span><span class="err">│</span><span class="w">        </span><span class="err">│</span><span class="w">   </span><span class="n">Caja</span><span class="w">    </span><span class="err">│</span>
+<span class="w">   </span><span class="err">│</span><span class="w"> </span><span class="n">Básica</span><span class="w">  </span><span class="err">│</span><span class="w">         </span><span class="err">│</span><span class="w">  </span><span class="n">Básico</span><span class="w">   </span><span class="err">│</span><span class="w">        </span><span class="err">│</span><span class="w">  </span><span class="n">Básica</span><span class="w">   </span><span class="err">│</span>
+<span class="w">   </span><span class="err">│</span><span class="w">         </span><span class="err">│</span><span class="w">          </span><span class="err">│</span><span class="w">           </span><span class="err">│</span><span class="w">        </span><span class="err">│</span><span class="w">           </span><span class="err">│</span>
+<span class="w">   </span><span class="err">│</span><span class="w"> </span><span class="err">•</span><span class="w"> </span><span class="n">Formulario</span><span class="err">│</span><span class="w">      </span><span class="err">│</span><span class="w"> </span><span class="err">•</span><span class="w"> </span><span class="n">Vista</span><span class="w"> </span><span class="n">OT</span><span class="err">│</span><span class="w">       </span><span class="err">│</span><span class="w"> </span><span class="err">•</span><span class="w"> </span><span class="n">Pagos</span><span class="w">   </span><span class="err">│</span>
+<span class="w">   </span><span class="err">│</span><span class="w"> </span><span class="err">•</span><span class="w"> </span><span class="n">Clientes</span><span class="w"> </span><span class="err">│</span><span class="w">      </span><span class="err">│</span><span class="w"> </span><span class="err">•</span><span class="w"> </span><span class="n">Estatus</span><span class="w"> </span><span class="err">│</span><span class="w">       </span><span class="err">│</span><span class="w"> </span><span class="err">•</span><span class="w"> </span><span class="n">Anticipos</span><span class="err">│</span>
+<span class="w">   </span><span class="err">│</span><span class="w"> </span><span class="err">•</span><span class="w"> </span><span class="n">Foto</span><span class="w">     </span><span class="err">│</span><span class="w">      </span><span class="err">│</span><span class="w"> </span><span class="err">•</span><span class="w"> </span><span class="n">Material</span><span class="err">│</span><span class="w">       </span><span class="err">│</span><span class="w"> </span><span class="err">•</span><span class="w"> </span><span class="n">Cortes</span><span class="w">   </span><span class="err">│</span>
+<span class="w">   </span><span class="err">│</span><span class="w"> </span><span class="err">•</span><span class="w"> </span><span class="n">Folio</span><span class="w"> </span><span class="n">OT</span><span class="w"> </span><span class="err">│</span><span class="w">      </span><span class="err">│</span><span class="w">           </span><span class="err">│</span><span class="w">       </span><span class="err">│</span><span class="w">           </span><span class="err">│</span>
+<span class="w">   </span><span class="err">└────┬────┘</span><span class="w">          </span><span class="err">└─────┬─────┘</span><span class="w">        </span><span class="err">└─────┬─────┘</span>
+<span class="w">        </span><span class="err">│</span><span class="w">                     </span><span class="err">│</span><span class="w">                     </span><span class="err">│</span>
+<span class="w">        </span><span class="err">└─────────────────────┼─────────────────────┘</span>
+<span class="w">                              </span><span class="err">│</span>
+<span class="w">                    </span><span class="err">┌─────────▼─────────┐</span>
+<span class="w">                    </span><span class="err">│</span><span class="w">  </span><span class="n">Backend</span><span class="w"> </span><span class="n">API</span><span class="w">      </span><span class="err">│</span>
+<span class="w">                    </span><span class="err">│</span><span class="w">  </span><span class="p">(</span><span class="n">Python</span><span class="o">/</span><span class="n">FastAPI</span><span class="p">)</span><span class="err">│</span>
+<span class="w">                    </span><span class="err">│</span><span class="w">  </span><span class="err">•</span><span class="w"> </span><span class="n">REST</span><span class="w"> </span><span class="n">API</span><span class="w">       </span><span class="err">│</span>
+<span class="w">                    </span><span class="err">│</span><span class="w">  </span><span class="err">•</span><span class="w"> </span><span class="n">JWT</span><span class="w"> </span><span class="n">Auth</span><span class="w">       </span><span class="err">│</span>
+<span class="w">                    </span><span class="err">│</span><span class="w">  </span><span class="err">•</span><span class="w"> </span><span class="n">File</span><span class="w"> </span><span class="n">Upload</span><span class="w">    </span><span class="err">│</span>
+<span class="w">                    </span><span class="err">│</span><span class="w">  </span><span class="err">•</span><span class="w"> </span><span class="n">SQLAlchemy</span><span class="w"> </span><span class="n">ORM</span><span class="w"> </span><span class="err">│</span>
+<span class="w">                    </span><span class="err">└─────────┬─────────┘</span>
+<span class="w">                              </span><span class="err">│</span>
+<span class="w">                    </span><span class="err">┌─────────▼─────────┐</span>
+<span class="w">                    </span><span class="err">│</span><span class="w">  </span><span class="n">Base</span><span class="w"> </span><span class="n">de</span><span class="w"> </span><span class="n">Datos</span><span class="w">    </span><span class="err">│</span>
+<span class="w">                    </span><span class="err">│</span><span class="w">  </span><span class="p">(</span><span class="n">MariaDB</span><span class="p">)</span><span class="w">         </span><span class="err">│</span>
+<span class="w">                    </span><span class="err">│</span><span class="w">  </span><span class="n">Servidor</span><span class="w"> </span><span class="n">Local</span><span class="w">    </span><span class="err">│</span>
+<span class="w">                    </span><span class="err">│</span><span class="w">  </span><span class="n">Relacional</span><span class="w"> </span><span class="n">SQL</span><span class="w">    </span><span class="err">│</span>
+<span class="w">                    </span><span class="err">│</span><span class="w">  </span><span class="err">•</span><span class="w"> </span><span class="n">Usuarios</span><span class="w">        </span><span class="err">│</span>
+<span class="w">                    </span><span class="err">│</span><span class="w">  </span><span class="err">•</span><span class="w"> </span><span class="n">Clientes</span><span class="w">        </span><span class="err">│</span>
+<span class="w">                    </span><span class="err">│</span><span class="w">  </span><span class="err">•</span><span class="w"> </span><span class="n">OT</span><span class="w">              </span><span class="err">│</span>
+<span class="w">                    </span><span class="err">│</span><span class="w">  </span><span class="err">•</span><span class="w"> </span><span class="n">Pagos</span><span class="w">           </span><span class="err">│</span>
+<span class="w">                    </span><span class="err">└───────────────────┘</span>
+
+<span class="w">        </span><span class="err">┌─────────────────────────────────────────────┐</span>
+<span class="w">        </span><span class="err">│</span><span class="w">            </span><span class="n">FASE</span><span class="w"> </span><span class="mi">2</span><span class="p">:</span><span class="w"> </span><span class="n">AVANZADO</span><span class="w">                 </span><span class="err">│</span>
+<span class="w">        </span><span class="err">│</span><span class="w">            </span><span class="p">(</span><span class="n">Semanas</span><span class="w"> </span><span class="mi">7</span><span class="o">-</span><span class="mi">12</span><span class="p">)</span><span class="w">                    </span><span class="err">│</span>
+<span class="w">        </span><span class="err">├─────────────────────────────────────────────┤</span>
+<span class="w">        </span><span class="err">│</span><span class="w">  </span><span class="err">✅</span><span class="w"> </span><span class="n">Recepción</span><span class="w"> </span><span class="n">Post</span><span class="o">-</span><span class="n">Trabajo</span><span class="w">                   </span><span class="err">│</span>
+<span class="w">        </span><span class="err">│</span><span class="w">  </span><span class="err">✅</span><span class="w"> </span><span class="n">Notificaciones</span><span class="w"> </span><span class="p">(</span><span class="n">WhatsApp</span><span class="o">/</span><span class="n">Email</span><span class="p">)</span><span class="w">          </span><span class="err">│</span>
+<span class="w">        </span><span class="err">│</span><span class="w">  </span><span class="err">✅</span><span class="w"> </span><span class="n">OTIs</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="n">Subtareas</span><span class="w">                         </span><span class="err">│</span>
+<span class="w">        </span><span class="err">│</span><span class="w">  </span><span class="err">✅</span><span class="w"> </span><span class="n">Reportes</span><span class="w"> </span><span class="n">Avanzados</span><span class="w">                       </span><span class="err">│</span>
+<span class="w">        </span><span class="err">│</span><span class="w">  </span><span class="err">✅</span><span class="w"> </span><span class="n">Dashboard</span><span class="w"> </span><span class="n">Auxiliar</span><span class="w">                       </span><span class="err">│</span>
+<span class="w">        </span><span class="err">│</span><span class="w">  </span><span class="err">✅</span><span class="w"> </span><span class="n">Cálculo</span><span class="w"> </span><span class="n">de</span><span class="w"> </span><span class="n">Comisiones</span><span class="w">                    </span><span class="err">│</span>
+<span class="w">        </span><span class="err">│</span><span class="w">  </span><span class="err">✅</span><span class="w"> </span><span class="n">Garantías</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="n">Reasignación</span><span class="w">                 </span><span class="err">│</span>
+<span class="w">        </span><span class="err">└─────────────────────────────────────────────┘</span>
+</code></pre></div>
+
+<h3 id="arquitectura-de-capas">Arquitectura de Capas</h3>
+<div class="codehilite"><pre><span></span><code>┌─────────────────────────────────────────────────────────────┐
+│                    <span class="n">CAPA</span> <span class="n">DE</span> <span class="n">PRESENTACIÓN</span>                     │
+├─────────────────────────────────────────────────────────────┤
+│                                                               │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │         <span class="n">Aplicación</span> <span class="n">Web</span> <span class="n">React</span> (<span class="n">Responsive</span>)             │   │
+│  │                                                       │   │
+│  │  ┌──────────────┐    ┌──────────────┐               │   │
+│  │  │  <span class="n">Recepción</span>   │    │  <span class="n">Técnicos</span>    │               │   │
+│  │  │  (<span class="n">Tablet</span>/    │    │  (<span class="n">Tablet</span>/    │               │   │
+│  │  │   <span class="n">Móvil</span>)     │    │   <span class="n">Móvil</span>)     │               │   │
+│  │  └──────────────┘    └──────────────┘               │   │
+│  │                                                       │   │
+│  │  ┌──────────────┐    ┌──────────────┐               │   │
+│  │  │  <span class="n">Admin</span><span class="o">/</span><span class="n">Caja</span>  │    │  <span class="n">Reportes</span>    │               │   │
+│  │  │  (<span class="n">Escritorio</span>)│    │  (<span class="n">Escritorio</span>)│               │   │
+│  │  └──────────────┘    └──────────────┘               │   │
+│  │                                                       │   │
+│  │  • <span class="n">React</span>.<span class="n">js</span> + <span class="n">Router</span>                                │   │
+│  │  • <span class="n">Material-UI</span> / <span class="n">Ant</span> <span class="n">Design</span>                         │   │
+│  │  • <span class="n">React-PDF</span> <span class="n">para</span> <span class="n">tickets</span>                          │   │
+│  └──────────────────────────────────────────────────────┘   │
+│                                                               │
+└─────────────────────────────┬───────────────────────────────┘
+                              │
+┌─────────────────────────────▼─────────────────────────────┐
+│                    <span class="n">CAPA</span> <span class="n">DE</span> <span class="n">API</span>                             │
+│                  <span class="n">Python</span> + <span class="n">FastAPI</span>                          │
+├───────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐ │
+│  │   <span class="n">Auth</span>   │  │   <span class="n">OT</span>     │  │  <span class="n">Pagos</span>   │  │ <span class="n">Reportes</span> │ │
+│  │   <span class="n">API</span>    │  │   <span class="n">API</span>    │  │   <span class="n">API</span>    │  │   <span class="n">API</span>    │ │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘ │
+│                                                             │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐ │
+│  │<span class="n">Clientes</span>  │  │<span class="n">Técnicos</span>  │  │<span class="n">Notific</span>.  │  │  <span class="n">Files</span>   │ │
+│  │   <span class="n">API</span>    │  │   <span class="n">API</span>    │  │   <span class="n">API</span>    │  │   <span class="n">API</span>    │ │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘ │
+│                                                             │
+│  • <span class="n">FastAPI</span> <span class="n">Framework</span>                                       │
+│  • <span class="n">SQLAlchemy</span> <span class="n">ORM</span>                                          │
+│  • <span class="n">Pydantic</span> <span class="n">para</span> <span class="n">validación</span>                                │
+│  • <span class="n">JWT</span> <span class="n">Authentication</span>                                      │
+│                                                             │
+└─────────────────────────────┬─────────────────────────────┘
+                              │
+┌─────────────────────────────▼─────────────────────────────┐
+│                    <span class="n">CAPA</span> <span class="n">DE</span> <span class="n">SERVICIOS</span>                        │
+├───────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐ │
+│  │<span class="n">WhatsApp</span>  │  │  <span class="n">Email</span>   │  │  <span class="n">Storage</span> │  │   <span class="n">PDF</span>    │ │
+│  │ <span class="n">Service</span>  │  │ <span class="n">Service</span>  │  │  <span class="n">Local</span>   │  │ <span class="n">Generator</span>│ │
+│  │ (<span class="n">Fase</span> <span class="mi">2</span>) │  │ (<span class="n">Fase</span> <span class="mi">2</span>) │  │  <span class="n">Files</span>   │  │<span class="n">ReportLab</span> │ │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘ │
+│                                                             │
+└─────────────────────────────┬─────────────────────────────┘
+                              │
+┌─────────────────────────────▼─────────────────────────────┐
+│                    <span class="n">CAPA</span> <span class="n">DE</span> <span class="n">DATOS</span>                          │
+├───────────────────────────────────────────────────────────┤
+│                                                             │
+│         <span class="n">MariaDB</span> <span class="n">Database</span> (<span class="n">Servidor</span> <span class="n">Local</span>)                 │
+│         <span class="n">Base</span> <span class="n">de</span> <span class="n">Datos</span> <span class="n">Relacional</span> <span class="n">SQL</span>                       │
+│  • <span class="n">Usuarios</span>  • <span class="n">Clientes</span>  • <span class="n">OT</span>  • <span class="n">Pagos</span>  • <span class="n">Materiales</span>      │
+│  • <span class="n">OTIs</span>      • <span class="n">Gastos</span>    • <span class="n">Reportes</span>  • <span class="n">Notificaciones</span>     │
+│                                                             │
+│  • <span class="n">Alembic</span> <span class="n">para</span> <span class="n">migraciones</span>                               │
+│  • <span class="n">SQLAlchemy</span> <span class="n">ORM</span> (<span class="n">compatible</span> <span class="n">con</span> <span class="n">MariaDB</span>)                │
+│  • <span class="n">Backup</span> <span class="nb">local</span> <span class="n">configurado</span>                                │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+</code></pre></div>
+
+<h3 id="flujo-de-datos-principal">Flujo de Datos Principal</h3>
+<div class="codehilite"><pre><span></span><code><span class="err">┌──────────────┐</span><span class="w">      </span><span class="err">┌──────────────┐</span><span class="w">      </span><span class="err">┌──────────────┐</span>
+<span class="err">│</span><span class="w">  </span><span class="n">Recepción</span><span class="w">   </span><span class="err">│─────▶│</span><span class="w">   </span><span class="n">FastAPI</span><span class="w">    </span><span class="err">│─────▶│</span><span class="w">   </span><span class="n">MariaDB</span><span class="w">    </span><span class="err">│</span>
+<span class="err">│</span><span class="w">  </span><span class="p">(</span><span class="n">React</span><span class="w"> </span><span class="n">Web</span><span class="w">  </span><span class="err">│</span><span class="w">      </span><span class="err">│</span><span class="w">   </span><span class="n">Backend</span><span class="w">     </span><span class="err">│</span><span class="w">      </span><span class="err">│</span><span class="w">  </span><span class="p">(</span><span class="n">Servidor</span><span class="w">   </span><span class="err">│</span>
+<span class="err">│</span><span class="w">   </span><span class="n">Tablet</span><span class="p">)</span><span class="w">    </span><span class="err">│</span><span class="w">      </span><span class="err">│</span><span class="w">   </span><span class="n">Python</span><span class="w">     </span><span class="err">│</span><span class="w">      </span><span class="err">│</span><span class="w">   </span><span class="n">Local</span><span class="p">)</span><span class="w">     </span><span class="err">│</span>
+<span class="err">│</span><span class="w">              </span><span class="err">│</span><span class="w">      </span><span class="err">│</span><span class="w">              </span><span class="err">│</span><span class="w">      </span><span class="err">│</span><span class="w">  </span><span class="n">Relacional</span><span class="w">  </span><span class="err">│</span>
+<span class="err">│</span><span class="w">              </span><span class="err">│</span><span class="w">      </span><span class="err">│</span><span class="w">              </span><span class="err">│</span><span class="w">      </span><span class="err">│</span><span class="w">     </span><span class="n">SQL</span><span class="w">       </span><span class="err">│</span>
+<span class="err">└──────────────┘</span><span class="w">      </span><span class="err">└──────┬───────┘</span><span class="w">      </span><span class="err">└──────┬───────┘</span>
+<span class="w">                             </span><span class="err">│</span><span class="w">                     </span><span class="err">│</span>
+<span class="w">                </span><span class="err">┌────────────▼──────────┐</span><span class="w">   </span><span class="err">┌──────▼──────┐</span>
+<span class="w">                </span><span class="err">│</span><span class="w">   </span><span class="n">Servicios</span><span class="w"> </span><span class="n">Python</span><span class="w">    </span><span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">  </span><span class="n">Storage</span><span class="w">    </span><span class="err">│</span>
+<span class="w">                </span><span class="err">│</span><span class="w">                       </span><span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">   </span><span class="n">Local</span><span class="w">     </span><span class="err">│</span>
+<span class="w">                </span><span class="err">│</span><span class="w"> </span><span class="err">•</span><span class="w"> </span><span class="n">ReportLab</span><span class="w"> </span><span class="p">(</span><span class="n">PDFs</span><span class="p">)</span><span class="w">    </span><span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">             </span><span class="err">│</span>
+<span class="w">                </span><span class="err">│</span><span class="w"> </span><span class="err">•</span><span class="w"> </span><span class="n">Email</span><span class="w"> </span><span class="p">(</span><span class="n">SMTP</span><span class="p">)</span><span class="w">        </span><span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w"> </span><span class="err">•</span><span class="w"> </span><span class="n">uploads</span><span class="o">/</span><span class="w">  </span><span class="err">│</span>
+<span class="w">                </span><span class="err">│</span><span class="w"> </span><span class="err">•</span><span class="w"> </span><span class="n">WhatsApp</span><span class="w"> </span><span class="p">(</span><span class="n">Fase</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w">  </span><span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w"> </span><span class="err">•</span><span class="w"> </span><span class="n">Imágenes</span><span class="w">  </span><span class="err">│</span>
+<span class="w">                </span><span class="err">└───────────────────────┘</span><span class="w">   </span><span class="err">└─────────────┘</span>
+<span class="w">                             </span><span class="err">│</span>
+<span class="w">                </span><span class="err">┌────────────▼──────────┐</span>
+<span class="w">                </span><span class="err">│</span><span class="w">   </span><span class="n">React</span><span class="w"> </span><span class="n">Web</span><span class="w"> </span><span class="n">App</span><span class="w">      </span><span class="err">│</span>
+<span class="w">                </span><span class="err">│</span><span class="w">   </span><span class="p">(</span><span class="n">Responsive</span><span class="p">)</span><span class="w">       </span><span class="err">│</span>
+<span class="w">                </span><span class="err">│</span><span class="w">                      </span><span class="err">│</span>
+<span class="w">                </span><span class="err">│</span><span class="w"> </span><span class="err">•</span><span class="w"> </span><span class="n">Recepción</span><span class="w">         </span><span class="err">│</span>
+<span class="w">                </span><span class="err">│</span><span class="w"> </span><span class="err">•</span><span class="w"> </span><span class="n">Técnicos</span><span class="w">          </span><span class="err">│</span>
+<span class="w">                </span><span class="err">│</span><span class="w"> </span><span class="err">•</span><span class="w"> </span><span class="n">Caja</span><span class="w">              </span><span class="err">│</span>
+<span class="w">                </span><span class="err">│</span><span class="w"> </span><span class="err">•</span><span class="w"> </span><span class="n">Reportes</span><span class="w">          </span><span class="err">│</span>
+<span class="w">                </span><span class="err">│</span><span class="w"> </span><span class="err">•</span><span class="w"> </span><span class="n">Admin</span><span class="w">             </span><span class="err">│</span>
+<span class="w">                </span><span class="err">└──────────────────────┘</span>
+</code></pre></div>
+
+<hr />
+<h2 id="10-distribucion-de-modulos-por-fase">10. DISTRIBUCIÓN DE MÓDULOS POR FASE</h2>
+<h3 id="fase-1-mvp-funcionalidades-esenciales">FASE 1: MVP (Funcionalidades Esenciales)</h3>
+<table>
+<thead>
+<tr>
+<th>Módulo</th>
+<th>Funcionalidades Incluidas</th>
+<th>Estado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Recepción</strong></td>
+<td>✅ Formulario completo<br>✅ Gestión de clientes<br>✅ Foto de pieza<br>✅ Prioridades y fechas<br>✅ Categorías básicas<br>✅ Asignación a técnico<br>✅ Generación de folio OT</td>
+<td>MVP</td>
+</tr>
+<tr>
+<td><strong>Técnicos</strong></td>
+<td>✅ Vista de OT asignadas<br>✅ Cambio de estatus básico<br>✅ Registro de materiales básico</td>
+<td>MVP</td>
+</tr>
+<tr>
+<td><strong>Caja</strong></td>
+<td>✅ Registro de pagos<br>✅ Control de anticipos<br>✅ Corte de caja diario</td>
+<td>MVP</td>
+</tr>
+<tr>
+<td><strong>Administración</strong></td>
+<td>✅ Gestión de usuarios<br>✅ Roles y permisos básicos<br>✅ Configuración básica</td>
+<td>MVP</td>
+</tr>
+<tr>
+<td><strong>Impresión</strong></td>
+<td>✅ Generación de tickets PDF<br>✅ Información básica</td>
+<td>MVP</td>
+</tr>
+</tbody>
+</table>
+<h3 id="fase-2-avanzado-funcionalidades-completas">FASE 2: Avanzado (Funcionalidades Completas)</h3>
+<table>
+<thead>
+<tr>
+<th>Módulo</th>
+<th>Funcionalidades Adicionales</th>
+<th>Estado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Recepción Post-Trabajo</strong></td>
+<td>✅ Flujo completo<br>✅ Borradores con precios<br>✅ Aprobación administrativa<br>✅ Foto de salida<br>✅ Gestión de garantías</td>
+<td>Fase 2</td>
+</tr>
+<tr>
+<td><strong>Técnicos Avanzado</strong></td>
+<td>✅ OTIs completas<br>✅ Subtareas<br>✅ Motivo de pausa<br>✅ Operaciones detalladas</td>
+<td>Fase 2</td>
+</tr>
+<tr>
+<td><strong>Notificaciones</strong></td>
+<td>✅ Push notifications<br>✅ WhatsApp<br>✅ Email automático</td>
+<td>Fase 2</td>
+</tr>
+<tr>
+<td><strong>Reportes</strong></td>
+<td>✅ Todos los reportes<br>✅ Filtros avanzados<br>✅ Exportación PDF/Excel</td>
+<td>Fase 2</td>
+</tr>
+<tr>
+<td><strong>Dashboard Auxiliar</strong></td>
+<td>✅ Ingresos/egresos<br>✅ Gráficos<br>✅ Cuentas por cobrar/pagar</td>
+<td>Fase 2</td>
+</tr>
+<tr>
+<td><strong>Comisiones</strong></td>
+<td>✅ Cálculo automático<br>✅ Reglas configurables</td>
+<td>Fase 2</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="11-cronograma-detallado-12-semanas-proyecto-principal">11. CRONOGRAMA DETALLADO (12 SEMANAS - PROYECTO PRINCIPAL)</h2>
+<h3 id="tabla-de-cronograma-semanal-proyecto-principal">Tabla de Cronograma Semanal - Proyecto Principal</h3>
+<table>
+<thead>
+<tr>
+<th>Semana</th>
+<th>Fase</th>
+<th>Módulo Principal</th>
+<th>Actividades Clave</th>
+<th>Entregables</th>
+<th>Hitos</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1-2</strong></td>
+<td>1</td>
+<td>Infraestructura</td>
+<td>• Análisis detallado<br>• Diseño BD<br>• Mockups<br>• Setup servidor<br>• Configuración Git</td>
+<td>• BD diseñada<br>• Mockups aprobados<br>• Servidor configurado</td>
+<td>✅ Inicio proyecto</td>
+</tr>
+<tr>
+<td><strong>3-4</strong></td>
+<td>1</td>
+<td>Backend + Recepción</td>
+<td>• API REST completa (FastAPI)<br>• Autenticación JWT<br>• CRUD Usuarios/Clientes/OT<br>• App React recepción responsive</td>
+<td>• API funcional<br>• App recepción básica</td>
+<td>✅ Backend operativo</td>
+</tr>
+<tr>
+<td><strong>5</strong></td>
+<td>1</td>
+<td>Técnicos + Tickets</td>
+<td>• Panel técnico móvil<br>• Cambio de estatus<br>• Generación PDF tickets</td>
+<td>• Panel técnico funcional<br>• Tickets imprimibles</td>
+<td>✅ Flujo básico completo</td>
+</tr>
+<tr>
+<td><strong>6</strong></td>
+<td>1</td>
+<td>Caja + Admin</td>
+<td>• Módulo de caja<br>• Panel administrativo<br>• Gestión usuarios</td>
+<td>• Caja funcional<br>• Admin básico</td>
+<td>🎯 <strong>MVP COMPLETO</strong></td>
+</tr>
+<tr>
+<td><strong>7-8</strong></td>
+<td>2</td>
+<td>Post-Trabajo + Notif</td>
+<td>• Flujo post-trabajo<br>• Borradores<br>• Integración API WhatsApp externa<br>• Email</td>
+<td>• Post-trabajo completo<br>• Notificaciones WhatsApp activas</td>
+<td>✅ Comunicación automática</td>
+</tr>
+<tr>
+<td><strong>9-10</strong></td>
+<td>2</td>
+<td>OTIs + Avanzado</td>
+<td>• Sistema OTIs<br>• Subtareas<br>• Garantías</td>
+<td>• Funcionalidades avanzadas</td>
+<td>✅ Sistema completo técnico</td>
+</tr>
+<tr>
+<td><strong>11</strong></td>
+<td>2</td>
+<td>Reportes</td>
+<td>• Todos los reportes<br>• Dashboard auxiliar<br>• Comisiones</td>
+<td>• Reportes operativos</td>
+<td>✅ Análisis completo</td>
+</tr>
+<tr>
+<td><strong>12</strong></td>
+<td>2</td>
+<td>Integración</td>
+<td>• Integración módulos<br>• Optimización<br>• Corrección bugs</td>
+<td>• Sistema integrado</td>
+<td>🎯 <strong>PROYECTO PRINCIPAL COMPLETO</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Nota:</strong> Las fases de Testeo, Seguridad del Servidor y Despliegue Final se realizarán posteriormente, fuera del periodo principal de 3 meses (12 semanas).</p>
+<hr />
+<h2 id="12-distribucion-de-recursos-y-equipo">12. DISTRIBUCIÓN DE RECURSOS Y EQUIPO</h2>
+<h3 id="roles-necesarios">Roles Necesarios</h3>
+<table>
+<thead>
+<tr>
+<th>Rol</th>
+<th>Fase 1</th>
+<th>Fase 2</th>
+<th>Fase 3 (Testeo/Seg)</th>
+<th>Responsabilidades</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Backend Developer (Python)</strong></td>
+<td>100%</td>
+<td>60%</td>
+<td>20%</td>
+<td>API FastAPI, Base de datos, Integraciones</td>
+</tr>
+<tr>
+<td><strong>Frontend Developer (React)</strong></td>
+<td>80%</td>
+<td>40%</td>
+<td>20%</td>
+<td>App React Responsive (Recepción/Técnicos/Admin/Caja/Reportes)</td>
+</tr>
+<tr>
+<td><strong>QA/Tester</strong></td>
+<td>20%</td>
+<td>30%</td>
+<td>100%</td>
+<td>Pruebas funcionales, integración, carga y seguridad</td>
+</tr>
+<tr>
+<td><strong>DevOps/Seguridad</strong></td>
+<td>40%</td>
+<td>30%</td>
+<td>100%</td>
+<td>Infraestructura, seguridad del servidor, hardening</td>
+</tr>
+<tr>
+<td><strong>Diseñador UI/UX</strong></td>
+<td>60%</td>
+<td>20%</td>
+<td>0%</td>
+<td>Mockups y diseño</td>
+</tr>
+</tbody>
+</table>
+<h3 id="estimacion-de-horas-por-fase">Estimación de Horas (por fase)</h3>
+<p><strong>FASE 1 (MVP):</strong>
+- Backend (Python/FastAPI): ~320 horas
+- Frontend React (Responsive): ~320 horas (incluye recepción, técnicos y admin)
+- Testing: ~80 horas
+- Configuración servidor local: ~80 horas
+- <strong>Total: ~800 horas</strong></p>
+<p><strong>FASE 2 (Avanzado):</strong>
+- Backend (Python/FastAPI): ~200 horas
+- Frontend React (Avanzado): ~280 horas
+- Testing básico: ~80 horas
+- Optimizaciones: ~80 horas
+- <strong>Total: ~640 horas</strong></p>
+<p><strong>FASE 3 (Testeo y Seguridad):</strong>
+- Testeo completo (funcional, integración, carga, seguridad): ~120 horas
+- Seguridad del servidor (hardening, SSL, firewall, backups): ~80 horas
+- Corrección de bugs encontrados: ~40 horas
+- <strong>Total: ~240 horas</strong></p>
+<p><strong>TOTAL PROYECTO: ~1,680 horas</strong></p>
+<hr />
+<h2 id="13-riesgos-y-mitigacion">13. RIESGOS Y MITIGACIÓN</h2>
+<table>
+<thead>
+<tr>
+<th>Riesgo</th>
+<th>Probabilidad</th>
+<th>Impacto</th>
+<th>Mitigación</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Retrasos en integración WhatsApp</td>
+<td>Media</td>
+<td>Alto</td>
+<td>Usar API alternativa o implementar en Fase 2</td>
+</tr>
+<tr>
+<td>Complejidad de reportes</td>
+<td>Media</td>
+<td>Medio</td>
+<td>Priorizar reportes esenciales en Fase 1</td>
+</tr>
+<tr>
+<td>Problemas con almacenamiento de imágenes</td>
+<td>Baja</td>
+<td>Medio</td>
+<td>Almacenamiento local inicial, migración a cloud en producción si es necesario</td>
+</tr>
+<tr>
+<td>Cambios de requerimientos</td>
+<td>Alta</td>
+<td>Medio</td>
+<td>MVP en Fase 1 permite ajustes en Fase 2</td>
+</tr>
+<tr>
+<td>Problemas de rendimiento</td>
+<td>Baja</td>
+<td>Alto</td>
+<td>Testing de carga desde Fase 1</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="14-presupuesto-detallado">14. PRESUPUESTO DETALLADO</h2>
+<h3 id="resumen-del-presupuesto">Resumen del Presupuesto</h3>
+<table>
+<thead>
+<tr>
+<th>Concepto</th>
+<th>Monto (MXN)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Presupuesto Total del Proyecto</strong></td>
+<td><strong>$65,000</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="desglose-por-fase">Desglose por Fase</h3>
+<table>
+<thead>
+<tr>
+<th>Fase</th>
+<th>Descripción</th>
+<th>Monto</th>
+<th>Porcentaje</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Fase 1 (MVP)</strong></td>
+<td>Desarrollo del sistema básico funcional</td>
+<td>$30,000</td>
+<td>46.15%</td>
+</tr>
+<tr>
+<td><strong>Fase 2 (Avanzado)</strong></td>
+<td>Funcionalidades completas y reportes</td>
+<td>$20,000</td>
+<td>30.77%</td>
+</tr>
+<tr>
+<td><strong>Post-Desarrollo</strong></td>
+<td>Testeo, seguridad e implementación</td>
+<td>$15,000</td>
+<td>23.08%</td>
+</tr>
+<tr>
+<td><strong>TOTAL</strong></td>
+<td></td>
+<td><strong>$65,000</strong></td>
+<td><strong>100%</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="estructura-de-pagos_1">Estructura de Pagos</h3>
+<h4 id="pago-1-inicio-del-proyecto-30000-mxn-4615">Pago 1: Inicio del Proyecto - $30,000 MXN (46.15%)</h4>
+<p><strong>Qué cubre:</strong>
+- Inicio de Fase 1 (MVP)
+- Análisis y diseño
+- Desarrollo de backend y frontend 
+- Configuración de infraestructura
+- Desarrollo de módulos esenciales 
+<strong>Condiciones:</strong>
+- Se requiere para iniciar cualquier trabajo de desarrollo</p>
+<hr />
+<h4 id="pago-2-fase-de-pruebas-20000-mxn-3077">Pago 2: Fase de Pruebas - $20,000 MXN (30.77%)</h4>
+<p><strong>Cuándo se realiza:</strong> Al completar el desarrollo (Fin de Fase 2 - Semana 12)<br />
+<strong>Qué cubre:</strong>
+- Sistema completo funcional entregado
+- Todas las funcionalidades desarrolladas
+- Integración de módulos completada
+- Optimizaciones implementadas
+- Inicio de fase de testeo</p>
+<hr />
+<h4 id="pago-3-entrega-final-15000-mxn-2308">Pago 3: Entrega Final - $15,000 MXN (23.08%)</h4>
+<p><strong>Cuándo se realiza:</strong> Al completar testeo, seguridad e implementación<br />
+<strong>Qué cubre:</strong>
+- Testeo completo realizado
+- Seguridad del servidor implementada
+- Sistema desplegado en producción
+- Documentación completa entregada
+- Capacitación a usuarios realizada
+- Sistema funcionando en producción</p>
+<p><strong>Condiciones:</strong>
+- Se realiza al completar todas las fases post-desarrollo
+- Sistema debe estar funcionando correctamente en producción
+- Usuarios deben estar capacitados
+- Documentación completa entregada</p>
+<hr />
+<h3 id="terminos-de-pago">Términos de Pago</h3>
+<ul>
+<li><strong>Forma de pago:</strong> Transferencia bancaria o efectivo</li>
+<li><strong>Moneda:</strong> Pesos Mexicanos (MXN)</li>
+<li><strong>IVA:</strong> No incluido (se agregará según corresponda)</li>
+</ul>
+<h3 id="alcance-del-presupuesto">Alcance del Presupuesto</h3>
+<p><strong>Incluido en el presupuesto:</strong>
+- ✅ Desarrollo completo del sistema (backend y frontend)
+- ✅ Diseño de base de datos e implementación
+- ✅ Integración con API externa de WhatsApp
+- ✅ Testeo completo del sistema
+- ✅ Configuración de seguridad del servidor
+- ✅ Despliegue en producción
+- ✅ Documentación técnica y de usuario
+- ✅ Capacitación a usuarios
+- ✅ Soporte post-implementación (60 días)</p>
+<p><strong>No incluido en el presupuesto:</strong>
+- ❌ Servicios de hosting/cloud (si se requiere migración)
+- ❌ Licencias de software de terceros
+- ❌ Costos de API externa de WhatsApp (serán del cliente)
+- ❌ Hardware adicional requerido
+- ❌ Cambios mayores de alcance después de iniciado el proyecto</p>
+<h3 id="notas-importantes">Notas Importantes</h3>
+<ol>
+<li><strong>Cambios de alcance:</strong> Cualquier cambio mayor al alcance acordado será cotizado por separado</li>
+<li><strong>Tiempo de respuesta:</strong> Los pagos deben realizarse dentro del plazo establecido para no retrasar el proyecto</li>
+</ol>
+<hr />
+<h2 id="15-criterios-de-aceptacion-por-fase">15. CRITERIOS DE ACEPTACIÓN POR FASE</h2>
+<h3 id="fase-1-mvp-criterios-de-aceptacion">FASE 1: MVP - Criterios de Aceptación</h3>
+<p>✅ <strong>Recepción:</strong>
+- [ ] Puede crear OT con todos los campos requeridos
+- [ ] Genera folio único automáticamente
+- [ ] Valida anticipo si precio ≥ $1,500
+- [ ] Captura foto de pieza
+- [ ] Asigna a técnico</p>
+<p>✅ <strong>Técnicos:</strong>
+- [ ] Ve sus OT asignadas
+- [ ] Cambia estatus de trabajos
+- [ ] Registra materiales básicos</p>
+<p>✅ <strong>Caja:</strong>
+- [ ] Registra pagos correctamente
+- [ ] Genera corte de caja diario
+- [ ] Controla anticipos</p>
+<p>✅ <strong>Administración:</strong>
+- [ ] Gestiona usuarios y roles
+- [ ] Configura datos básicos del negocio</p>
+<p>✅ <strong>Impresión:</strong>
+- [ ] Genera ticket PDF con información completa</p>
+<h3 id="fase-2-avanzado-criterios-de-aceptacion">FASE 2: Avanzado - Criterios de Aceptación</h3>
+<p>✅ <strong>Post-Trabajo:</strong>
+- [ ] Flujo completo de borradores funciona
+- [ ] Aprobación administrativa operativa
+- [ ] Notificaciones se envían correctamente</p>
+<p>✅ <strong>OTIs y Subtareas:</strong>
+- [ ] Sistema completo de OTIs funcional
+- [ ] Subtareas se gestionan correctamente</p>
+<p>✅ <strong>Reportes:</strong>
+- [ ] Todos los reportes generan datos correctos
+- [ ] Filtros funcionan adecuadamente
+- [ ] Exportación PDF/Excel operativa</p>
+<p>✅ <strong>Comisiones:</strong>
+- [ ] Cálculo automático correcto
+- [ ] Reglas configurables funcionan</p>
+<hr />
+<h2 id="16-entregables-por-fase">16. ENTREGABLES POR FASE</h2>
+<h3 id="fase-1-mvp-semana-6">FASE 1: MVP (Semana 6)</h3>
+<p><strong>Software:</strong>
+- ✅ Aplicación web React responsive (Recepción y Técnicos básico, funciona en tablets/teléfonos)
+- ✅ Panel web (Caja y Administración básica)
+- ✅ API REST funcional
+- ✅ Base de datos configurada</p>
+<p><strong>Documentación:</strong>
+- ✅ Manual de usuario básico
+- ✅ Documentación de API
+- ✅ Diagrama de base de datos</p>
+<p><strong>Capacitación:</strong>
+- ✅ Sesión de capacitación para recepción
+- ✅ Sesión de capacitación para técnicos
+- ✅ Sesión de capacitación para caja</p>
+<h3 id="fase-2-avanzado-semana-12-fin-del-desarrollo">FASE 2: Avanzado (Semana 12) - FIN DEL DESARROLLO</h3>
+<p><strong>Software:</strong>
+- ✅ Sistema completo funcional
+- ✅ Todos los módulos integrados
+- ✅ Optimizaciones implementadas
+- ✅ Integración WhatsApp con API externa</p>
+<p><strong>Documentación:</strong>
+- ✅ Manual de usuario completo
+- ✅ Manual técnico
+- ✅ Documentación de API completa
+- ✅ Guías de uso por módulo</p>
+<p><strong>🎯 PROYECTO DE DESARROLLO COMPLETADO EN 3 MESES</strong></p>
+<hr />
+<h3 id="fases-post-desarrollo-testeo-e-implementacion">FASES POST-DESARROLLO: Testeo e Implementación</h3>
+<p><em>Estas fases se realizarán después de completar el desarrollo en 3 meses:</em></p>
+<p><strong>Testeo (Semana 13):</strong>
+- ✅ Suite completa de pruebas funcionales
+- ✅ Pruebas de integración (WhatsApp API, BD, etc.)
+- ✅ Pruebas de carga y rendimiento
+- ✅ Pruebas de seguridad de aplicación
+- ✅ Reporte de bugs y correcciones</p>
+<p><strong>Seguridad (Semana 14):</strong>
+- ✅ Servidor configurado con medidas de seguridad
+- ✅ SSL/HTTPS implementado
+- ✅ Firewall configurado
+- ✅ Backups automáticos funcionando
+- ✅ Monitoreo y logs de seguridad
+- ✅ Documentación de seguridad completa</p>
+<p><strong>Despliegue (Semana 15):</strong>
+- ✅ Sistema desplegado en producción
+- ✅ Configuración de producción completada
+- ✅ Capacitación a usuarios realizada
+- ✅ Documentación final entregada</p>
+<p><strong>Capacitación:</strong>
+- ✅ Capacitación completa a todos los usuarios
+- ✅ Videos tutoriales
+- ✅ Manual de usuario final
+- ✅ Soporte post-implementación (30 días)</p>
+<hr />
+<h2 id="17-metricas-de-exito">17. MÉTRICAS DE ÉXITO</h2>
+<h3 id="fase-1-mvp">FASE 1 (MVP)</h3>
+<ul>
+<li>✅ Sistema permite recibir y procesar al menos 50 OT/día</li>
+<li>✅ Tiempo de respuesta API &lt; 500ms</li>
+<li>✅ Disponibilidad &gt; 95%</li>
+<li>✅ Usuarios pueden operar sin errores críticos</li>
+</ul>
+<h3 id="fase-2-completo">FASE 2 (Completo)</h3>
+<ul>
+<li>✅ Sistema procesa 100+ OT/día sin problemas</li>
+<li>✅ Tiempo de respuesta API &lt; 300ms</li>
+<li>✅ Disponibilidad &gt; 99%</li>
+<li>✅ Todos los reportes generan datos precisos</li>
+<li>✅ Notificaciones se envían con &gt; 95% de éxito</li>
+</ul>
+<hr />
+<hr />
+<h2 id="18-contacto-y-seguimiento">18. CONTACTO Y SEGUIMIENTO</h2>
+<ul>
+<li><strong>Reuniones de seguimiento:</strong> Semanales (Martes)</li>
+<li><strong>Comunicación diaria:</strong> Slack/Teams</li>
+<li><strong>Reportes de avance:</strong> Semanales (cada Martes)</li>
+<li><strong>Hitos importantes:</strong> Reuniones especiales al final de cada fase</li>
+</ul>
+<hr />
+<p><strong>Documento actualizado el:</strong> [17/12/25]<br />
+<strong>Versión:</strong> 3.0<br />
+<strong>Duración del desarrollo:</strong> 12 semanas (3 meses)<br />
+<strong>Fases post-desarrollo:</strong> Testeo, Seguridad e Implementación (después de los 3 meses)<br />
+<strong>Preparado para:</strong> [Nombre del Cliente]</p>
+<hr />
+<p>'</p>
+</body>
+</html>
