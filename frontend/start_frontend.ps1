@@ -8,12 +8,6 @@ if (-Not (Test-Path "package.json")) {
     exit 1
 }
 
-# Verificar que node_modules existe
-if (-Not (Test-Path "node_modules")) {
-    Write-Host "Instalando dependencias..." -ForegroundColor Yellow
-    npm install
-}
-
 # Iniciar servidor
 Write-Host "Iniciando servidor React en http://localhost:3000..." -ForegroundColor Green
 Write-Host ""
