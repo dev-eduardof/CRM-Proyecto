@@ -8,6 +8,9 @@ class RolEnum(str, enum.Enum):
     ADMIN = "ADMIN"
     TECNICO = "TECNICO"
     RECEPCION = "RECEPCION"
+    CAJA = "CAJA"
+    AUXILIAR = "AUXILIAR"
+    JEFE_TALLER = "JEFE_TALLER"
 
 
 class User(Base):

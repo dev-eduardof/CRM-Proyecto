@@ -5,10 +5,10 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Users from './pages/Users';
 // import Recepcion from './pages/Recepcion';
 // import Tecnicos from './pages/Tecnicos';
 // import Caja from './pages/Caja';
-// import Admin from './pages/Admin';
 // import Reportes from './pages/Reportes';
 
 const theme = createTheme({
@@ -38,11 +38,18 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/users"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <Users />
+                </ProtectedRoute>
+              }
+            />
             {/* 
             <Route path="/recepcion" element={<Recepcion />} />
             <Route path="/tecnicos" element={<Tecnicos />} />
             <Route path="/caja" element={<Caja />} />
-            <Route path="/admin" element={<Admin />} />
             <Route path="/reportes" element={<Reportes />} />
             */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />

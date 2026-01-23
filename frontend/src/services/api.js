@@ -56,4 +56,14 @@ export const authAPI = {
     api.post('/api/v1/auth/logout')
 };
 
+// API de usuarios
+export const usersAPI = {
+  getAll: () => api.get('/api/v1/users/'),
+  getById: (id) => api.get(`/api/v1/users/${id}`),
+  create: (userData) => api.post('/api/v1/users/', userData),
+  update: (id, userData) => api.put(`/api/v1/users/${id}`, userData),
+  delete: (id) => api.delete(`/api/v1/users/${id}`),
+  getRoles: () => api.get('/api/v1/users/roles/list')
+};
+
 export default api;

@@ -1,80 +1,159 @@
-# 🚗 CRM Talleres - Sistema de Gestión de Talleres
+# 🚗 Sistema CRM para Talleres
 
-Sistema completo de gestión para talleres mecánicos desarrollado con FastAPI (Backend) y React (Frontend).
+Sistema de gestión de relaciones con clientes (CRM) diseñado específicamente para talleres mecánicos.
 
-## 📋 Características Principales
+## 📋 Requisitos Previos
 
-- ✅ Gestión de órdenes de trabajo
-- ✅ Control de clientes
-- ✅ Panel para técnicos
-- ✅ Sistema de pagos y caja
-- ✅ Reportes y análisis
-- ✅ Notificaciones WhatsApp y Email
-- ✅ Responsive (Tablet/Móvil/Desktop)
-- ✅ Autenticación JWT
-- ✅ Roles y permisos
+- **Git** instalado
+- **Docker** y **Docker Compose** instalados
+- Puertos disponibles: `3000` (Frontend), `8000` (Backend), `3306` (MariaDB), `8080` (Adminer)
 
-## 🏗️ Arquitectura
+## 🚀 Instalación Rápida
 
-```
-CRM-Proyecto/
-├── backend/          # FastAPI + Python
-├── frontend/         # React + Vite
-├── database/         # Scripts SQL
-├── docs/             # Documentación
-├── uploads/          # Archivos subidos
-└── docker-compose.yml
-```
-
-## 🚀 Inicio Rápido con Docker
-
-### Prerrequisitos
-
-- Docker Desktop instalado
-- Git
-
-### 1. Clonar repositorio
+### 1. Clonar el Repositorio
 
 ```bash
-git clone https://github.com/dev-eduardof/CRM-Proyecto.git
+git clone https://github.com/eduardofelixlopez/CRM-Proyecto.git
 cd CRM-Proyecto
 ```
 
-### 2. Configurar variables de entorno
+### 2. Configurar Variables de Entorno
+
+Crea el archivo `.env` en la raíz del proyecto:
 
 ```bash
-# Copiar archivo de ejemplo
-copy .env.example .env
-
-# Editar .env con tus configuraciones
+# Copiar el archivo de ejemplo
+cp .env.example .env
 ```
 
-### 3. Iniciar servicios
+Edita el archivo `.env` con tus valores (o usa los valores por defecto para desarrollo):
+
+```env
+# Database
+MYSQL_ROOT_PASSWORD=tu_password_seguro
+MYSQL_DATABASE=crm_talleres
+MYSQL_USER=crm_user
+MYSQL_PASSWORD=tu_password_usuario
+
+# Backend
+DATABASE_URL=mysql+pymysql://crm_user:tu_password_usuario@db:3306/crm_talleres
+SECRET_KEY=tu_clave_secreta_muy_larga_y_segura
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# Frontend
+REACT_APP_API_URL=http://localhost:8000
+```
+
+### 3. Iniciar el Proyecto con Docker
 
 ```bash
-# Iniciar todos los servicios
 docker-compose up -d
-
-# Ver logs
-docker-compose logs -f
-
-# Detener servicios
-docker-compose down
 ```
 
-### 4. Acceder a los servicios
+Este comando iniciará:
+- 🗄️ **MariaDB** en el puerto `3306`
+- 🐍 **Backend (FastAPI)** en el puerto `8000`
+- ⚛️ **Frontend (React)** en el puerto `3000`
+- 🔧 **Adminer** en el puerto `8080`
+
+### 4. Verificar que Todo Esté Funcionando
+
+```bash
+docker-compose ps
+```
+
+Deberías ver todos los servicios en estado `Up`.
+
+### 5. Acceder a la Aplicación
 
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:8000
-- **API Docs (Swagger)**: http://localhost:8000/docs
-- **Adminer (BD)**: http://localhost:8080
+- **API Docs**: http://localhost:8000/docs
+- **Adminer (DB Manager)**: http://localhost:8080
 
-### Credenciales por defecto
+### 6. Credenciales Iniciales
 
-- **Usuario**: admin
-- **Password**: admin123
+**Usuario Administrador por defecto:**
+- **Usuario**: `ADMIN`
+- **Contraseña**: `admin123`
 
-## 🛠️ Instalación Local (Sin Docker)
+⚠️ **IMPORTANTE**: Cambia estas credenciales después del primer inicio de sesión.
+
+## 📦 Estructura del Proyecto
+
+```
+CRM-Proyecto/
+├── backend/                 # API FastAPI
+│   ├── app/
+│   │   ├── api/            # Endpoints
+│   │   ├── core/           # Configuración y seguridad
+│   │   ├── models/         # Modelos de base de datos
+│   │   ├── schemas/        # Esquemas Pydantic
+│   │   └── services/       # Lógica de negocio
+│   ├── requirements.txt
+│   └── Dockerfile
+├── frontend/               # Aplicación React
+│   ├── src/
+│   │   ├── components/    # Componentes reutilizables
+│   │   ├── contexts/      # Context API
+│   │   ├── pages/         # Páginas principales
+│   │   └── services/      # Servicios API
+│   ├── package.json
+│   └── Dockerfile
+├── database/              # Scripts SQL
+├── docs/                  # Documentación
+├── docker-compose.yml
+└── .env.example
+```
+
+## 🛠️ Comandos Útiles
+
+### Ver logs de los servicios
+
+```bash
+# Todos los servicios
+docker-compose logs -f
+
+# Solo backend
+docker-compose logs -f backend
+
+# Solo frontend
+docker-compose logs -f frontend
+```
+
+### Detener los servicios
+
+```bash
+docker-compose down
+```
+
+### Detener y eliminar volúmenes (⚠️ elimina la base de datos)
+
+```bash
+docker-compose down -v
+```
+
+### Reiniciar un servicio específico
+
+```bash
+docker-compose restart backend
+docker-compose restart frontend
+```
+
+### Reconstruir los contenedores
+
+```bash
+docker-compose up -d --build
+```
+
+### Acceder a la base de datos
+
+```bash
+docker-compose exec db mysql -u root -p
+```
+
+## 🔧 Instalación Local (Sin Docker)
 
 ### Backend
 
@@ -93,11 +172,10 @@ source venv/bin/activate
 # Instalar dependencias
 pip install -r requirements.txt
 
-# Configurar .env
-copy .env.example .env
+# Configurar .env (ajustar DATABASE_URL para tu MySQL local)
 
-# Ejecutar servidor
-uvicorn app.main:app --reload
+# Iniciar servidor
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ### Frontend
@@ -108,217 +186,121 @@ cd frontend
 # Instalar dependencias
 npm install
 
-# Configurar .env
-copy .env.example .env
-
-# Ejecutar en desarrollo
-npm run dev
+# Iniciar servidor de desarrollo
+npm start
 ```
 
 ### Base de Datos
 
 ```bash
-# Conectar a MariaDB
+# Crear base de datos
 mysql -u root -p
 
-# Crear base de datos
 CREATE DATABASE crm_talleres;
 
-# Importar schema
-mysql -u root -p crm_talleres < database/schema.sql
+# Ejecutar script de inicialización
+mysql -u root -p crm_talleres < database/init.sql
 ```
 
-## 📦 Stack Tecnológico
+## 👥 Roles de Usuario
 
-### Backend
-- **FastAPI** - Framework web Python
-- **SQLAlchemy** - ORM
-- **MariaDB** - Base de datos
-- **JWT** - Autenticación
-- **Pydantic** - Validación de datos
+El sistema incluye los siguientes roles:
 
-### Frontend
-- **React 18** - Biblioteca UI
-- **Vite** - Build tool
-- **Material-UI** - Componentes
-- **React Router** - Navegación
-- **Axios** - Cliente HTTP
+- **ADMIN**: Administrador con acceso total
+- **TECNICO**: Técnico mecánico
+- **RECEPCION**: Personal de recepción
+- **CAJA**: Cajero
+- **AUXILIAR**: Personal auxiliar
+- **JEFE_TALLER**: Jefe de taller
 
-### DevOps
-- **Docker** - Contenedores
-- **Docker Compose** - Orquestación
+## 🔒 Seguridad
 
-## 📚 Documentación
+- Autenticación mediante JWT (JSON Web Tokens)
+- Contraseñas hasheadas con bcrypt
+- Protección CORS configurada
+- Rutas protegidas por roles
+- Validación de datos con Pydantic
 
-- [Estructura Técnica](ESTRUCTURA_TECNICA_CRM.html)
-- [Guía de Inicio](GUIA_INICIO_PROYECTO.md)
-- [Backend README](backend/README.md)
-- [Frontend README](frontend/README.md)
+## 📚 Documentación API
 
-## 🔐 Roles del Sistema
+Una vez iniciado el backend, puedes acceder a la documentación interactiva:
 
-- **Admin** - Acceso total
-- **Recepción** - Gestión de OT y clientes
-- **Técnico** - Panel de trabajos asignados
-- **Caja** - Pagos y cortes
-- **Auxiliar** - Reportes financieros
-- **Jefe de Taller** - Supervisión
-
-## 📱 Módulos
-
-### 1. Recepción (Tablet/Móvil)
-- Crear órdenes de trabajo
-- Gestión de clientes
-- Captura de fotos
-- Asignación a técnicos
-
-### 2. Panel de Técnicos (Tablet/Móvil)
-- Ver trabajos asignados
-- Cambiar estatus
-- Registrar materiales
-- Agregar notas
-
-### 3. Caja
-- Registro de pagos
-- Control de anticipos
-- Cortes de caja
-
-### 4. Reportes
-- Trabajos entrantes/salientes
-- Análisis financiero
-- Comisiones
-- Filtros avanzados
-
-### 5. Administración
-- Gestión de usuarios
-- Configuración del sistema
-- Monitoreo
-
-## 🧪 Testing
-
-### Backend
-```bash
-cd backend
-pytest
-```
-
-### Frontend
-```bash
-cd frontend
-npm run test
-```
-
-## 📊 Base de Datos
-
-### Tablas Principales
-
-- `usuarios` - Usuarios del sistema
-- `clientes` - Clientes del taller
-- `ordenes_trabajo` - Órdenes de trabajo
-- `materiales` - Materiales utilizados
-- `pagos` - Pagos y anticipos
-- `gastos` - Gastos del negocio
-- `notificaciones` - Notificaciones enviadas
-
-## 🔄 Flujo de Trabajo
-
-1. **Recepción** → Cliente llega, se crea OT
-2. **Técnico** → Recibe notificación, trabaja en OT
-3. **Post-Trabajo** → Recepción revisa y crea borrador
-4. **Aprobación** → Admin aprueba precios
-5. **Notificación** → Cliente recibe WhatsApp/Email
-6. **Caja** → Cliente paga y retira trabajo
-
-## 🚀 Comandos Útiles
-
-### Docker
-
-```bash
-# Iniciar servicios
-docker-compose up -d
-
-# Ver logs
-docker-compose logs -f [servicio]
-
-# Reiniciar servicio
-docker-compose restart [servicio]
-
-# Detener servicios
-docker-compose down
-
-# Reconstruir imágenes
-docker-compose build
-
-# Limpiar todo
-docker-compose down -v
-```
-
-### Git
-
-```bash
-# Ver estado
-git status
-
-# Cambiar de rama
-git checkout desarrollo
-
-# Commit
-git add .
-git commit -m "descripción"
-
-# Push
-git push origin desarrollo
-```
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
 
 ## 🐛 Solución de Problemas
 
-### Docker no inicia
+### El contenedor de backend no inicia
 
 ```bash
-# Verificar Docker Desktop está corriendo
-docker --version
+# Ver logs detallados
+docker-compose logs backend
 
-# Limpiar contenedores antiguos
-docker-compose down -v
-docker system prune -a
+# Verificar que el puerto 8000 no esté en uso
+netstat -ano | findstr :8000  # Windows
+lsof -i :8000                 # Linux/Mac
 ```
 
-### Error de conexión a BD
+### El contenedor de frontend no inicia
 
 ```bash
-# Verificar que el contenedor de BD está corriendo
+# Ver logs detallados
+docker-compose logs frontend
+
+# Verificar que el puerto 3000 no esté en uso
+netstat -ano | findstr :3000  # Windows
+lsof -i :3000                 # Linux/Mac
+```
+
+### Error de conexión a la base de datos
+
+```bash
+# Verificar que MariaDB esté corriendo
 docker-compose ps
 
-# Ver logs de BD
+# Verificar logs de la base de datos
 docker-compose logs db
+
+# Reiniciar el servicio de base de datos
+docker-compose restart db
 ```
 
-### Puerto en uso
+### Resetear la base de datos
 
 ```bash
-# Cambiar puertos en docker-compose.yml
-# Por ejemplo: "3001:3000" en lugar de "3000:3000"
+# Detener servicios
+docker-compose down
+
+# Eliminar volúmenes
+docker volume rm crm-proyecto_mysql_data
+
+# Iniciar nuevamente
+docker-compose up -d
 ```
 
-## 📞 Soporte
+## 🔄 Ramas del Repositorio
 
-Para problemas o preguntas:
-1. Revisar documentación
-2. Consultar logs: `docker-compose logs -f`
-3. Verificar .env está configurado correctamente
+- **main**: Rama de producción (estable)
+- **desarrollo**: Rama de desarrollo (nuevas características)
+- **testeo**: Rama de pruebas
+
+## 📝 Contribuir
+
+1. Clona el repositorio
+2. Crea una rama desde `desarrollo`
+3. Realiza tus cambios
+4. Haz commit con mensajes descriptivos
+5. Push a tu rama
+6. Crea un Pull Request a `desarrollo`
+
+## 📧 Contacto
+
+Para soporte o consultas: eduardofelixlopez@gmail.com
 
 ## 📄 Licencia
 
-Proyecto privado - CRM Talleres
-
-## 👥 Equipo de Desarrollo
-
-- Backend: Python/FastAPI
-- Frontend: React
-- Base de Datos: MariaDB
-- DevOps: Docker
+Este proyecto es privado y de uso interno.
 
 ---
 
-**Versión**: 1.0.0  
-**Última actualización**: 22/01/2026
+**¡Listo para usar! 🚀**

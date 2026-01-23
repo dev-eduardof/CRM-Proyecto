@@ -1,15 +1,15 @@
 # 📊 ESTADO ACTUAL DEL PROYECTO CRM TALLERES
 
 **Fecha**: 22 de Enero de 2026  
-**Versión**: 1.0.0  
+**Versión**: 1.1.0  
 **Rama**: testeo  
-**Estado**: ✅ Sistema de Login Operativo
+**Estado**: ✅ Sistema de Login y Gestión de Usuarios Operativo
 
 ---
 
 ## 🎯 RESUMEN EJECUTIVO
 
-Sistema CRM para gestión de talleres mecánicos con autenticación JWT completamente funcional. Backend en FastAPI, Frontend en React, Base de datos MariaDB.
+Sistema CRM para gestión de talleres mecánicos con autenticación JWT y módulo de administración de usuarios completamente funcional. Backend en FastAPI, Frontend en React con Material-UI, Base de datos MariaDB.
 
 ---
 
@@ -19,19 +19,37 @@ Sistema CRM para gestión de talleres mecánicos con autenticación JWT completa
 - ✅ Login con JWT
 - ✅ Registro de usuarios
 - ✅ Protección de rutas
-- ✅ Roles de usuario (ADMIN, TECNICO, RECEPCION)
+- ✅ Roles de usuario (ADMIN, TECNICO, RECEPCION, CAJA, AUXILIAR, JEFE_TALLER)
 - ✅ Sesión persistente
 - ✅ Logout funcional
 
+### 👥 Módulo de Gestión de Usuarios (NUEVO)
+- ✅ CRUD completo de usuarios
+- ✅ Asignación de roles
+- ✅ Activar/Desactivar usuarios
+- ✅ Cambio de contraseñas
+- ✅ Validaciones completas
+- ✅ Protección por rol ADMIN
+- ✅ Interfaz intuitiva con Material-UI
+
+### 🎨 Interfaz de Usuario
+- ✅ Layout con navegación
+- ✅ Menú lateral (drawer)
+- ✅ AppBar con información de usuario
+- ✅ Dashboard mejorado
+- ✅ Página de gestión de usuarios
+- ✅ Componentes reutilizables
+
 ### 🗄️ Base de Datos
 - ✅ MariaDB 12.1 configurada
-- ✅ 9 tablas creadas (usuarios, clientes, ordenes_trabajo, etc.)
+- ✅ 9 tablas creadas
 - ✅ Usuario admin operativo
 - ✅ Relaciones entre tablas establecidas
 
 ### 🔧 Backend (FastAPI)
 - ✅ API RESTful funcionando
 - ✅ Endpoints de autenticación
+- ✅ Endpoints CRUD de usuarios
 - ✅ Validación con Pydantic
 - ✅ Seguridad con bcrypt
 - ✅ CORS configurado
@@ -40,9 +58,11 @@ Sistema CRM para gestión de talleres mecánicos con autenticación JWT completa
 ### 🎨 Frontend (React)
 - ✅ Página de Login
 - ✅ Dashboard
+- ✅ Gestión de Usuarios
 - ✅ Context de autenticación
-- ✅ Rutas protegidas
+- ✅ Rutas protegidas por rol
 - ✅ Material-UI implementado
+- ✅ Layout con navegación
 - ✅ Interceptores HTTP
 
 ---
@@ -73,6 +93,7 @@ cd "G:\CRM Proyecto\frontend"
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:8000
 - **API Docs**: http://localhost:8000/docs
+- **Gestión de Usuarios**: http://localhost:3000/users (solo ADMIN)
 
 ---
 
@@ -103,7 +124,8 @@ G:\CRM Proyecto\
 ├── backend/                    # Backend FastAPI
 │   ├── app/
 │   │   ├── api/v1/            # Endpoints
-│   │   │   └── auth.py        # Autenticación
+│   │   │   ├── auth.py        # Autenticación
+│   │   │   └── users.py       # Gestión de usuarios (NUEVO)
 │   │   ├── core/              # Núcleo
 │   │   │   ├── security.py    # Seguridad (bcrypt, JWT)
 │   │   │   └── dependencies.py # Dependencias auth
@@ -124,9 +146,11 @@ G:\CRM Proyecto\
 │   ├── src/
 │   │   ├── pages/
 │   │   │   ├── Login.jsx      # Página de login
-│   │   │   └── Dashboard.jsx  # Dashboard
+│   │   │   ├── Dashboard.jsx  # Dashboard
+│   │   │   └── Users.jsx      # Gestión de usuarios (NUEVO)
 │   │   ├── components/
-│   │   │   └── ProtectedRoute.jsx # Rutas protegidas
+│   │   │   ├── ProtectedRoute.jsx # Rutas protegidas
+│   │   │   └── Layout.jsx     # Layout principal (NUEVO)
 │   │   ├── context/
 │   │   │   └── AuthContext.jsx # Context de auth
 │   │   ├── services/
@@ -140,8 +164,11 @@ G:\CRM Proyecto\
 │   ├── schema.sql             # Schema completo
 │   └── setup.sql              # Setup inicial
 │
+├── docs/                       # Documentación
+│   └── MODULO_USUARIOS.md     # Doc módulo usuarios (NUEVO)
+│
 ├── README.md                   # Documentación principal
-├── DOCKER_GUIDE.md            # Guía de Docker
+├── ESTADO_PROYECTO.md         # Este archivo
 ├── docker-compose.yml         # Configuración Docker
 ├── start_proyecto.ps1         # Script maestro
 └── PLANIFICACION_CRM.html     # Planificación original
@@ -149,117 +176,27 @@ G:\CRM Proyecto\
 
 ---
 
-## 🔧 TECNOLOGÍAS UTILIZADAS
+## 🆕 NOVEDADES EN ESTA VERSIÓN (1.1.0)
 
-### Backend:
-- **FastAPI** 0.104.1 - Framework web
-- **SQLAlchemy** 2.0.23 - ORM
-- **PyMySQL** 1.1.0 - Driver MySQL
-- **bcrypt** 5.0.0 - Hash de contraseñas
-- **python-jose** 3.3.0 - JWT
-- **Pydantic** 2.5.0 - Validación
-- **Uvicorn** 0.24.0 - Servidor ASGI
+### Módulo de Gestión de Usuarios
+- ✅ Crear, editar, visualizar y eliminar usuarios
+- ✅ Asignación de roles
+- ✅ Tabla con indicadores visuales
+- ✅ Formulario con validaciones completas
+- ✅ Protección por rol ADMIN
 
-### Frontend:
-- **React** 18.2.0 - Framework UI
-- **Vite** 5.0.8 - Build tool
-- **Material-UI** 5.14.20 - Componentes
-- **React Router** 6.20.0 - Enrutamiento
-- **Axios** 1.6.2 - Cliente HTTP
+### Mejoras de Interfaz
+- ✅ Layout con navegación lateral
+- ✅ AppBar con menú de usuario
+- ✅ Drawer con módulos disponibles
+- ✅ Footer informativo
+- ✅ Diseño responsive
 
-### Base de Datos:
-- **MariaDB** 12.1.2
-
----
-
-## 📊 BASE DE DATOS
-
-### Tablas Creadas:
-
-1. **usuarios** - Usuarios del sistema
-   - Campos: id, username, email, nombre_completo, password_hash, rol, activo
-   - Roles: ADMIN, TECNICO, RECEPCION
-
-2. **clientes** - Clientes del taller
-   - Campos: id, nombre, apellidos, email, telefono, direccion, etc.
-
-3. **categorias** - Categorías de trabajos
-   - Campos: id, nombre, descripcion, activo
-
-4. **subcategorias** - Subcategorías
-   - Campos: id, categoria_id, nombre, descripcion
-
-5. **ordenes_trabajo** - Órdenes de trabajo
-   - Campos: id, folio, cliente_id, vehiculo, estatus, etc.
-
-6. **materiales** - Materiales utilizados
-   - Campos: id, orden_id, descripcion, cantidad, precio
-
-7. **pagos** - Pagos y anticipos
-   - Campos: id, orden_id, monto, tipo, metodo_pago
-
-8. **gastos** - Gastos del negocio
-   - Campos: id, descripcion, monto, categoria, fecha
-
-9. **notificaciones** - Notificaciones enviadas
-   - Campos: id, orden_id, tipo, mensaje, enviado
-
----
-
-## 🔐 SEGURIDAD IMPLEMENTADA
-
-### Autenticación:
-- ✅ JWT con expiración de 30 minutos
-- ✅ Tokens en header Authorization
-- ✅ Refresh automático en interceptores
-
-### Contraseñas:
-- ✅ Hash con bcrypt
-- ✅ Salt aleatorio por contraseña
-- ✅ Verificación segura
-
-### Autorización:
-- ✅ Roles de usuario
-- ✅ Protección de rutas por rol
-- ✅ Verificación de usuario activo
-
-### CORS:
-- ✅ Configurado para desarrollo
-- ✅ Permite todos los orígenes (dev)
-- ✅ Credentials habilitados
-
----
-
-## 🐛 PROBLEMAS RESUELTOS
-
-### 1. Enum de Roles
-- **Problema**: Valores en minúsculas vs MAYÚSCULAS
-- **Solución**: Actualizado a MAYÚSCULAS en BD y código
-
-### 2. Hash de Contraseñas
-- **Problema**: Conflicto entre passlib y bcrypt 5.0
-- **Solución**: Usar bcrypt directamente
-
-### 3. Username Case Sensitive
-- **Problema**: "ADMIN" vs "admin"
-- **Solución**: Convertir a minúsculas automáticamente
-
-### 4. CORS Error
-- **Problema**: Frontend en IP diferente a localhost
-- **Solución**: Permitir todos los orígenes en desarrollo
-
----
-
-## 📝 COMMITS IMPORTANTES
-
-```
-✅ feat: estructura inicial del proyecto con Docker
-✅ feat: sistema de login completo implementado
-✅ fix: corregir valores de enum de roles a MAYÚSCULAS
-✅ fix: cambiar de passlib a bcrypt directo
-✅ fix: convertir username a minúsculas automáticamente
-✅ fix: permitir todos los orígenes en CORS para desarrollo
-```
+### Backend
+- ✅ Endpoints CRUD de usuarios
+- ✅ Validaciones robustas
+- ✅ Protección por roles
+- ✅ Manejo de errores mejorado
 
 ---
 
@@ -335,8 +272,8 @@ git checkout nombre-rama
 ## 📚 DOCUMENTACIÓN DISPONIBLE
 
 1. **README.md** - Documentación principal del proyecto
-2. **DOCKER_GUIDE.md** - Guía completa de Docker
-3. **ESTADO_PROYECTO.md** - Este documento
+2. **ESTADO_PROYECTO.md** - Este documento (estado actual)
+3. **docs/MODULO_USUARIOS.md** - Documentación del módulo de usuarios (NUEVO)
 4. **PLANIFICACION_CRM.html** - Planificación original
 5. **backend/README.md** - Documentación del backend
 6. **frontend/README.md** - Documentación del frontend
@@ -462,17 +399,19 @@ npm run dev
 
 ```
 ✅ Sistema de Login: OPERATIVO
+✅ Gestión de Usuarios: OPERATIVO (NUEVO)
 ✅ Base de Datos: CONFIGURADA
 ✅ Backend: FUNCIONANDO
 ✅ Frontend: FUNCIONANDO
 ✅ Autenticación: COMPLETA
+✅ Layout y Navegación: IMPLEMENTADO (NUEVO)
 ✅ Documentación: ACTUALIZADA
 
-🚀 LISTO PARA DESARROLLO DE MÓDULOS
+🚀 LISTO PARA DESARROLLO DE NUEVOS MÓDULOS
 ```
 
 ---
 
-**Última actualización**: 22/01/2026 19:10  
+**Última actualización**: 22/01/2026 20:30  
 **Desarrollado por**: Eduardo Felix  
-**Versión**: 1.0.0 - Sistema de Login Operativo
+**Versión**: 1.1.0 - Sistema de Login y Gestión de Usuarios Operativo

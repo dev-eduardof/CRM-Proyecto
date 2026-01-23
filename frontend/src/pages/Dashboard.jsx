@@ -1,23 +1,19 @@
-import { Container, Paper, Typography, Box, Button, Chip } from '@mui/material';
+import { Container, Paper, Typography, Box, Chip, Grid, Card, CardContent, CardActions, Button } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import Layout from '../components/Layout';
 import {
   Dashboard as DashboardIcon,
-  ExitToApp,
   Person,
   AdminPanelSettings,
   Build,
-  Receipt
+  Receipt,
+  People
 } from '@mui/icons-material';
 
 const Dashboard = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
 
   const getRolColor = (rol) => {
     const colors = {
@@ -38,18 +34,18 @@ const Dashboard = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      {/* Header */}
-      <Paper
-        elevation={3}
-        sx={{
-          p: 3,
-          mb: 3,
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white'
-        }}
-      >
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Layout>
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+        {/* Header */}
+        <Paper
+          elevation={3}
+          sx={{
+            p: 3,
+            mb: 3,
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white'
+          }}
+        >
           <Box>
             <Typography variant="h4" component="h1" gutterBottom>
               <DashboardIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
@@ -59,17 +55,7 @@ const Dashboard = () => {
               Bienvenido, {user?.nombre_completo}
             </Typography>
           </Box>
-          <Button
-            variant="contained"
-            color="inherit"
-            startIcon={<ExitToApp />}
-            onClick={handleLogout}
-            sx={{ color: '#667eea' }}
-          >
-            Cerrar Sesión
-          </Button>
-        </Box>
-      </Paper>
+        </Paper>
 
       {/* Información del usuario */}
       <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
@@ -126,21 +112,53 @@ const Dashboard = () => {
         <Typography variant="h6" gutterBottom>
           Módulos del Sistema
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Los siguientes módulos estarán disponibles próximamente:
-        </Typography>
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-          <Chip label="Clientes" variant="outlined" />
-          <Chip label="Órdenes de Trabajo" variant="outlined" />
-          <Chip label="Materiales" variant="outlined" />
-          <Chip label="Pagos" variant="outlined" />
-          <Chip label="Gastos" variant="outlined" />
-          <Chip label="Reportes" variant="outlined" />
-          <Chip label="Usuarios" variant="outlined" />
-          <Chip label="Configuración" variant="outlined" />
-        </Box>
+        <Grid container spacing={3} sx={{ mt: 1 }}>
+          {/* Gestión de Usuarios - Solo ADMIN */}
+          {user?.rol === 'ADMIN' && (
+            <Grid item xs={12} sm={6} md={4}>
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <People sx={{ fontSize: 40, color: 'primary.main', mr: 2 }} />
+                    <Typography variant="h6">
+                      Usuarios
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary">
+                    Gestión de usuarios y roles del sistema
+                  </Typography>
+                </CardContent>
+                <CardActions>
+                  <Button 
+                    size="small" 
+                    onClick={() => navigate('/users')}
+                    variant="contained"
+                  >
+                    Acceder
+                  </Button>
+                </CardActions>
+              </Card>
+            </Grid>
+          )}
+
+          {/* Próximos módulos */}
+          <Grid item xs={12}>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+              Próximos módulos disponibles:
+            </Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+              <Chip label="Clientes" variant="outlined" />
+              <Chip label="Órdenes de Trabajo" variant="outlined" />
+              <Chip label="Materiales" variant="outlined" />
+              <Chip label="Pagos" variant="outlined" />
+              <Chip label="Gastos" variant="outlined" />
+              <Chip label="Reportes" variant="outlined" />
+            </Box>
+          </Grid>
+        </Grid>
       </Paper>
-    </Container>
+      </Container>
+    </Layout>
   );
 };
 
