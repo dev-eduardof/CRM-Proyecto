@@ -31,20 +31,26 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
+      console.log('Intentando login con:', username);
       const response = await authAPI.login(username, password);
+      console.log('Respuesta de login:', response);
       const { access_token } = response.data;
+      console.log('Token recibido:', access_token);
       
       // Guardar token
       localStorage.setItem('token', access_token);
       setToken(access_token);
       
       // Cargar datos del usuario
+      console.log('Cargando datos del usuario...');
       const userResponse = await authAPI.me();
+      console.log('Datos del usuario:', userResponse.data);
       setUser(userResponse.data);
       
       return { success: true };
     } catch (error) {
       console.error('Error en login:', error);
+      console.error('Error response:', error.response);
       return {
         success: false,
         message: error.response?.data?.detail || 'Error al iniciar sesión'

@@ -38,7 +38,9 @@ api.interceptors.response.use(
 
 // Servicios de autenticación
 export const authAPI = {
-  login: (username, password) => {
+  login: (username, password) => 
+    api.post('/api/v1/auth/login/json', { username, password }),
+  loginForm: (username, password) => {
     const formData = new FormData();
     formData.append('username', username);
     formData.append('password', password);
@@ -46,8 +48,6 @@ export const authAPI = {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
   },
-  loginJSON: (username, password) => 
-    api.post('/api/v1/auth/login/json', { username, password }),
   register: (userData) => 
     api.post('/api/v1/auth/register', userData),
   me: () => 
