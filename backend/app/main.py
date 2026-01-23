@@ -3,8 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 
-# Importar routers cuando estén disponibles
-# from app.api.v1 import auth, users, clients, ordenes
+# Importar routers
+from app.api.v1 import auth
 
 app = FastAPI(
     title="CRM Talleres API",
@@ -53,8 +53,8 @@ def health_check():
         "service": "crm-talleres-backend"
     }
 
-# Incluir routers cuando estén disponibles
-# app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
+# Incluir routers
+app.include_router(auth.router, prefix="/api/v1")
 # app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
 # app.include_router(clients.router, prefix="/api/v1/clients", tags=["clients"])
 # app.include_router(ordenes.router, prefix="/api/v1/ordenes", tags=["ordenes"])

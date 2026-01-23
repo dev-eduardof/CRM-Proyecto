@@ -1,1 +1,1 @@
-# API v1 Routes
+# API v1 endpoints

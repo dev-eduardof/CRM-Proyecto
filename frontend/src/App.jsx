@@ -1,10 +1,10 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-
-// Importar páginas cuando estén disponibles
-// import Login from './pages/Login';
-// import Dashboard from './pages/Dashboard';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
 // import Recepcion from './pages/Recepcion';
 // import Tecnicos from './pages/Tecnicos';
 // import Caja from './pages/Caja';
@@ -27,23 +27,28 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
-        <div className="App">
-          <h1>CRM Talleres</h1>
-          <p>Sistema de Gestión de Talleres</p>
-          <p>Frontend en construcción...</p>
-        </div>
-        {/* 
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/recepcion" element={<Recepcion />} />
-          <Route path="/tecnicos" element={<Tecnicos />} />
-          <Route path="/caja" element={<Caja />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/reportes" element={<Reportes />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-        */}
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            {/* 
+            <Route path="/recepcion" element={<Recepcion />} />
+            <Route path="/tecnicos" element={<Tecnicos />} />
+            <Route path="/caja" element={<Caja />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/reportes" element={<Reportes />} />
+            */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </AuthProvider>
       </Router>
     </ThemeProvider>
   );
