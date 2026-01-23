@@ -192,7 +192,7 @@ Content-Type: application/json
   "email": "usuario@example.com",
   "nombre_completo": "Nombre Completo",
   "password": "password123",
-  "rol": "recepcion"
+  "rol": "RECEPCION"
 }
 ```
 
@@ -209,7 +209,7 @@ Authorization: Bearer {token}
   "username": "admin",
   "email": "admin@crm.com",
   "nombre_completo": "Administrador",
-  "rol": "admin",
+  "rol": "ADMIN",
   "activo": true,
   "created_at": "2026-01-22T00:00:00",
   "updated_at": null
@@ -350,7 +350,7 @@ CREATE TABLE usuarios (
     email VARCHAR(100) UNIQUE NOT NULL,
     nombre_completo VARCHAR(100) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    rol ENUM('admin', 'tecnico', 'recepcion') NOT NULL,
+    rol ENUM('ADMIN', 'TECNICO', 'RECEPCION') NOT NULL,
     activo BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP
@@ -371,7 +371,7 @@ INSERT INTO usuarios (
     'admin@crm.com',
     'Administrador',
     '$2b$12$...',  -- Hash de 'admin123'
-    'admin',
+    'ADMIN',
     TRUE
 );
 ```
