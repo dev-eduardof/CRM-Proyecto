@@ -17,11 +17,7 @@ app = FastAPI(
 # Configurar CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:5173",  # Vite default port
-        "http://frontend:3000"
-    ],
+    allow_origins=["*"],  # Permitir todos los orígenes en desarrollo
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
