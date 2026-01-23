@@ -5,9 +5,9 @@ from app.database import Base
 
 
 class RolEnum(str, enum.Enum):
-    ADMIN = "admin"
-    TECNICO = "tecnico"
-    RECEPCION = "recepcion"
+    ADMIN = "ADMIN"
+    TECNICO = "TECNICO"
+    RECEPCION = "RECEPCION"
 
 
 class User(Base):
