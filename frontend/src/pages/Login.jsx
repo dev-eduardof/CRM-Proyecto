@@ -33,9 +33,13 @@ const Login = () => {
   const [error, setError] = useState('');
 
   const handleChange = (e) => {
+    const value = e.target.name === 'username' 
+      ? e.target.value.toLowerCase() 
+      : e.target.value;
+    
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: value
     });
     setError('');
   };
