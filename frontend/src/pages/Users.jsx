@@ -135,6 +135,7 @@ const Users = () => {
   const handleOpenDialog = (user = null) => {
     if (user) {
       // Editar usuario
+      console.log('📝 Editando usuario:', user);
       setEditingUser(user);
       setFormData({
         // Campos básicos
@@ -162,7 +163,7 @@ const Users = () => {
         estado: user.estado || '',
         // Información Laboral
         fecha_ingreso: user.fecha_ingreso || '',
-        tipo_contrato: user.tipo_contrato || 'PLANTA',
+        tipo_contrato: user.tipo_contrato || '',
         salario_base_diario: user.salario_base_diario || '',
         horario_trabajo: user.horario_trabajo || '',
         dias_descanso: user.dias_descanso || '',
@@ -815,25 +816,45 @@ const Users = () => {
                   fullWidth
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   label="Horario de Trabajo"
                   name="horario_trabajo"
+                  select
                   value={formData.horario_trabajo}
                   onChange={handleChange}
                   fullWidth
-                  placeholder="Ej: Lunes a Viernes 8:00-17:00"
-                />
+                >
+                  <MenuItem value="">Seleccionar...</MenuItem>
+                  <MenuItem value="Lunes a Viernes 8:00-17:00">Lunes a Viernes 8:00-17:00</MenuItem>
+                  <MenuItem value="Lunes a Viernes 9:00-18:00">Lunes a Viernes 9:00-18:00</MenuItem>
+                  <MenuItem value="Lunes a Viernes 7:00-16:00">Lunes a Viernes 7:00-16:00</MenuItem>
+                  <MenuItem value="Lunes a Sábado 8:00-17:00">Lunes a Sábado 8:00-17:00</MenuItem>
+                  <MenuItem value="Lunes a Sábado 9:00-14:00">Lunes a Sábado 9:00-14:00</MenuItem>
+                  <MenuItem value="Turnos Rotativos">Turnos Rotativos</MenuItem>
+                </TextField>
               </Grid>
-              <Grid item xs={12}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   label="Días de Descanso"
                   name="dias_descanso"
+                  select
                   value={formData.dias_descanso}
                   onChange={handleChange}
                   fullWidth
-                  placeholder="Ej: Sábado y Domingo"
-                />
+                >
+                  <MenuItem value="">Seleccionar...</MenuItem>
+                  <MenuItem value="Sábado y Domingo">Sábado y Domingo</MenuItem>
+                  <MenuItem value="Domingo">Domingo</MenuItem>
+                  <MenuItem value="Lunes">Lunes</MenuItem>
+                  <MenuItem value="Martes">Martes</MenuItem>
+                  <MenuItem value="Miércoles">Miércoles</MenuItem>
+                  <MenuItem value="Jueves">Jueves</MenuItem>
+                  <MenuItem value="Viernes">Viernes</MenuItem>
+                  <MenuItem value="Sábado">Sábado</MenuItem>
+                  <MenuItem value="Domingo y Lunes">Domingo y Lunes</MenuItem>
+                  <MenuItem value="Variable">Variable</MenuItem>
+                </TextField>
               </Grid>
             </Grid>
           )}
