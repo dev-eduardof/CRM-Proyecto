@@ -88,8 +88,13 @@ class UserUpdate(BaseModel):
 
 
 # Schema para respuesta completa
-class UserResponse(UserBase):
+class UserResponse(BaseModel):
+    # Campos básicos
     id: int
+    username: str
+    email: str
+    nombre_completo: str
+    rol: RolEnum
     activo: bool
     
     # Información Personal
