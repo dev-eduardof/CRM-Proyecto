@@ -75,6 +75,7 @@ class UserUpdate(BaseModel):
     # Información Laboral
     fecha_ingreso: Optional[date] = None
     fecha_baja: Optional[date] = None
+    motivo_baja: Optional[str] = None
     tipo_contrato: Optional[TipoContratoEnum] = None
     salario_base_diario: Optional[Decimal] = None
     horario_trabajo: Optional[str] = None
@@ -118,6 +119,7 @@ class UserResponse(BaseModel):
     # Información Laboral
     fecha_ingreso: Optional[date] = None
     fecha_baja: Optional[date] = None
+    motivo_baja: Optional[str] = None
     tipo_contrato: Optional[TipoContratoEnum] = None
     salario_base_diario: Optional[Decimal] = None
     horario_trabajo: Optional[str] = None

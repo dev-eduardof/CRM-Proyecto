@@ -62,6 +62,7 @@ class User(Base):
     # Información Laboral
     fecha_ingreso = Column(Date, nullable=True)
     fecha_baja = Column(Date, nullable=True)
+    motivo_baja = Column(Text, nullable=True)
     tipo_contrato = Column(Enum(TipoContratoEnum), nullable=True, default=TipoContratoEnum.PLANTA)
     salario_base_diario = Column(Numeric(10, 2), nullable=True)
     horario_trabajo = Column(String(100), nullable=True)  # ej: "Lunes a Viernes 8:00-17:00"

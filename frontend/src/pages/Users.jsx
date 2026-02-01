@@ -38,7 +38,9 @@ import {
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
   Check as CheckIcon,
-  Warning as WarningIcon
+  Warning as WarningIcon,
+  Block as BlockIcon,
+  CheckCircleOutline as ActivateIcon
 } from '@mui/icons-material';
 
 const Users = () => {
@@ -62,10 +64,14 @@ const Users = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [openSuccessDialog, setOpenSuccessDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [openDeactivateDialog, setOpenDeactivateDialog] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [userToDelete, setUserToDelete] = useState(null);
+  const [userToDeactivate, setUserToDeactivate] = useState(null);
+  const [motivoBaja, setMotivoBaja] = useState('');
   const [editingUser, setEditingUser] = useState(null);
   const [tabValue, setTabValue] = useState(0);
+  const [userStatusTab, setUserStatusTab] = useState(0); // 0 = activos, 1 = inactivos
   const [formData, setFormData] = useState({
     // Campos básicos
     username: '',
@@ -92,6 +98,8 @@ const Users = () => {
     estado: '',
     // Información Laboral
     fecha_ingreso: '',
+    fecha_baja: '',
+    motivo_baja: '',
     tipo_contrato: 'PLANTA',
     salario_base_diario: '',
     horario_trabajo: '',
@@ -163,6 +171,8 @@ const Users = () => {
         estado: user.estado || '',
         // Información Laboral
         fecha_ingreso: user.fecha_ingreso || '',
+        fecha_baja: user.fecha_baja || '',
+        motivo_baja: user.motivo_baja || '',
         tipo_contrato: user.tipo_contrato || '',
         salario_base_diario: user.salario_base_diario || '',
         horario_trabajo: user.horario_trabajo || '',
@@ -409,6 +419,64 @@ const Users = () => {
     setUserToDelete(null);
   };
 
+  // Funciones para activar/desactivar usuarios
+  const handleDeactivateClick = (user) => {
+    setUserToDeactivate(user);
+    setMotivoBaja('');
+    setOpenDeactivateDialog(true);
+  };
+
+  const handleDeactivateConfirm = async () => {
+    if (!userToDeactivate || !motivoBaja.trim()) {
+      setError('El motivo de baja es obligatorio');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      await usersAPI.update(userToDeactivate.id, {
+        activo: false,
+        fecha_baja: today,
+        motivo_baja: motivoBaja
+      });
+      setOpenDeactivateDialog(false);
+      setUserToDeactivate(null);
+      setMotivoBaja('');
+      setSuccessMessage('¡Usuario desactivado exitosamente!');
+      setOpenSuccessDialog(true);
+      loadUsers();
+    } catch (err) {
+      setOpenDeactivateDialog(false);
+      setUserToDeactivate(null);
+      setMotivoBaja('');
+      setError(err.response?.data?.detail || 'Error al desactivar usuario');
+      setTimeout(() => setError(''), 5000);
+    }
+  };
+
+  const handleDeactivateCancel = () => {
+    setOpenDeactivateDialog(false);
+    setUserToDeactivate(null);
+    setMotivoBaja('');
+  };
+
+  const handleActivate = async (user) => {
+    try {
+      await usersAPI.update(user.id, {
+        activo: true,
+        fecha_baja: null,
+        motivo_baja: null
+      });
+      setSuccessMessage('¡Usuario activado exitosamente!');
+      setOpenSuccessDialog(true);
+      loadUsers();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Error al activar usuario');
+      setTimeout(() => setError(''), 5000);
+    }
+  };
+
   const getRolColor = (rol) => {
     const colors = {
       ADMIN: 'error',
@@ -451,6 +519,14 @@ const Users = () => {
         </Alert>
       )}
 
+      {/* Pestañas de Activos/Inactivos */}
+      <Paper sx={{ mb: 2 }}>
+        <Tabs value={userStatusTab} onChange={(e, newValue) => setUserStatusTab(newValue)}>
+          <Tab label={`Usuarios Activos (${users.filter(u => u.activo).length})`} />
+          <Tab label={`Usuarios Inactivos (${users.filter(u => !u.activo).length})`} />
+        </Tabs>
+      </Paper>
+
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -461,11 +537,13 @@ const Users = () => {
               <TableCell>Email</TableCell>
               <TableCell>Rol</TableCell>
               <TableCell>Estado</TableCell>
+              {userStatusTab === 1 && <TableCell>Fecha Baja</TableCell>}
+              {userStatusTab === 1 && <TableCell>Motivo Baja</TableCell>}
               <TableCell align="center">Acciones</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {users.map((u) => (
+            {users.filter(u => userStatusTab === 0 ? u.activo : !u.activo).map((u) => (
               <TableRow key={u.id}>
                 <TableCell>{u.id}</TableCell>
                 <TableCell>{u.username}</TableCell>
@@ -482,6 +560,18 @@ const Users = () => {
                     size="small"
                   />
                 </TableCell>
+                {userStatusTab === 1 && (
+                  <TableCell>
+                    {u.fecha_baja ? new Date(u.fecha_baja).toLocaleDateString('es-MX') : '-'}
+                  </TableCell>
+                )}
+                {userStatusTab === 1 && (
+                  <TableCell sx={{ maxWidth: 200 }}>
+                    <Tooltip title={u.motivo_baja || 'Sin motivo'}>
+                      <span>{u.motivo_baja ? (u.motivo_baja.length > 50 ? u.motivo_baja.substring(0, 50) + '...' : u.motivo_baja) : '-'}</span>
+                    </Tooltip>
+                  </TableCell>
+                )}
                 <TableCell align="center">
                   <Tooltip title="Editar">
                     <IconButton
@@ -492,6 +582,27 @@ const Users = () => {
                       <EditIcon />
                     </IconButton>
                   </Tooltip>
+                  {u.activo ? (
+                    <Tooltip title="Desactivar">
+                      <IconButton
+                        color="warning"
+                        onClick={() => handleDeactivateClick(u)}
+                        disabled={u.id === user.id}
+                      >
+                        <BlockIcon />
+                      </IconButton>
+                    </Tooltip>
+                  ) : (
+                    <Tooltip title="Activar">
+                      <IconButton
+                        color="success"
+                        onClick={() => handleActivate(u)}
+                        disabled={u.id === user.id}
+                      >
+                        <ActivateIcon />
+                      </IconButton>
+                    </Tooltip>
+                  )}
                   <Tooltip title="Eliminar">
                     <IconButton
                       color="error"
@@ -929,6 +1040,64 @@ const Users = () => {
             startIcon={<DeleteIcon />}
           >
             Eliminar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal de Desactivar Usuario */}
+      <Dialog
+        open={openDeactivateDialog}
+        onClose={handleDeactivateCancel}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ bgcolor: 'warning.main', color: 'white', textAlign: 'center' }}>
+          Desactivar Usuario
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          {userToDeactivate && (
+            <Box sx={{ mb: 3, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                Usuario a desactivar:
+              </Typography>
+              <Typography variant="h6" color="text.primary">
+                {userToDeactivate.nombre_completo}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                @{userToDeactivate.username} - {userToDeactivate.email}
+              </Typography>
+            </Box>
+          )}
+          <TextField
+            label="Motivo de Baja *"
+            multiline
+            rows={4}
+            value={motivoBaja}
+            onChange={(e) => setMotivoBaja(e.target.value)}
+            fullWidth
+            required
+            placeholder="Describe el motivo de la baja del usuario..."
+            helperText="Este campo es obligatorio"
+          />
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', pb: 3, gap: 2 }}>
+          <Button
+            onClick={handleDeactivateCancel}
+            variant="outlined"
+            color="inherit"
+            size="large"
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleDeactivateConfirm}
+            variant="contained"
+            color="warning"
+            size="large"
+            startIcon={<BlockIcon />}
+            disabled={!motivoBaja.trim()}
+          >
+            Desactivar
           </Button>
         </DialogActions>
       </Dialog>
