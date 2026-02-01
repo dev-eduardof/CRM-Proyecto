@@ -631,6 +631,7 @@ const Users = () => {
               <Tab label="Información Personal" />
               <Tab label="Dirección" />
               <Tab label="Información Laboral" />
+              <Tab label="Vacaciones" />
             </Tabs>
           </Box>
 
@@ -968,6 +969,174 @@ const Users = () => {
                 </TextField>
               </Grid>
             </Grid>
+          )}
+
+          {/* Tab 4: Vacaciones */}
+          {tabValue === 4 && (
+            <Box sx={{ mt: 2 }}>
+              {editingUser && editingUser.fecha_ingreso ? (
+                <Grid container spacing={3}>
+                  {/* Información de Antigüedad */}
+                  <Grid item xs={12}>
+                    <Paper sx={{ p: 2, bgcolor: 'primary.50', border: '1px solid', borderColor: 'primary.200' }}>
+                      <Typography variant="h6" gutterBottom color="primary.main">
+                        📅 Información de Antigüedad
+                      </Typography>
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="body2" color="text.secondary">
+                            Fecha de Ingreso:
+                          </Typography>
+                          <Typography variant="h6">
+                            {new Date(editingUser.fecha_ingreso).toLocaleDateString('es-MX', { 
+                              year: 'numeric', 
+                              month: 'long', 
+                              day: 'numeric' 
+                            })}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="body2" color="text.secondary">
+                            Años de Antigüedad:
+                          </Typography>
+                          <Typography variant="h6">
+                            {(() => {
+                              const ingreso = new Date(editingUser.fecha_ingreso);
+                              const hoy = new Date();
+                              const diffTime = Math.abs(hoy - ingreso);
+                              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                              const years = Math.floor(diffDays / 365);
+                              const months = Math.floor((diffDays % 365) / 30);
+                              return `${years} año${years !== 1 ? 's' : ''} y ${months} mes${months !== 1 ? 'es' : ''}`;
+                            })()}
+                          </Typography>
+                        </Grid>
+                      </Grid>
+                    </Paper>
+                  </Grid>
+
+                  {/* Días de Vacaciones Según Ley */}
+                  <Grid item xs={12}>
+                    <Paper sx={{ p: 2, bgcolor: 'success.50', border: '1px solid', borderColor: 'success.200' }}>
+                      <Typography variant="h6" gutterBottom color="success.main">
+                        🏖️ Días de Vacaciones (Ley Federal del Trabajo)
+                      </Typography>
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} sm={3}>
+                          <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'white', borderRadius: 1 }}>
+                            <Typography variant="body2" color="text.secondary">
+                              Días por Año
+                            </Typography>
+                            <Typography variant="h4" color="success.main" fontWeight="bold">
+                              {editingUser.dias_vacaciones_anio || 12}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={12} sm={3}>
+                          <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'white', borderRadius: 1 }}>
+                            <Typography variant="body2" color="text.secondary">
+                              Días Disponibles
+                            </Typography>
+                            <Typography variant="h4" color="primary.main" fontWeight="bold">
+                              {editingUser.dias_vacaciones_disponibles || 0}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={12} sm={3}>
+                          <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'white', borderRadius: 1 }}>
+                            <Typography variant="body2" color="text.secondary">
+                              Días Tomados
+                            </Typography>
+                            <Typography variant="h4" color="warning.main" fontWeight="bold">
+                              {editingUser.dias_vacaciones_tomados || 0}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={12} sm={3}>
+                          <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'white', borderRadius: 1 }}>
+                            <Typography variant="body2" color="text.secondary">
+                              Días Pendientes
+                            </Typography>
+                            <Typography variant="h4" color="info.main" fontWeight="bold">
+                              {editingUser.dias_vacaciones_pendientes_anios_anteriores || 0}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                      </Grid>
+                    </Paper>
+                  </Grid>
+
+                  {/* Tabla de Días según Antigüedad */}
+                  <Grid item xs={12}>
+                    <Paper sx={{ p: 2 }}>
+                      <Typography variant="h6" gutterBottom>
+                        📋 Tabla de Vacaciones según Antigüedad (LFT)
+                      </Typography>
+                      <TableContainer>
+                        <Table size="small">
+                          <TableHead>
+                            <TableRow>
+                              <TableCell><strong>Años de Servicio</strong></TableCell>
+                              <TableCell align="center"><strong>Días de Vacaciones</strong></TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            <TableRow>
+                              <TableCell>1 año</TableCell>
+                              <TableCell align="center">12 días</TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell>2 años</TableCell>
+                              <TableCell align="center">14 días</TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell>3 años</TableCell>
+                              <TableCell align="center">16 días</TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell>4 años</TableCell>
+                              <TableCell align="center">18 días</TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell>5-9 años</TableCell>
+                              <TableCell align="center">20 días</TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell>10-14 años</TableCell>
+                              <TableCell align="center">22 días</TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell>15-19 años</TableCell>
+                              <TableCell align="center">24 días</TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell>20-24 años</TableCell>
+                              <TableCell align="center">26 días</TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell>25+ años</TableCell>
+                              <TableCell align="center">28 días</TableCell>
+                            </TableRow>
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                      <Alert severity="info" sx={{ mt: 2 }}>
+                        <Typography variant="body2">
+                          <strong>Nota:</strong> Los días de vacaciones se calculan automáticamente según la Ley Federal del Trabajo de México.
+                          Después del año 5, se agregan 2 días por cada 5 años de servicio.
+                        </Typography>
+                      </Alert>
+                    </Paper>
+                  </Grid>
+                </Grid>
+              ) : (
+                <Alert severity="warning">
+                  <Typography variant="body1">
+                    Para ver la información de vacaciones, primero debes establecer la <strong>Fecha de Ingreso</strong> en la pestaña de Información Laboral.
+                  </Typography>
+                </Alert>
+              )}
+            </Box>
           )}
         </DialogContent>
         <DialogActions>
