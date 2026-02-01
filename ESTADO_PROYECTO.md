@@ -1,417 +1,193 @@
-# 📊 ESTADO ACTUAL DEL PROYECTO CRM TALLERES
+# 📊 Estado del Proyecto CRM Talleres
 
-**Fecha**: 22 de Enero de 2026  
-**Versión**: 1.1.0  
-**Rama**: testeo  
-**Estado**: ✅ Sistema de Login y Gestión de Usuarios Operativo
+**Última actualización:** 31 de Enero, 2026
 
 ---
 
-## 🎯 RESUMEN EJECUTIVO
+## ✅ Módulos Implementados
 
-Sistema CRM para gestión de talleres mecánicos con autenticación JWT y módulo de administración de usuarios completamente funcional. Backend en FastAPI, Frontend en React con Material-UI, Base de datos MariaDB.
-
----
-
-## ✅ LO QUE ESTÁ FUNCIONANDO
-
-### 🔐 Sistema de Autenticación
+### 1. Sistema de Autenticación ✅ COMPLETO
 - ✅ Login con JWT
 - ✅ Registro de usuarios
-- ✅ Protección de rutas
-- ✅ Roles de usuario (ADMIN, TECNICO, RECEPCION, CAJA, AUXILIAR, JEFE_TALLER)
-- ✅ Sesión persistente
-- ✅ Logout funcional
+- ✅ Protección de rutas por rol
+- ✅ 6 roles: ADMIN, TECNICO, RECEPCION, CAJA, AUXILIAR, JEFE_TALLER
 
-### 👥 Módulo de Gestión de Usuarios (NUEVO)
-- ✅ CRUD completo de usuarios
-- ✅ Asignación de roles
-- ✅ Activar/Desactivar usuarios
-- ✅ Cambio de contraseñas
-- ✅ Validaciones completas
-- ✅ Protección por rol ADMIN
-- ✅ Interfaz intuitiva con Material-UI
+### 2. Gestión de Usuarios (CRUD Completo) ✅ COMPLETO
+- ✅ Crear, editar, eliminar usuarios
+- ✅ Activar/desactivar usuarios
+- ✅ Gestión de roles
+- ✅ Reglas de seguridad (no eliminar último admin)
+- ✅ **NUEVO: Información Personal** (RFC, CURP, NSS, teléfonos, estado civil)
+- ✅ **NUEVO: Dirección Completa** (calle, colonia, CP, ciudad, estado)
+- ✅ **NUEVO: Información Laboral** (fecha ingreso, contrato, salario, horario, departamento)
+- ✅ **NUEVO: Sistema de Vacaciones** (días por año, disponibles, tomados, pendientes)
+- ✅ Formulario con 4 tabs organizados
 
-### 🎨 Interfaz de Usuario
-- ✅ Layout con navegación
-- ✅ Menú lateral (drawer)
-- ✅ AppBar con información de usuario
-- ✅ Dashboard mejorado
-- ✅ Página de gestión de usuarios
-- ✅ Componentes reutilizables
+### 3. Sistema de Vacaciones ✅ COMPLETO (Backend)
+- ✅ Cálculo automático según Ley Federal del Trabajo de México
+- ✅ Solicitudes de vacaciones (días completos, medio día, horas)
+- ✅ Flujo de aprobación (ADMIN, JEFE_TALLER)
+- ✅ Descuento automático de días
+- ✅ API REST completa
+- ⏳ Interfaz de usuario (pendiente)
+- ⏳ Generación de PDF (pendiente)
 
-### 🗄️ Base de Datos
-- ✅ MariaDB 12.1 configurada
-- ✅ 9 tablas creadas
-- ✅ Usuario admin operativo
-- ✅ Relaciones entre tablas establecidas
+### 4. Sistema de Incidencias ✅ COMPLETO (Backend)
+- ✅ Registro de incidencias positivas y negativas
+- ✅ Sistema de seguimiento
+- ✅ Estadísticas por empleado
+- ✅ API REST completa
+- ⏳ Interfaz de usuario (pendiente)
 
-### 🔧 Backend (FastAPI)
-- ✅ API RESTful funcionando
-- ✅ Endpoints de autenticación
-- ✅ Endpoints CRUD de usuarios
-- ✅ Validación con Pydantic
-- ✅ Seguridad con bcrypt
-- ✅ CORS configurado
-- ✅ Documentación automática (/docs)
-
-### 🎨 Frontend (React)
-- ✅ Página de Login
-- ✅ Dashboard
-- ✅ Gestión de Usuarios
-- ✅ Context de autenticación
-- ✅ Rutas protegidas por rol
-- ✅ Material-UI implementado
-- ✅ Layout con navegación
-- ✅ Interceptores HTTP
+### 5. Tablas de Soporte (Creadas)
+- ✅ Asistencias (control de entrada/salida)
+- ✅ Documentos de empleado (gestión documental)
 
 ---
 
-## 🚀 CÓMO INICIAR EL PROYECTO
+## 🚀 Sistema en Producción
 
-### Opción 1: Script Automático (Recomendado)
+### URLs Disponibles:
+- **Frontend:** http://localhost:3000
+- **Backend API:** http://localhost:8000
+- **Documentación API:** http://localhost:8000/docs
+- **Adminer (Gestión BD):** http://localhost:8080
+
+### Credenciales:
+- **Usuario:** `admin`
+- **Contraseña:** `admin123`
+
+### Tecnologías:
+- **Backend:** FastAPI + SQLAlchemy + MariaDB + JWT
+- **Frontend:** React 18 + Vite + Material-UI + React Router
+- **Base de Datos:** MariaDB 10.6
+- **Contenedores:** Docker + Docker Compose
+
+---
+
+## 📈 Estadísticas del Proyecto
+
+### Código Implementado:
+- **Backend:** ~2,000 líneas
+- **Frontend:** ~1,000 líneas
+- **Base de Datos:** 9 tablas principales
+- **API Endpoints:** 30+ endpoints
+
+### Archivos Principales:
+- 15 modelos de base de datos
+- 10 schemas de validación
+- 5 routers de API
+- 3 páginas principales en frontend
+
+---
+
+## 📋 Próximos Pasos
+
+### Fase 1: Interfaces de RRHH (Prioridad Alta)
+1. ⏳ Interfaz de gestión de vacaciones
+   - Página de solicitudes
+   - Formulario de solicitud
+   - Vista de aprobación
+   - Dashboard de vacaciones
+
+2. ⏳ Generación de PDF para vacaciones
+   - Documento firmado
+   - Envío por email (opcional)
+
+3. ⏳ Interfaz de gestión de incidencias
+   - Listado de incidencias
+   - Formulario de registro
+   - Estadísticas y reportes
+
+### Fase 2: Módulo de Clientes (Siguiente)
+- CRUD de clientes
+- Historial de servicios
+- Información de vehículos
+
+### Fase 3: Gestión de Órdenes de Trabajo
+- Recepción de trabajos
+- Asignación de técnicos
+- Seguimiento de estado
+- Fotos de entrada/salida
+
+### Fase 4: Inventario de Repuestos
+- Control de stock
+- Alertas de stock bajo
+- Movimientos de inventario
+
+### Fase 5: Facturación
+- Generación de facturas
+- Control de pagos
+- Reportes financieros
+
+---
+
+## 🔧 Configuración del Entorno
+
+### Desarrollo Local:
 ```powershell
-cd "G:\CRM Proyecto"
-.\start_proyecto.ps1
-```
-
-### Opción 2: Manual
-
-**Terminal 1 - Backend:**
-```powershell
-cd "G:\CRM Proyecto\backend"
-.\start_backend.ps1
-```
-
-**Terminal 2 - Frontend:**
-```powershell
-cd "G:\CRM Proyecto\frontend"
-.\start_frontend.ps1
-```
-
-### Acceso:
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8000
-- **API Docs**: http://localhost:8000/docs
-- **Gestión de Usuarios**: http://localhost:3000/users (solo ADMIN)
-
----
-
-## 🔑 CREDENCIALES
-
-### Usuario Administrador:
-```
-Usuario: admin
-Contraseña: admin123
-Rol: ADMIN
-```
-
-### Base de Datos:
-```
-Host: localhost:3306
-Base de datos: crm_talleres
-Usuario: crm_user
-Password: tH9qaLh6v5KMNyQ3b8GWjZlX
-Root Password: Hesoyam21
-```
-
----
-
-## 📁 ESTRUCTURA DEL PROYECTO
-
-```
-G:\CRM Proyecto\
-├── backend/                    # Backend FastAPI
-│   ├── app/
-│   │   ├── api/v1/            # Endpoints
-│   │   │   ├── auth.py        # Autenticación
-│   │   │   └── users.py       # Gestión de usuarios (NUEVO)
-│   │   ├── core/              # Núcleo
-│   │   │   ├── security.py    # Seguridad (bcrypt, JWT)
-│   │   │   └── dependencies.py # Dependencias auth
-│   │   ├── models/            # Modelos SQLAlchemy
-│   │   │   └── user.py        # Modelo Usuario
-│   │   ├── schemas/           # Schemas Pydantic
-│   │   │   └── user.py        # Validaciones
-│   │   ├── services/          # Lógica de negocio
-│   │   │   └── auth_service.py
-│   │   ├── config.py          # Configuración
-│   │   ├── database.py        # Conexión BD
-│   │   └── main.py            # App principal
-│   ├── venv/                  # Entorno virtual
-│   ├── requirements.txt       # Dependencias
-│   └── start_backend.ps1      # Script de inicio
-│
-├── frontend/                   # Frontend React
-│   ├── src/
-│   │   ├── pages/
-│   │   │   ├── Login.jsx      # Página de login
-│   │   │   ├── Dashboard.jsx  # Dashboard
-│   │   │   └── Users.jsx      # Gestión de usuarios (NUEVO)
-│   │   ├── components/
-│   │   │   ├── ProtectedRoute.jsx # Rutas protegidas
-│   │   │   └── Layout.jsx     # Layout principal (NUEVO)
-│   │   ├── context/
-│   │   │   └── AuthContext.jsx # Context de auth
-│   │   ├── services/
-│   │   │   └── api.js         # Servicio API
-│   │   ├── App.jsx            # App principal
-│   │   └── main.jsx           # Entry point
-│   ├── package.json           # Dependencias
-│   └── start_frontend.ps1     # Script de inicio
-│
-├── database/                   # Base de datos
-│   ├── schema.sql             # Schema completo
-│   └── setup.sql              # Setup inicial
-│
-├── docs/                       # Documentación
-│   └── MODULO_USUARIOS.md     # Doc módulo usuarios (NUEVO)
-│
-├── README.md                   # Documentación principal
-├── ESTADO_PROYECTO.md         # Este archivo
-├── docker-compose.yml         # Configuración Docker
-├── start_proyecto.ps1         # Script maestro
-└── PLANIFICACION_CRM.html     # Planificación original
-```
-
----
-
-## 🆕 NOVEDADES EN ESTA VERSIÓN (1.1.0)
-
-### Módulo de Gestión de Usuarios
-- ✅ Crear, editar, visualizar y eliminar usuarios
-- ✅ Asignación de roles
-- ✅ Tabla con indicadores visuales
-- ✅ Formulario con validaciones completas
-- ✅ Protección por rol ADMIN
-
-### Mejoras de Interfaz
-- ✅ Layout con navegación lateral
-- ✅ AppBar con menú de usuario
-- ✅ Drawer con módulos disponibles
-- ✅ Footer informativo
-- ✅ Diseño responsive
-
-### Backend
-- ✅ Endpoints CRUD de usuarios
-- ✅ Validaciones robustas
-- ✅ Protección por roles
-- ✅ Manejo de errores mejorado
-
----
-
-## 🎯 PRÓXIMOS PASOS
-
-### Fase 1: Completar Autenticación
-- [ ] Agregar "Olvidé mi contraseña"
-- [ ] Implementar refresh tokens
-- [ ] Agregar verificación de email
-- [ ] Historial de sesiones
-
-### Fase 2: Módulo de Clientes
-- [ ] CRUD completo de clientes
-- [ ] Búsqueda y filtros
-- [ ] Historial de servicios
-- [ ] Exportar a Excel/PDF
-
-### Fase 3: Órdenes de Trabajo
-- [ ] Crear órdenes
-- [ ] Asignar técnicos
-- [ ] Seguimiento de estatus
-- [ ] Generación de folios
-- [ ] Impresión de órdenes
-
-### Fase 4: Materiales
-- [ ] Inventario
-- [ ] Registro de uso
-- [ ] Control de costos
-- [ ] Alertas de stock bajo
-
-### Fase 5: Pagos y Caja
-- [ ] Registro de pagos
-- [ ] Anticipos
-- [ ] Cortes de caja
-- [ ] Reportes de ingresos
-
-### Fase 6: Reportes
-- [ ] Reportes de ventas
-- [ ] Reportes de técnicos
-- [ ] Estadísticas
-- [ ] Gráficas
-- [ ] Exportación
-
----
-
-## 🔄 FLUJO DE TRABAJO GIT
-
-### Ramas:
-- **main** - Producción
-- **desarrollo** - Desarrollo activo
-- **testeo** - Pruebas (actual)
-
-### Comandos útiles:
-```bash
-# Ver estado
-git status
-
-# Agregar cambios
-git add .
-
-# Commit
-git commit -m "mensaje"
-
-# Ver historial
-git log --oneline
-
-# Cambiar de rama
-git checkout nombre-rama
-```
-
----
-
-## 📚 DOCUMENTACIÓN DISPONIBLE
-
-1. **README.md** - Documentación principal del proyecto
-2. **ESTADO_PROYECTO.md** - Este documento (estado actual)
-3. **docs/MODULO_USUARIOS.md** - Documentación del módulo de usuarios (NUEVO)
-4. **PLANIFICACION_CRM.html** - Planificación original
-5. **backend/README.md** - Documentación del backend
-6. **frontend/README.md** - Documentación del frontend
-
----
-
-## 🛠️ COMANDOS ÚTILES
-
-### Backend:
-```powershell
-# Activar entorno virtual
+# Backend
 cd backend
-.\venv\Scripts\Activate.ps1
-
-# Instalar dependencias
-pip install -r requirements.txt
-
-# Iniciar servidor
+.\venv\Scripts\activate
 python -m uvicorn app.main:app --reload
-```
 
-### Frontend:
-```powershell
-# Instalar dependencias
+# Frontend
 cd frontend
-npm install
-
-# Iniciar servidor
 npm run dev
 ```
 
-### Base de Datos:
-```powershell
-# Conectar a MariaDB
-& "C:\Program Files\MariaDB 12.1\bin\mysql.exe" -u root -pHesoyam21
-
-# Conectar a base de datos específica
-& "C:\Program Files\MariaDB 12.1\bin\mysql.exe" -u crm_user -ptH9qaLh6v5KMNyQ3b8GWjZlX crm_talleres
-
-# Backup
-& "C:\Program Files\MariaDB 12.1\bin\mysqldump.exe" -u root -pHesoyam21 crm_talleres > backup.sql
-```
-
----
-
-## 🎨 CAPTURAS DE FUNCIONALIDAD
-
-### Login:
-- Formulario con validación
-- Conversión automática a minúsculas
-- Feedback de errores
-- Credenciales de prueba visibles
-
-### Dashboard:
-- Información del usuario
-- Rol con chip de color
-- Estado activo/inactivo
-- Botón de logout
-- Vista de módulos disponibles
-
----
-
-## ⚠️ NOTAS IMPORTANTES
-
-### Seguridad:
-- ⚠️ CORS está configurado para permitir todos los orígenes (solo desarrollo)
-- ⚠️ Cambiar SECRET_KEY en producción
-- ⚠️ Cambiar contraseñas por defecto en producción
-- ⚠️ Configurar HTTPS en producción
-
-### Base de Datos:
-- ✅ Usuario admin ya creado
-- ✅ Categorías iniciales cargadas
-- ✅ Schema completo importado
-
 ### Docker:
-- ℹ️ Docker Compose configurado pero no usado actualmente
-- ℹ️ Proyecto corriendo en instalación local
-- ℹ️ Docker disponible para deploy futuro
+```powershell
+# Levantar todo
+docker compose up -d
 
----
+# Ver logs
+docker logs crm_backend
+docker logs crm_frontend
 
-## 📞 SOPORTE Y RECURSOS
-
-### Documentación Oficial:
-- [FastAPI](https://fastapi.tiangolo.com/)
-- [React](https://react.dev/)
-- [Material-UI](https://mui.com/)
-- [MariaDB](https://mariadb.org/documentation/)
-
-### Herramientas:
-- **API Docs**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
-
----
-
-## ✅ CHECKLIST DE VERIFICACIÓN
-
-### Sistema Operativo:
-- [x] Backend corriendo en puerto 8000
-- [x] Frontend corriendo en puerto 3000
-- [x] MariaDB corriendo en puerto 3306
-- [x] Login funcionando
-- [x] Dashboard accesible
-- [x] Logout funcionando
-
-### Configuración:
-- [x] Variables de entorno configuradas
-- [x] Base de datos inicializada
-- [x] Usuario admin creado
-- [x] CORS configurado
-- [x] JWT funcionando
-
-### Documentación:
-- [x] README actualizado
-- [x] Código comentado
-- [x] Scripts de inicio creados
-- [x] Guías disponibles
-
----
-
-## 🎉 ESTADO FINAL
-
-```
-✅ Sistema de Login: OPERATIVO
-✅ Gestión de Usuarios: OPERATIVO (NUEVO)
-✅ Base de Datos: CONFIGURADA
-✅ Backend: FUNCIONANDO
-✅ Frontend: FUNCIONANDO
-✅ Autenticación: COMPLETA
-✅ Layout y Navegación: IMPLEMENTADO (NUEVO)
-✅ Documentación: ACTUALIZADA
-
-🚀 LISTO PARA DESARROLLO DE NUEVOS MÓDULOS
+# Detener todo
+docker compose down
 ```
 
 ---
 
-**Última actualización**: 22/01/2026 20:30  
-**Desarrollado por**: Eduardo Felix  
-**Versión**: 1.1.0 - Sistema de Login y Gestión de Usuarios Operativo
+## 📚 Documentación
+
+- **README.md** - Guía general del proyecto
+- **RESUMEN_IMPLEMENTACION_RRHH.md** - Documentación detallada del módulo de RRHH
+- **QUICK_START_DOCKER.md** - Guía rápida para Docker
+- **docs/MODULO_USUARIOS.md** - Documentación del módulo de usuarios
+
+---
+
+## 🎯 Objetivos Cumplidos
+
+✅ Estructura base del proyecto  
+✅ Sistema de autenticación  
+✅ Gestión de usuarios completa  
+✅ Módulo de RRHH (backend completo)  
+✅ API REST documentada  
+✅ Interfaz de usuario moderna  
+✅ Docker configurado  
+✅ Git y GitHub configurados  
+
+---
+
+## 🚧 En Desarrollo
+
+⏳ Interfaces de vacaciones e incidencias  
+⏳ Generación de PDFs  
+⏳ Módulo de clientes  
+
+---
+
+## 📞 Información del Proyecto
+
+- **Repositorio:** https://github.com/dev-eduardof/CRM-Proyecto
+- **Rama Principal:** main
+- **Rama de Desarrollo:** desarrollo
+- **Rama de Pruebas:** testeo
+
+---
+
+**¡El proyecto está funcionando correctamente y listo para continuar con los siguientes módulos!** 🎉
