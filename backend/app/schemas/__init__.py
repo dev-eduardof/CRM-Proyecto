@@ -3,9 +3,23 @@ from app.schemas.user import (
     UserCreate,
     UserUpdate,
     UserResponse,
+    UserListResponse,
     UserLogin,
     Token,
     TokenData
+)
+from app.schemas.solicitud_vacaciones import (
+    SolicitudVacacionesBase,
+    SolicitudVacacionesCreate,
+    SolicitudVacacionesUpdate,
+    SolicitudVacacionesAprobacion,
+    SolicitudVacacionesResponse
+)
+from app.schemas.incidencia import (
+    IncidenciaBase,
+    IncidenciaCreate,
+    IncidenciaUpdate,
+    IncidenciaResponse
 )
 
 __all__ = [
@@ -13,7 +27,17 @@ __all__ = [
     "UserCreate",
     "UserUpdate",
     "UserResponse",
+    "UserListResponse",
     "UserLogin",
     "Token",
-    "TokenData"
+    "TokenData",
+    "SolicitudVacacionesBase",
+    "SolicitudVacacionesCreate",
+    "SolicitudVacacionesUpdate",
+    "SolicitudVacacionesAprobacion",
+    "SolicitudVacacionesResponse",
+    "IncidenciaBase",
+    "IncidenciaCreate",
+    "IncidenciaUpdate",
+    "IncidenciaResponse"
 ]

@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 import os
 
 # Importar routers
-from app.api.v1 import auth, users
+from app.api.v1 import auth, users, vacaciones, incidencias
 
 app = FastAPI(
     title="CRM Talleres API",
@@ -52,6 +52,8 @@ def health_check():
 # Incluir routers
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(users.router, prefix="/api/v1")
+app.include_router(vacaciones.router, prefix="/api/v1")
+app.include_router(incidencias.router, prefix="/api/v1")
 # app.include_router(clients.router, prefix="/api/v1/clients", tags=["clients"])
 # app.include_router(ordenes.router, prefix="/api/v1/ordenes", tags=["ordenes"])
 

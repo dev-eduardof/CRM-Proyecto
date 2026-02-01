@@ -25,7 +25,11 @@ import {
   Alert,
   CircularProgress,
   Tooltip,
-  Snackbar
+  Snackbar,
+  Tabs,
+  Tab,
+  Grid,
+  Divider
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -61,13 +65,40 @@ const Users = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [userToDelete, setUserToDelete] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
+  const [tabValue, setTabValue] = useState(0);
   const [formData, setFormData] = useState({
+    // Campos básicos
     username: '',
     email: '',
     nombre_completo: '',
     rol: 'RECEPCION',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    // Información Personal
+    rfc: '',
+    curp: '',
+    nss: '',
+    fecha_nacimiento: '',
+    telefono: '',
+    telefono_emergencia: '',
+    contacto_emergencia: '',
+    estado_civil: '',
+    // Dirección
+    calle: '',
+    numero: '',
+    colonia: '',
+    codigo_postal: '',
+    ciudad: '',
+    estado: '',
+    // Información Laboral
+    fecha_ingreso: '',
+    tipo_contrato: 'PLANTA',
+    salario_base_diario: '',
+    horario_trabajo: '',
+    dias_descanso: '',
+    departamento: '',
+    puesto_especifico: '',
+    jefe_directo_id: ''
   });
   const [formErrors, setFormErrors] = useState({});
 
@@ -106,39 +137,119 @@ const Users = () => {
       // Editar usuario
       setEditingUser(user);
       setFormData({
-        username: user.username,
-        email: user.email,
-        nombre_completo: user.nombre_completo,
-        rol: user.rol,
+        // Campos básicos
+        username: user.username || '',
+        email: user.email || '',
+        nombre_completo: user.nombre_completo || '',
+        rol: user.rol || 'RECEPCION',
         password: '',
-        confirmPassword: ''
+        confirmPassword: '',
+        // Información Personal
+        rfc: user.rfc || '',
+        curp: user.curp || '',
+        nss: user.nss || '',
+        fecha_nacimiento: user.fecha_nacimiento || '',
+        telefono: user.telefono || '',
+        telefono_emergencia: user.telefono_emergencia || '',
+        contacto_emergencia: user.contacto_emergencia || '',
+        estado_civil: user.estado_civil || '',
+        // Dirección
+        calle: user.calle || '',
+        numero: user.numero || '',
+        colonia: user.colonia || '',
+        codigo_postal: user.codigo_postal || '',
+        ciudad: user.ciudad || '',
+        estado: user.estado || '',
+        // Información Laboral
+        fecha_ingreso: user.fecha_ingreso || '',
+        tipo_contrato: user.tipo_contrato || 'PLANTA',
+        salario_base_diario: user.salario_base_diario || '',
+        horario_trabajo: user.horario_trabajo || '',
+        dias_descanso: user.dias_descanso || '',
+        departamento: user.departamento || '',
+        puesto_especifico: user.puesto_especifico || '',
+        jefe_directo_id: user.jefe_directo_id || ''
       });
     } else {
       // Nuevo usuario
       setEditingUser(null);
       setFormData({
+        // Campos básicos
         username: '',
         email: '',
         nombre_completo: '',
         rol: 'RECEPCION',
         password: '',
-        confirmPassword: ''
+        confirmPassword: '',
+        // Información Personal
+        rfc: '',
+        curp: '',
+        nss: '',
+        fecha_nacimiento: '',
+        telefono: '',
+        telefono_emergencia: '',
+        contacto_emergencia: '',
+        estado_civil: '',
+        // Dirección
+        calle: '',
+        numero: '',
+        colonia: '',
+        codigo_postal: '',
+        ciudad: '',
+        estado: '',
+        // Información Laboral
+        fecha_ingreso: '',
+        tipo_contrato: 'PLANTA',
+        salario_base_diario: '',
+        horario_trabajo: '',
+        dias_descanso: '',
+        departamento: '',
+        puesto_especifico: '',
+        jefe_directo_id: ''
       });
     }
     setFormErrors({});
+    setTabValue(0);
     setOpenDialog(true);
   };
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setEditingUser(null);
+    setTabValue(0);
     setFormData({
+      // Campos básicos
       username: '',
       email: '',
       nombre_completo: '',
       rol: 'RECEPCION',
       password: '',
-      confirmPassword: ''
+      confirmPassword: '',
+      // Información Personal
+      rfc: '',
+      curp: '',
+      nss: '',
+      fecha_nacimiento: '',
+      telefono: '',
+      telefono_emergencia: '',
+      contacto_emergencia: '',
+      estado_civil: '',
+      // Dirección
+      calle: '',
+      numero: '',
+      colonia: '',
+      codigo_postal: '',
+      ciudad: '',
+      estado: '',
+      // Información Laboral
+      fecha_ingreso: '',
+      tipo_contrato: 'PLANTA',
+      salario_base_diario: '',
+      horario_trabajo: '',
+      dias_descanso: '',
+      departamento: '',
+      puesto_especifico: '',
+      jefe_directo_id: ''
     });
     setFormErrors({});
   };
@@ -210,30 +321,53 @@ const Users = () => {
     }
 
     try {
+      // Preparar datos para enviar
+      const dataToSend = {
+        email: formData.email,
+        nombre_completo: formData.nombre_completo,
+        rol: formData.rol,
+        // Información Personal
+        rfc: formData.rfc || null,
+        curp: formData.curp || null,
+        nss: formData.nss || null,
+        fecha_nacimiento: formData.fecha_nacimiento || null,
+        telefono: formData.telefono || null,
+        telefono_emergencia: formData.telefono_emergencia || null,
+        contacto_emergencia: formData.contacto_emergencia || null,
+        estado_civil: formData.estado_civil || null,
+        // Dirección
+        calle: formData.calle || null,
+        numero: formData.numero || null,
+        colonia: formData.colonia || null,
+        codigo_postal: formData.codigo_postal || null,
+        ciudad: formData.ciudad || null,
+        estado: formData.estado || null,
+        // Información Laboral
+        fecha_ingreso: formData.fecha_ingreso || null,
+        tipo_contrato: formData.tipo_contrato || null,
+        salario_base_diario: formData.salario_base_diario ? parseFloat(formData.salario_base_diario) : null,
+        horario_trabajo: formData.horario_trabajo || null,
+        dias_descanso: formData.dias_descanso || null,
+        departamento: formData.departamento || null,
+        puesto_especifico: formData.puesto_especifico || null,
+        jefe_directo_id: formData.jefe_directo_id ? parseInt(formData.jefe_directo_id) : null
+      };
+
       if (editingUser) {
         // Actualizar usuario
-        const updateData = {
-          email: formData.email,
-          nombre_completo: formData.nombre_completo,
-          rol: formData.rol
-        };
-        
         // Solo incluir password si se proporcionó
         if (formData.password) {
-          updateData.password = formData.password;
+          dataToSend.password = formData.password;
         }
 
-        await usersAPI.update(editingUser.id, updateData);
+        await usersAPI.update(editingUser.id, dataToSend);
         setSuccessMessage('¡Usuario actualizado exitosamente!');
       } else {
         // Crear usuario
-        await usersAPI.create({
-          username: formData.username,
-          email: formData.email,
-          nombre_completo: formData.nombre_completo,
-          rol: formData.rol,
-          password: formData.password
-        });
+        dataToSend.username = formData.username;
+        dataToSend.password = formData.password;
+
+        await usersAPI.create(dataToSend);
         setSuccessMessage('¡Usuario creado exitosamente!');
       }
 
@@ -374,89 +508,335 @@ const Users = () => {
       </TableContainer>
 
       {/* Diálogo de Crear/Editar Usuario */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
         <DialogTitle>
           {editingUser ? 'Editar Usuario' : 'Nuevo Usuario'}
         </DialogTitle>
         <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-            <TextField
-              label="Nombre de Usuario"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              error={!!formErrors.username}
-              helperText={formErrors.username}
-              disabled={!!editingUser}
-              fullWidth
-              required
-            />
-            <TextField
-              label="Email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              error={!!formErrors.email}
-              helperText={formErrors.email}
-              fullWidth
-              required
-            />
-            <TextField
-              label="Nombre Completo"
-              name="nombre_completo"
-              value={formData.nombre_completo}
-              onChange={handleChange}
-              error={!!formErrors.nombre_completo}
-              helperText={formErrors.nombre_completo}
-              fullWidth
-              required
-            />
-            <TextField
-              label="Rol"
-              name="rol"
-              select
-              value={formData.rol}
-              onChange={handleChange}
-              fullWidth
-              required
-              SelectProps={{
-                native: false,
-              }}
-            >
-              {roles.length > 0 ? (
-                roles.map((rol) => (
-                  <MenuItem key={rol} value={rol}>
-                    {rol} - {roleDescriptions[rol] || rol}
-                  </MenuItem>
-                ))
-              ) : (
-                <MenuItem value="RECEPCION">Cargando roles...</MenuItem>
-              )}
-            </TextField>
-            <TextField
-              label={editingUser ? 'Nueva Contraseña (dejar vacío para no cambiar)' : 'Contraseña'}
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-              error={!!formErrors.password}
-              helperText={formErrors.password}
-              fullWidth
-              required={!editingUser}
-            />
-            <TextField
-              label="Confirmar Contraseña"
-              name="confirmPassword"
-              type="password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              error={!!formErrors.confirmPassword}
-              helperText={formErrors.confirmPassword}
-              fullWidth
-              required={!editingUser || !!formData.password}
-            />
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+            <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)}>
+              <Tab label="Información Básica" />
+              <Tab label="Información Personal" />
+              <Tab label="Dirección" />
+              <Tab label="Información Laboral" />
+            </Tabs>
           </Box>
+
+          {/* Tab 0: Información Básica */}
+          {tabValue === 0 && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+              <TextField
+                label="Nombre de Usuario"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                error={!!formErrors.username}
+                helperText={formErrors.username}
+                disabled={!!editingUser}
+                fullWidth
+                required
+              />
+              <TextField
+                label="Email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                error={!!formErrors.email}
+                helperText={formErrors.email}
+                fullWidth
+                required
+              />
+              <TextField
+                label="Nombre Completo"
+                name="nombre_completo"
+                value={formData.nombre_completo}
+                onChange={handleChange}
+                error={!!formErrors.nombre_completo}
+                helperText={formErrors.nombre_completo}
+                fullWidth
+                required
+              />
+              <TextField
+                label="Rol"
+                name="rol"
+                select
+                value={formData.rol}
+                onChange={handleChange}
+                fullWidth
+                required
+              >
+                {roles.length > 0 ? (
+                  roles.map((rol) => (
+                    <MenuItem key={rol} value={rol}>
+                      {rol} - {roleDescriptions[rol] || rol}
+                    </MenuItem>
+                  ))
+                ) : (
+                  <MenuItem value="RECEPCION">Cargando roles...</MenuItem>
+                )}
+              </TextField>
+              <TextField
+                label={editingUser ? 'Nueva Contraseña (dejar vacío para no cambiar)' : 'Contraseña'}
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleChange}
+                error={!!formErrors.password}
+                helperText={formErrors.password}
+                fullWidth
+                required={!editingUser}
+              />
+              <TextField
+                label="Confirmar Contraseña"
+                name="confirmPassword"
+                type="password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                error={!!formErrors.confirmPassword}
+                helperText={formErrors.confirmPassword}
+                fullWidth
+                required={!editingUser || !!formData.password}
+              />
+            </Box>
+          )}
+
+          {/* Tab 1: Información Personal */}
+          {tabValue === 1 && (
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="RFC"
+                  name="rfc"
+                  value={formData.rfc}
+                  onChange={handleChange}
+                  fullWidth
+                  inputProps={{ maxLength: 13 }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="CURP"
+                  name="curp"
+                  value={formData.curp}
+                  onChange={handleChange}
+                  fullWidth
+                  inputProps={{ maxLength: 18 }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="NSS"
+                  name="nss"
+                  value={formData.nss}
+                  onChange={handleChange}
+                  fullWidth
+                  inputProps={{ maxLength: 11 }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Fecha de Nacimiento"
+                  name="fecha_nacimiento"
+                  type="date"
+                  value={formData.fecha_nacimiento}
+                  onChange={handleChange}
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Teléfono"
+                  name="telefono"
+                  value={formData.telefono}
+                  onChange={handleChange}
+                  fullWidth
+                  inputProps={{ maxLength: 15 }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Estado Civil"
+                  name="estado_civil"
+                  select
+                  value={formData.estado_civil}
+                  onChange={handleChange}
+                  fullWidth
+                >
+                  <MenuItem value="">Seleccionar...</MenuItem>
+                  <MenuItem value="SOLTERO">Soltero/a</MenuItem>
+                  <MenuItem value="CASADO">Casado/a</MenuItem>
+                  <MenuItem value="DIVORCIADO">Divorciado/a</MenuItem>
+                  <MenuItem value="VIUDO">Viudo/a</MenuItem>
+                  <MenuItem value="UNION_LIBRE">Unión Libre</MenuItem>
+                </TextField>
+              </Grid>
+              <Grid item xs={12}>
+                <Divider sx={{ my: 1 }}>Contacto de Emergencia</Divider>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Nombre del Contacto"
+                  name="contacto_emergencia"
+                  value={formData.contacto_emergencia}
+                  onChange={handleChange}
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Teléfono de Emergencia"
+                  name="telefono_emergencia"
+                  value={formData.telefono_emergencia}
+                  onChange={handleChange}
+                  fullWidth
+                  inputProps={{ maxLength: 15 }}
+                />
+              </Grid>
+            </Grid>
+          )}
+
+          {/* Tab 2: Dirección */}
+          {tabValue === 2 && (
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid item xs={12} sm={8}>
+                <TextField
+                  label="Calle"
+                  name="calle"
+                  value={formData.calle}
+                  onChange={handleChange}
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  label="Número"
+                  name="numero"
+                  value={formData.numero}
+                  onChange={handleChange}
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Colonia"
+                  name="colonia"
+                  value={formData.colonia}
+                  onChange={handleChange}
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Código Postal"
+                  name="codigo_postal"
+                  value={formData.codigo_postal}
+                  onChange={handleChange}
+                  fullWidth
+                  inputProps={{ maxLength: 5 }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Ciudad"
+                  name="ciudad"
+                  value={formData.ciudad}
+                  onChange={handleChange}
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Estado"
+                  name="estado"
+                  value={formData.estado}
+                  onChange={handleChange}
+                  fullWidth
+                />
+              </Grid>
+            </Grid>
+          )}
+
+          {/* Tab 3: Información Laboral */}
+          {tabValue === 3 && (
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Fecha de Ingreso"
+                  name="fecha_ingreso"
+                  type="date"
+                  value={formData.fecha_ingreso}
+                  onChange={handleChange}
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Tipo de Contrato"
+                  name="tipo_contrato"
+                  select
+                  value={formData.tipo_contrato}
+                  onChange={handleChange}
+                  fullWidth
+                >
+                  <MenuItem value="PLANTA">Planta</MenuItem>
+                  <MenuItem value="TEMPORAL">Temporal</MenuItem>
+                  <MenuItem value="POR_OBRA">Por Obra</MenuItem>
+                </TextField>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Salario Base Diario"
+                  name="salario_base_diario"
+                  type="number"
+                  value={formData.salario_base_diario}
+                  onChange={handleChange}
+                  fullWidth
+                  inputProps={{ min: 0, step: 0.01 }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Departamento"
+                  name="departamento"
+                  value={formData.departamento}
+                  onChange={handleChange}
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Puesto Específico"
+                  name="puesto_especifico"
+                  value={formData.puesto_especifico}
+                  onChange={handleChange}
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Horario de Trabajo"
+                  name="horario_trabajo"
+                  value={formData.horario_trabajo}
+                  onChange={handleChange}
+                  fullWidth
+                  placeholder="Ej: Lunes a Viernes 8:00-17:00"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Días de Descanso"
+                  name="dias_descanso"
+                  value={formData.dias_descanso}
+                  onChange={handleChange}
+                  fullWidth
+                  placeholder="Ej: Sábado y Domingo"
+                />
+              </Grid>
+            </Grid>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancelar</Button>
