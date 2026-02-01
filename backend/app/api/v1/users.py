@@ -125,10 +125,12 @@ def update_user(
             )
     
     # Actualizar campos si se proporcionan
-    if user_data.email is not None:
-        # Verificar que el email no esté en uso por otro usuario
+    update_data = user_data.model_dump(exclude_unset=True)
+    
+    # Verificar email único si se está actualizando
+    if 'email' in update_data:
         existing_email = db.query(User).filter(
-            User.email == user_data.email,
+            User.email == update_data['email'],
             User.id != user_id
         ).first()
         if existing_email:
@@ -136,19 +138,16 @@ def update_user(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="El email ya está en uso"
             )
-        user.email = user_data.email
     
-    if user_data.nombre_completo is not None:
-        user.nombre_completo = user_data.nombre_completo
+    # Si hay contraseña, hashearla
+    if 'password' in update_data:
+        update_data['password_hash'] = get_password_hash(update_data['password'])
+        del update_data['password']
     
-    if user_data.rol is not None:
-        user.rol = user_data.rol
-    
-    if user_data.activo is not None:
-        user.activo = user_data.activo
-    
-    if user_data.password is not None:
-        user.password_hash = get_password_hash(user_data.password)
+    # Actualizar todos los campos proporcionados
+    for field, value in update_data.items():
+        if hasattr(user, field):
+            setattr(user, field, value)
     
     db.commit()
     db.refresh(user)
