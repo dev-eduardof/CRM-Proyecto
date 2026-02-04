@@ -3,6 +3,10 @@ from app.models.solicitud_vacaciones import SolicitudVacaciones, TipoSolicitudEn
 from app.models.asistencia import Asistencia, TipoAsistenciaEnum
 from app.models.documento_empleado import DocumentoEmpleado, TipoDocumentoEnum, EstadoDocumentoEnum
 from app.models.incidencia_empleado import IncidenciaEmpleado, TipoIncidenciaEnum, SeveridadEnum
+from app.models.cliente import Cliente, TipoClienteEnum
+from app.models.categoria_orden import CategoriaOrden, SubcategoriaOrden
+from app.models.subtarea_orden import SubtareaOrden, EstadoSubtareaEnum
+from app.models.orden_trabajo import OrdenTrabajo, EstadoOrdenEnum, PrioridadEnum, TipoPermisoEnum
 
 __all__ = [
     "User", 
@@ -19,5 +23,15 @@ __all__ = [
     "EstadoDocumentoEnum",
     "IncidenciaEmpleado",
     "TipoIncidenciaEnum",
-    "SeveridadEnum"
+    "SeveridadEnum",
+    "Cliente",
+    "TipoClienteEnum",
+    "CategoriaOrden",
+    "SubcategoriaOrden",
+    "SubtareaOrden",
+    "EstadoSubtareaEnum",
+    "OrdenTrabajo",
+    "EstadoOrdenEnum",
+    "PrioridadEnum",
+    "TipoPermisoEnum"
 ]

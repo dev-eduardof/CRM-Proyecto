@@ -21,6 +21,31 @@ from app.schemas.incidencia import (
     IncidenciaUpdate,
     IncidenciaResponse
 )
+from app.schemas.cliente import (
+    ClienteBase,
+    ClienteCreate,
+    ClienteUpdate,
+    ClienteResponse
+)
+from app.schemas.orden_trabajo import (
+    CategoriaOrdenBase,
+    CategoriaOrdenCreate,
+    CategoriaOrdenResponse,
+    SubcategoriaOrdenBase,
+    SubcategoriaOrdenCreate,
+    SubcategoriaOrdenResponse,
+    SubtareaOrdenBase,
+    SubtareaOrdenCreate,
+    SubtareaOrdenUpdate,
+    SubtareaOrdenResponse,
+    OrdenTrabajoBase,
+    OrdenTrabajoCreate,
+    OrdenTrabajoUpdate,
+    OrdenTrabajoResponse,
+    OrdenTrabajoListResponse,
+    CambiarEstadoOrden,
+    UploadFotoRequest
+)
 
 __all__ = [
     "UserBase",
@@ -39,5 +64,26 @@ __all__ = [
     "IncidenciaBase",
     "IncidenciaCreate",
     "IncidenciaUpdate",
-    "IncidenciaResponse"
+    "IncidenciaResponse",
+    "ClienteBase",
+    "ClienteCreate",
+    "ClienteUpdate",
+    "ClienteResponse",
+    "CategoriaOrdenBase",
+    "CategoriaOrdenCreate",
+    "CategoriaOrdenResponse",
+    "SubcategoriaOrdenBase",
+    "SubcategoriaOrdenCreate",
+    "SubcategoriaOrdenResponse",
+    "SubtareaOrdenBase",
+    "SubtareaOrdenCreate",
+    "SubtareaOrdenUpdate",
+    "SubtareaOrdenResponse",
+    "OrdenTrabajoBase",
+    "OrdenTrabajoCreate",
+    "OrdenTrabajoUpdate",
+    "OrdenTrabajoResponse",
+    "OrdenTrabajoListResponse",
+    "CambiarEstadoOrden",
+    "UploadFotoRequest"
 ]

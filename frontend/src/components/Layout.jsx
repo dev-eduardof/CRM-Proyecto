@@ -30,7 +30,9 @@ import {
   AttachMoney as AttachMoneyIcon,
   BarChart as BarChartIcon,
   Settings as SettingsIcon,
-  ExitToApp as ExitToAppIcon
+  ExitToApp as ExitToAppIcon,
+  BeachAccess as BeachAccessIcon,
+  PersonAdd as PersonAddIcon
 } from '@mui/icons-material';
 
 const Layout = ({ children }) => {
@@ -64,8 +66,9 @@ const Layout = ({ children }) => {
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard', roles: ['ADMIN', 'TECNICO', 'RECEPCION', 'CAJA', 'AUXILIAR', 'JEFE_TALLER'] },
     { text: 'Usuarios', icon: <PeopleIcon />, path: '/users', roles: ['ADMIN'] },
-    { text: 'Clientes', icon: <ReceiptIcon />, path: '/clients', roles: ['ADMIN', 'RECEPCION'] },
-    { text: 'Órdenes', icon: <BuildIcon />, path: '/orders', roles: ['ADMIN', 'TECNICO', 'RECEPCION'] },
+    { text: 'Mis Vacaciones', icon: <BeachAccessIcon />, path: '/vacaciones', roles: ['ADMIN', 'TECNICO', 'RECEPCION', 'CAJA', 'AUXILIAR', 'JEFE_TALLER'] },
+    { text: 'Clientes', icon: <PersonAddIcon />, path: '/clientes', roles: ['ADMIN', 'RECEPCION'] },
+    { text: 'Órdenes de Trabajo', icon: <BuildIcon />, path: '/ordenes', roles: ['ADMIN', 'TECNICO', 'RECEPCION'] },
     { text: 'Caja', icon: <AttachMoneyIcon />, path: '/cashier', roles: ['ADMIN', 'CAJA'] },
     { text: 'Reportes', icon: <BarChartIcon />, path: '/reports', roles: ['ADMIN'] },
   ];
@@ -136,7 +139,15 @@ const Layout = ({ children }) => {
               variant="h6"
               noWrap
               component="div"
-              sx={{ flexGrow: 1, display: { xs: 'none', sm: 'block' } }}
+              onClick={() => navigate('/dashboard')}
+              sx={{ 
+                flexGrow: 1, 
+                display: { xs: 'none', sm: 'block' },
+                cursor: 'pointer',
+                '&:hover': {
+                  opacity: 0.8
+                }
+              }}
             >
               CRM Talleres
             </Typography>

@@ -2,9 +2,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
+import pathlib
 
 # Importar routers
-from app.api.v1 import auth, users, vacaciones, incidencias
+from app.api.v1 import auth, users, vacaciones, incidencias, clientes, ordenes
 
 app = FastAPI(
     title="CRM Talleres API",
@@ -30,17 +31,6 @@ if not os.path.exists(uploads_dir):
 
 app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 
-# Root endpoint
-@app.get("/")
-def read_root():
-    return {
-        "message": "CRM Talleres API",
-        "version": "1.0.0",
-        "status": "running",
-        "docs": "/docs",
-        "redoc": "/redoc"
-    }
-
 # Health check
 @app.get("/health")
 def health_check():
@@ -49,13 +39,23 @@ def health_check():
         "service": "crm-talleres-backend"
     }
 
-# Incluir routers
+# Incluir routers ANTES de montar el frontend
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(users.router, prefix="/api/v1")
 app.include_router(vacaciones.router, prefix="/api/v1")
 app.include_router(incidencias.router, prefix="/api/v1")
-# app.include_router(clients.router, prefix="/api/v1/clients", tags=["clients"])
-# app.include_router(ordenes.router, prefix="/api/v1/ordenes", tags=["ordenes"])
+app.include_router(clientes.router, prefix="/api/v1")
+app.include_router(ordenes.router, prefix="/api/v1")
+
+# Servir frontend estático al final (debe ser lo último)
+frontend_dist = pathlib.Path(__file__).parent.parent.parent / "frontend" / "dist"
+print(f"Buscando frontend en: {frontend_dist}")
+print(f"Existe: {frontend_dist.exists()}")
+if frontend_dist.exists():
+    print(f"Montando frontend desde: {frontend_dist}")
+    app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="frontend")
+else:
+    print("Frontend no encontrado, sirviendo solo API")
 
 if __name__ == "__main__":
     import uvicorn

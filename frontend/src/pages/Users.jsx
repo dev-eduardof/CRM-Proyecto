@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { usersAPI } from '../services/api';
+import { usersAPI, vacacionesAPI } from '../services/api';
 import Layout from '../components/Layout';
 import {
   Container,
@@ -40,13 +40,17 @@ import {
   Check as CheckIcon,
   Warning as WarningIcon,
   Block as BlockIcon,
-  CheckCircleOutline as ActivateIcon
+  CheckCircleOutline as ActivateIcon,
+  CheckCircle as ApproveIcon,
+  Cancel as RejectIcon,
+  PictureAsPdf as PdfIcon
 } from '@mui/icons-material';
 
 const Users = () => {
   const { user } = useAuth();
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
+  const [solicitudesVacaciones, setSolicitudesVacaciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -71,7 +75,11 @@ const Users = () => {
   const [motivoBaja, setMotivoBaja] = useState('');
   const [editingUser, setEditingUser] = useState(null);
   const [tabValue, setTabValue] = useState(0);
-  const [userStatusTab, setUserStatusTab] = useState(0); // 0 = activos, 1 = inactivos
+  const [userStatusTab, setUserStatusTab] = useState(0); // 0 = activos, 1 = inactivos, 2 = solicitudes vacaciones
+  const [solicitudToApprove, setSolicitudToApprove] = useState(null);
+  const [openApprovalDialog, setOpenApprovalDialog] = useState(false);
+  const [motivoRechazo, setMotivoRechazo] = useState('');
+  const [approvalAction, setApprovalAction] = useState(''); // 'aprobar' o 'rechazar'
   const [formData, setFormData] = useState({
     // Campos básicos
     username: '',
@@ -114,6 +122,7 @@ const Users = () => {
   useEffect(() => {
     loadUsers();
     loadRoles();
+    loadSolicitudesVacaciones();
   }, []);
 
   const loadUsers = async () => {
@@ -137,6 +146,15 @@ const Users = () => {
       console.error('Error al cargar roles:', err);
       // Si falla, usar roles por defecto
       setRoles(['ADMIN', 'TECNICO', 'RECEPCION', 'CAJA', 'AUXILIAR', 'JEFE_TALLER']);
+    }
+  };
+
+  const loadSolicitudesVacaciones = async () => {
+    try {
+      const response = await vacacionesAPI.getAllSolicitudes();
+      setSolicitudesVacaciones(response.data);
+    } catch (err) {
+      console.error('Error al cargar solicitudes de vacaciones:', err);
     }
   };
 
@@ -477,6 +495,64 @@ const Users = () => {
     }
   };
 
+  // Funciones para gestionar solicitudes de vacaciones
+  const handleOpenApprovalDialog = (solicitud, action) => {
+    setSolicitudToApprove(solicitud);
+    setApprovalAction(action);
+    setMotivoRechazo('');
+    setOpenApprovalDialog(true);
+  };
+
+  const handleCloseApprovalDialog = () => {
+    setOpenApprovalDialog(false);
+    setSolicitudToApprove(null);
+    setMotivoRechazo('');
+    setApprovalAction('');
+  };
+
+  const handleConfirmApproval = async () => {
+    if (!solicitudToApprove) return;
+
+    try {
+      if (approvalAction === 'aprobar') {
+        await vacacionesAPI.aprobar(solicitudToApprove.id, { aprobar: true });
+        setSuccessMessage('¡Solicitud aprobada exitosamente! Los días se han descontado automáticamente.');
+      } else {
+        if (!motivoRechazo.trim()) {
+          setError('El motivo de rechazo es obligatorio');
+          return;
+        }
+        await vacacionesAPI.rechazar(solicitudToApprove.id, motivoRechazo);
+        setSuccessMessage('Solicitud rechazada.');
+      }
+      
+      handleCloseApprovalDialog();
+      setOpenSuccessDialog(true);
+      loadSolicitudesVacaciones();
+      loadUsers(); // Recargar usuarios para actualizar días de vacaciones
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Error al procesar solicitud');
+      setTimeout(() => setError(''), 5000);
+    }
+  };
+
+  const handleDownloadPDF = async (solicitudId) => {
+    try {
+      const response = await vacacionesAPI.downloadPDF(solicitudId);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `solicitud_vacaciones_${solicitudId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Error al descargar PDF');
+      setTimeout(() => setError(''), 5000);
+    }
+  };
+
   const getRolColor = (rol) => {
     const colors = {
       ADMIN: 'error',
@@ -487,6 +563,26 @@ const Users = () => {
       JEFE_TALLER: 'secondary'
     };
     return colors[rol] || 'default';
+  };
+
+  const getEstadoSolicitudColor = (estado) => {
+    const colors = {
+      'PENDIENTE': 'warning',
+      'APROBADA': 'success',
+      'RECHAZADA': 'error',
+      'TOMADA': 'info',
+      'CANCELADA': 'default'
+    };
+    return colors[estado] || 'default';
+  };
+
+  const getTipoSolicitudLabel = (tipo) => {
+    const labels = {
+      'DIAS_COMPLETOS': 'Días Completos',
+      'MEDIO_DIA': 'Medio Día',
+      'HORAS': 'Horas'
+    };
+    return labels[tipo] || tipo;
   };
 
   if (loading) {
@@ -519,31 +615,34 @@ const Users = () => {
         </Alert>
       )}
 
-      {/* Pestañas de Activos/Inactivos */}
+      {/* Pestañas de Activos/Inactivos/Solicitudes */}
       <Paper sx={{ mb: 2 }}>
         <Tabs value={userStatusTab} onChange={(e, newValue) => setUserStatusTab(newValue)}>
           <Tab label={`Usuarios Activos (${users.filter(u => u.activo).length})`} />
           <Tab label={`Usuarios Inactivos (${users.filter(u => !u.activo).length})`} />
+          <Tab label={`Solicitudes de Vacaciones (${solicitudesVacaciones?.filter(s => s.estado === 'PENDIENTE').length || 0} pendientes)`} />
         </Tabs>
       </Paper>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Usuario</TableCell>
-              <TableCell>Nombre Completo</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Rol</TableCell>
-              <TableCell>Estado</TableCell>
-              {userStatusTab === 1 && <TableCell>Fecha Baja</TableCell>}
-              {userStatusTab === 1 && <TableCell>Motivo Baja</TableCell>}
-              <TableCell align="center">Acciones</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {users.filter(u => userStatusTab === 0 ? u.activo : !u.activo).map((u) => (
+      {/* Tabla de Usuarios o Solicitudes según pestaña */}
+      {userStatusTab < 2 ? (
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>ID</TableCell>
+                <TableCell>Usuario</TableCell>
+                <TableCell>Nombre Completo</TableCell>
+                <TableCell>Email</TableCell>
+                <TableCell>Rol</TableCell>
+                <TableCell>Estado</TableCell>
+                {userStatusTab === 1 && <TableCell>Fecha Baja</TableCell>}
+                {userStatusTab === 1 && <TableCell>Motivo Baja</TableCell>}
+                <TableCell align="center">Acciones</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {users.filter(u => userStatusTab === 0 ? u.activo : !u.activo).map((u) => (
               <TableRow key={u.id}>
                 <TableCell>{u.id}</TableCell>
                 <TableCell>{u.username}</TableCell>
@@ -615,9 +714,136 @@ const Users = () => {
                 </TableCell>
               </TableRow>
             ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableBody>
+          </Table>
+        </TableContainer>
+      ) : (
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>ID</TableCell>
+                <TableCell>Empleado</TableCell>
+                <TableCell>Fecha Solicitud</TableCell>
+                <TableCell>Período</TableCell>
+                <TableCell>Tipo</TableCell>
+                <TableCell>Días</TableCell>
+                <TableCell>Estado</TableCell>
+                <TableCell>Observaciones</TableCell>
+                <TableCell align="center">Acciones</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {solicitudesVacaciones.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={9} align="center">
+                    <Typography variant="body1" color="text.secondary" sx={{ py: 3 }}>
+                      No hay solicitudes de vacaciones.
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                solicitudesVacaciones.map((solicitud) => (
+                  <TableRow key={solicitud.id}>
+                    <TableCell>{solicitud.id}</TableCell>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight="bold">
+                        {solicitud.empleado?.nombre_completo || 'N/A'}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {solicitud.empleado?.email || ''}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(solicitud.fecha_solicitud).toLocaleDateString('es-MX')}
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">
+                        {new Date(solicitud.fecha_inicio).toLocaleDateString('es-MX')}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        al {new Date(solicitud.fecha_fin).toLocaleDateString('es-MX')}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip 
+                        label={getTipoSolicitudLabel(solicitud.tipo)} 
+                        size="small" 
+                        variant="outlined"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="h6" color="primary">
+                        {solicitud.cantidad}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={solicitud.estado}
+                        color={getEstadoSolicitudColor(solicitud.estado)}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell sx={{ maxWidth: 200 }}>
+                      <Tooltip title={solicitud.observaciones || 'Sin observaciones'}>
+                        <span>
+                          {solicitud.observaciones 
+                            ? (solicitud.observaciones.length > 30 
+                              ? solicitud.observaciones.substring(0, 30) + '...' 
+                              : solicitud.observaciones)
+                            : '-'}
+                        </span>
+                      </Tooltip>
+                    </TableCell>
+                    <TableCell align="center">
+                      {solicitud.estado === 'PENDIENTE' && (
+                        <>
+                          <Tooltip title="Aprobar">
+                            <IconButton
+                              color="success"
+                              onClick={() => handleOpenApprovalDialog(solicitud, 'aprobar')}
+                            >
+                              <ApproveIcon />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Rechazar">
+                            <IconButton
+                              color="error"
+                              onClick={() => handleOpenApprovalDialog(solicitud, 'rechazar')}
+                            >
+                              <RejectIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      )}
+                      {solicitud.estado === 'APROBADA' && (
+                        <>
+                          <Tooltip title="Descargar PDF">
+                            <IconButton
+                              color="primary"
+                              onClick={() => handleDownloadPDF(solicitud.id)}
+                            >
+                              <PdfIcon />
+                            </IconButton>
+                          </Tooltip>
+                          <Typography variant="caption" color="text.secondary" display="block">
+                            Aprobada por {solicitud.aprobada_por?.nombre_completo || 'N/A'}
+                          </Typography>
+                        </>
+                      )}
+                      {solicitud.estado === 'RECHAZADA' && (
+                        <Typography variant="caption" color="text.secondary">
+                          Rechazada: {solicitud.motivo_rechazo || 'Sin motivo'}
+                        </Typography>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
 
       {/* Diálogo de Crear/Editar Usuario */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
@@ -1022,7 +1248,7 @@ const Users = () => {
                         🏖️ Días de Vacaciones (Ley Federal del Trabajo)
                       </Typography>
                       <Grid container spacing={2}>
-                        <Grid item xs={12} sm={3}>
+                        <Grid item xs={12} sm={4}>
                           <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'white', borderRadius: 1 }}>
                             <Typography variant="body2" color="text.secondary">
                               Días por Año
@@ -1032,7 +1258,7 @@ const Users = () => {
                             </Typography>
                           </Box>
                         </Grid>
-                        <Grid item xs={12} sm={3}>
+                        <Grid item xs={12} sm={4}>
                           <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'white', borderRadius: 1 }}>
                             <Typography variant="body2" color="text.secondary">
                               Días Disponibles
@@ -1042,23 +1268,13 @@ const Users = () => {
                             </Typography>
                           </Box>
                         </Grid>
-                        <Grid item xs={12} sm={3}>
+                        <Grid item xs={12} sm={4}>
                           <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'white', borderRadius: 1 }}>
                             <Typography variant="body2" color="text.secondary">
                               Días Tomados
                             </Typography>
                             <Typography variant="h4" color="warning.main" fontWeight="bold">
                               {editingUser.dias_vacaciones_tomados || 0}
-                            </Typography>
-                          </Box>
-                        </Grid>
-                        <Grid item xs={12} sm={3}>
-                          <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'white', borderRadius: 1 }}>
-                            <Typography variant="body2" color="text.secondary">
-                              Días Pendientes
-                            </Typography>
-                            <Typography variant="h4" color="info.main" fontWeight="bold">
-                              {editingUser.dias_vacaciones_pendientes_anios_anteriores || 0}
                             </Typography>
                           </Box>
                         </Grid>
@@ -1267,6 +1483,102 @@ const Users = () => {
             disabled={!motivoBaja.trim()}
           >
             Desactivar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal de Aprobar/Rechazar Solicitud de Vacaciones */}
+      <Dialog
+        open={openApprovalDialog}
+        onClose={handleCloseApprovalDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ bgcolor: approvalAction === 'aprobar' ? 'success.main' : 'error.main', color: 'white', textAlign: 'center' }}>
+          {approvalAction === 'aprobar' ? '✓ Aprobar Solicitud' : '✗ Rechazar Solicitud'}
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          {solicitudToApprove && (
+            <Box>
+              <Paper sx={{ p: 2, mb: 2, bgcolor: 'grey.100' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Empleado:
+                </Typography>
+                <Typography variant="h6">
+                  {solicitudToApprove.empleado?.nombre_completo || 'N/A'}
+                </Typography>
+                <Divider sx={{ my: 1 }} />
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">
+                      Período:
+                    </Typography>
+                    <Typography variant="body1">
+                      {new Date(solicitudToApprove.fecha_inicio).toLocaleDateString('es-MX')} - {new Date(solicitudToApprove.fecha_fin).toLocaleDateString('es-MX')}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">
+                      Días solicitados:
+                    </Typography>
+                    <Typography variant="h5" color="primary">
+                      {solicitudToApprove.cantidad}
+                    </Typography>
+                  </Grid>
+                  {solicitudToApprove.observaciones && (
+                    <Grid item xs={12}>
+                      <Typography variant="body2" color="text.secondary">
+                        Observaciones:
+                      </Typography>
+                      <Typography variant="body1">
+                        {solicitudToApprove.observaciones}
+                      </Typography>
+                    </Grid>
+                  )}
+                </Grid>
+              </Paper>
+
+              {approvalAction === 'aprobar' ? (
+                <Alert severity="success">
+                  <Typography variant="body2">
+                    Al aprobar esta solicitud, se descontarán automáticamente <strong>{solicitudToApprove.cantidad} días</strong> de las vacaciones disponibles del empleado.
+                  </Typography>
+                </Alert>
+              ) : (
+                <TextField
+                  label="Motivo de Rechazo *"
+                  multiline
+                  rows={4}
+                  value={motivoRechazo}
+                  onChange={(e) => setMotivoRechazo(e.target.value)}
+                  fullWidth
+                  required
+                  placeholder="Explica el motivo del rechazo..."
+                  helperText="Este campo es obligatorio"
+                  sx={{ mt: 2 }}
+                />
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', pb: 3, gap: 2 }}>
+          <Button
+            onClick={handleCloseApprovalDialog}
+            variant="outlined"
+            color="inherit"
+            size="large"
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleConfirmApproval}
+            variant="contained"
+            color={approvalAction === 'aprobar' ? 'success' : 'error'}
+            size="large"
+            startIcon={approvalAction === 'aprobar' ? <ApproveIcon /> : <RejectIcon />}
+            disabled={approvalAction === 'rechazar' && !motivoRechazo.trim()}
+          >
+            {approvalAction === 'aprobar' ? 'Aprobar' : 'Rechazar'}
           </Button>
         </DialogActions>
       </Dialog>

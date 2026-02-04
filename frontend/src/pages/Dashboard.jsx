@@ -1,6 +1,7 @@
-import { Container, Paper, Typography, Box, Chip, Grid, Card, CardContent, CardActions, Button } from '@mui/material';
+import { Container, Paper, Typography, Box, Chip, Grid, Card, CardContent, Collapse, IconButton } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import Layout from '../components/Layout';
 import {
   Dashboard as DashboardIcon,
@@ -8,12 +9,17 @@ import {
   AdminPanelSettings,
   Build,
   Receipt,
-  People
+  People,
+  PersonAdd,
+  BeachAccess,
+  ExpandMore,
+  ExpandLess
 } from '@mui/icons-material';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [userInfoExpanded, setUserInfoExpanded] = useState(false);
 
   const getRolColor = (rol) => {
     const colors = {
@@ -58,53 +64,73 @@ const Dashboard = () => {
         </Paper>
 
       {/* Información del usuario */}
-      <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Información del Usuario
-        </Typography>
-        <Box sx={{ mt: 2 }}>
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="body2" color="text.secondary">
-              Usuario
-            </Typography>
-            <Typography variant="body1">
-              {user?.username}
-            </Typography>
-          </Box>
-          
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="body2" color="text.secondary">
-              Email
-            </Typography>
-            <Typography variant="body1">
-              {user?.email}
-            </Typography>
-          </Box>
-          
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="body2" color="text.secondary">
-              Rol
-            </Typography>
-            <Chip
-              icon={getRolIcon(user?.rol)}
-              label={user?.rol?.toUpperCase()}
-              color={getRolColor(user?.rol)}
-              sx={{ mt: 0.5 }}
-            />
-          </Box>
-          
-          <Box>
-            <Typography variant="body2" color="text.secondary">
-              Estado
-            </Typography>
-            <Chip
-              label={user?.activo ? 'ACTIVO' : 'INACTIVO'}
-              color={user?.activo ? 'success' : 'error'}
-              size="small"
-              sx={{ mt: 0.5 }}
-            />
-          </Box>
+      <Paper elevation={2} sx={{ mb: 3 }}>
+        <Box 
+          sx={{ 
+            p: 2, 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            cursor: 'pointer',
+            '&:hover': {
+              bgcolor: 'action.hover'
+            }
+          }}
+          onClick={() => setUserInfoExpanded(!userInfoExpanded)}
+        >
+          <Typography variant="h6">
+            Información del Usuario
+          </Typography>
+          <IconButton size="small">
+            {userInfoExpanded ? <ExpandLess /> : <ExpandMore />}
+          </IconButton>
         </Box>
+        
+        <Collapse in={userInfoExpanded}>
+          <Box sx={{ p: 3, pt: 0 }}>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                Usuario
+              </Typography>
+              <Typography variant="body1">
+                {user?.username}
+              </Typography>
+            </Box>
+            
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                Email
+              </Typography>
+              <Typography variant="body1">
+                {user?.email}
+              </Typography>
+            </Box>
+            
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                Rol
+              </Typography>
+              <Chip
+                icon={getRolIcon(user?.rol)}
+                label={user?.rol?.toUpperCase()}
+                color={getRolColor(user?.rol)}
+                sx={{ mt: 0.5 }}
+              />
+            </Box>
+            
+            <Box>
+              <Typography variant="body2" color="text.secondary">
+                Estado
+              </Typography>
+              <Chip
+                label={user?.activo ? 'ACTIVO' : 'INACTIVO'}
+                color={user?.activo ? 'success' : 'error'}
+                size="small"
+                sx={{ mt: 0.5 }}
+              />
+            </Box>
+          </Box>
+        </Collapse>
       </Paper>
 
       {/* Módulos disponibles */}
@@ -116,7 +142,17 @@ const Dashboard = () => {
           {/* Gestión de Usuarios - Solo ADMIN */}
           {user?.rol === 'ADMIN' && (
             <Grid item xs={12} sm={6} md={4}>
-              <Card>
+              <Card 
+                sx={{ 
+                  cursor: 'pointer',
+                  transition: 'all 0.3s',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: 6
+                  }
+                }}
+                onClick={() => navigate('/users')}
+              >
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <People sx={{ fontSize: 40, color: 'primary.main', mr: 2 }} />
@@ -125,18 +161,94 @@ const Dashboard = () => {
                     </Typography>
                   </Box>
                   <Typography variant="body2" color="text.secondary">
-                    Gestión de usuarios y roles del sistema
+                    Gestión de usuarios, roles y recursos humanos
                   </Typography>
                 </CardContent>
-                <CardActions>
-                  <Button 
-                    size="small" 
-                    onClick={() => navigate('/users')}
-                    variant="contained"
-                  >
-                    Acceder
-                  </Button>
-                </CardActions>
+              </Card>
+            </Grid>
+          )}
+
+          {/* Mis Vacaciones - Todos los usuarios */}
+          <Grid item xs={12} sm={6} md={4}>
+            <Card 
+              sx={{ 
+                cursor: 'pointer',
+                transition: 'all 0.3s',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: 6
+                }
+              }}
+              onClick={() => navigate('/vacaciones')}
+            >
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <BeachAccess sx={{ fontSize: 40, color: 'success.main', mr: 2 }} />
+                  <Typography variant="h6">
+                    Mis Vacaciones
+                  </Typography>
+                </Box>
+                <Typography variant="body2" color="text.secondary">
+                  Solicitar y gestionar tus días de vacaciones
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Clientes - ADMIN y RECEPCION */}
+          {(user?.rol === 'ADMIN' || user?.rol === 'RECEPCION') && (
+            <Grid item xs={12} sm={6} md={4}>
+              <Card 
+                sx={{ 
+                  cursor: 'pointer',
+                  transition: 'all 0.3s',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: 6
+                  }
+                }}
+                onClick={() => navigate('/clientes')}
+              >
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <PersonAdd sx={{ fontSize: 40, color: 'secondary.main', mr: 2 }} />
+                    <Typography variant="h6">
+                      Clientes
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary">
+                    Gestión de clientes y base de datos
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          )}
+
+          {/* Órdenes de Trabajo - ADMIN, RECEPCION y TECNICO */}
+          {(user?.rol === 'ADMIN' || user?.rol === 'RECEPCION' || user?.rol === 'TECNICO') && (
+            <Grid item xs={12} sm={6} md={4}>
+              <Card 
+                sx={{ 
+                  cursor: 'pointer',
+                  transition: 'all 0.3s',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: 6
+                  }
+                }}
+                onClick={() => navigate('/ordenes')}
+              >
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Build sx={{ fontSize: 40, color: 'primary.main', mr: 2 }} />
+                    <Typography variant="h6">
+                      Órdenes de Trabajo
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary">
+                    Gestión de servicios y reparaciones
+                  </Typography>
+                </CardContent>
               </Card>
             </Grid>
           )}
@@ -147,8 +259,6 @@ const Dashboard = () => {
               Próximos módulos disponibles:
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
-              <Chip label="Clientes" variant="outlined" />
-              <Chip label="Órdenes de Trabajo" variant="outlined" />
               <Chip label="Materiales" variant="outlined" />
               <Chip label="Pagos" variant="outlined" />
               <Chip label="Gastos" variant="outlined" />

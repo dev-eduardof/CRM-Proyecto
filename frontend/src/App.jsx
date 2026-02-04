@@ -6,6 +6,9 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Users from './pages/Users';
+import Vacaciones from './pages/Vacaciones';
+import Clientes from './pages/Clientes';
+import Ordenes from './pages/Ordenes';
 // import Recepcion from './pages/Recepcion';
 // import Tecnicos from './pages/Tecnicos';
 // import Caja from './pages/Caja';
@@ -43,6 +46,30 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['ADMIN']}>
                   <Users />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/vacaciones"
+              element={
+                <ProtectedRoute>
+                  <Vacaciones />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/clientes"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN', 'RECEPCION']}>
+                  <Clientes />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/ordenes"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN', 'RECEPCION', 'TECNICO']}>
+                  <Ordenes />
                 </ProtectedRoute>
               }
             />

@@ -38,6 +38,7 @@ services:
     volumes:
       - ./backend:/app
       - ./uploads:/app/uploads
+      - ./frontend/dist:/frontend/dist
     depends_on:
       db:
         condition: service_healthy

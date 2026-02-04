@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from fastapi.responses import FileResponse
+from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from datetime import date, datetime
+import os
 from app.database import get_db
 from app.models.user import User
 from app.models.solicitud_vacaciones import SolicitudVacaciones, EstadoSolicitudEnum
@@ -12,6 +14,7 @@ from app.schemas.solicitud_vacaciones import (
     SolicitudVacacionesResponse
 )
 from app.core.dependencies import get_current_active_user, require_role
+from app.utils.pdf_generator import generar_pdf_solicitud_vacaciones
 
 router = APIRouter(
     prefix="/vacaciones",
@@ -35,7 +38,10 @@ def get_solicitudes_vacaciones(
     - Los empleados solo ven sus propias solicitudes
     - Los ADMIN pueden ver todas las solicitudes
     """
-    query = db.query(SolicitudVacaciones)
+    query = db.query(SolicitudVacaciones).options(
+        joinedload(SolicitudVacaciones.empleado),
+        joinedload(SolicitudVacaciones.aprobada_por)
+    )
     
     # Si no es ADMIN, solo puede ver sus propias solicitudes
     if current_user.rol.value != "ADMIN":
@@ -58,8 +64,35 @@ def get_solicitudes_vacaciones(
     result = []
     for solicitud in solicitudes:
         solicitud_dict = SolicitudVacacionesResponse.from_orm(solicitud).dict()
-        solicitud_dict['empleado_nombre'] = solicitud.empleado.nombre_completo
-        if solicitud.aprobada_por_id:
+        solicitud_dict['empleado_nombre'] = solicitud.empleado.nombre_completo if solicitud.empleado else 'N/A'
+        if solicitud.aprobada_por_id and solicitud.aprobada_por:
+            solicitud_dict['aprobada_por_nombre'] = solicitud.aprobada_por.nombre_completo
+        result.append(solicitud_dict)
+    
+    return result
+
+
+@router.get("/mis-solicitudes", response_model=List[SolicitudVacacionesResponse])
+def get_mis_solicitudes(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Obtener las solicitudes de vacaciones del usuario actual
+    """
+    solicitudes = db.query(SolicitudVacaciones).options(
+        joinedload(SolicitudVacaciones.empleado),
+        joinedload(SolicitudVacaciones.aprobada_por)
+    ).filter(
+        SolicitudVacaciones.empleado_id == current_user.id
+    ).order_by(SolicitudVacaciones.fecha_solicitud.desc()).all()
+    
+    # Agregar nombres
+    result = []
+    for solicitud in solicitudes:
+        solicitud_dict = SolicitudVacacionesResponse.from_orm(solicitud).dict()
+        solicitud_dict['empleado_nombre'] = solicitud.empleado.nombre_completo if solicitud.empleado else current_user.nombre_completo
+        if solicitud.aprobada_por_id and solicitud.aprobada_por:
             solicitud_dict['aprobada_por_nombre'] = solicitud.aprobada_por.nombre_completo
         result.append(solicitud_dict)
     
@@ -200,7 +233,10 @@ def aprobar_rechazar_solicitud(
     """
     Aprobar o rechazar una solicitud de vacaciones (solo ADMIN o JEFE_TALLER)
     """
-    solicitud = db.query(SolicitudVacaciones).filter(SolicitudVacaciones.id == solicitud_id).first()
+    solicitud = db.query(SolicitudVacaciones).options(
+        joinedload(SolicitudVacaciones.empleado),
+        joinedload(SolicitudVacaciones.aprobada_por)
+    ).filter(SolicitudVacaciones.id == solicitud_id).first()
     
     if not solicitud:
         raise HTTPException(status_code=404, detail="Solicitud no encontrada")
@@ -220,6 +256,14 @@ def aprobar_rechazar_solicitud(
         empleado.dias_vacaciones_tomados += int(solicitud.cantidad)
         empleado.actualizar_dias_vacaciones()
         db.add(empleado)
+        
+        # Generar PDF
+        try:
+            pdf_path = generar_pdf_solicitud_vacaciones(solicitud, empleado, current_user)
+            solicitud.pdf_url = pdf_path
+        except Exception as e:
+            print(f"Error al generar PDF: {e}")
+            # No fallar la aprobación si hay error en el PDF
     else:
         # Rechazar
         solicitud.estado = EstadoSolicitudEnum.RECHAZADA
@@ -231,7 +275,63 @@ def aprobar_rechazar_solicitud(
     db.commit()
     db.refresh(solicitud)
     
-    return solicitud
+    # Agregar nombres para la respuesta
+    result = SolicitudVacacionesResponse.from_orm(solicitud).dict()
+    result['empleado_nombre'] = solicitud.empleado.nombre_completo if solicitud.empleado else 'N/A'
+    if solicitud.aprobada_por_id and solicitud.aprobada_por:
+        result['aprobada_por_nombre'] = solicitud.aprobada_por.nombre_completo
+    
+    return result
+
+
+@router.get("/{solicitud_id}/pdf")
+def descargar_pdf_solicitud(
+    solicitud_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Descargar el PDF de una solicitud de vacaciones
+    """
+    solicitud = db.query(SolicitudVacaciones).options(
+        joinedload(SolicitudVacaciones.empleado),
+        joinedload(SolicitudVacaciones.aprobada_por)
+    ).filter(SolicitudVacaciones.id == solicitud_id).first()
+    
+    if not solicitud:
+        raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+    
+    # Solo el empleado, el aprobador o un ADMIN pueden descargar
+    if (current_user.rol.value != "ADMIN" and 
+        solicitud.empleado_id != current_user.id and 
+        solicitud.aprobada_por_id != current_user.id):
+        raise HTTPException(status_code=403, detail="No tienes permiso para descargar este PDF")
+    
+    # Si no existe el PDF, generarlo
+    if not solicitud.pdf_url or not os.path.exists(solicitud.pdf_url):
+        try:
+            pdf_path = generar_pdf_solicitud_vacaciones(
+                solicitud, 
+                solicitud.empleado, 
+                solicitud.aprobada_por if solicitud.aprobada_por_id else None
+            )
+            solicitud.pdf_url = pdf_path
+            db.add(solicitud)
+            db.commit()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error al generar PDF: {str(e)}")
+    
+    # Verificar que el archivo existe
+    if not os.path.exists(solicitud.pdf_url):
+        raise HTTPException(status_code=404, detail="Archivo PDF no encontrado")
+    
+    # Retornar el archivo
+    filename = f"solicitud_vacaciones_{solicitud.id}.pdf"
+    return FileResponse(
+        path=solicitud.pdf_url,
+        media_type='application/pdf',
+        filename=filename
+    )
 
 
 @router.delete("/{solicitud_id}", status_code=status.HTTP_204_NO_CONTENT)
