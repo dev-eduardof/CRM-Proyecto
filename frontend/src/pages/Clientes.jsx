@@ -40,9 +40,12 @@ import {
   Business as BusinessIcon,
   Phone as PhoneIcon,
   Email as EmailIcon,
-  Home as HomeIcon
+  Home as HomeIcon,
+  LocationOn as LocationIcon,
+  Store as StoreIcon
 } from '@mui/icons-material';
 import axios from 'axios';
+import { sucursalesAPI } from '../services/api';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -88,6 +91,26 @@ const Clientes = () => {
   const [openSuccessDialog, setOpenSuccessDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [clienteToDelete, setClienteToDelete] = useState(null);
+  
+  // Estados para sucursales
+  const [sucursales, setSucursales] = useState([]);
+  const [openSucursalDialog, setOpenSucursalDialog] = useState(false);
+  const [editingSucursal, setEditingSucursal] = useState(null);
+  const [sucursalFormData, setSucursalFormData] = useState({
+    nombre_sucursal: '',
+    codigo_sucursal: '',
+    telefono: '',
+    telefono_alternativo: '',
+    email: '',
+    calle: '',
+    numero_exterior: '',
+    numero_interior: '',
+    colonia: '',
+    codigo_postal: '',
+    ciudad: '',
+    estado: '',
+    notas: ''
+  });
 
   useEffect(() => {
     loadClientes();
@@ -111,7 +134,140 @@ const Clientes = () => {
     }
   };
 
-  const handleOpenDialog = (cliente = null) => {
+  const loadSucursales = async (clienteId) => {
+    try {
+      const response = await sucursalesAPI.getByCliente(clienteId);
+      setSucursales(response.data);
+    } catch (err) {
+      console.error('Error al cargar sucursales:', err);
+      setSucursales([]);
+    }
+  };
+
+  const handleOpenSucursalDialog = (sucursal = null) => {
+    if (sucursal) {
+      setEditingSucursal(sucursal);
+      setSucursalFormData({
+        nombre_sucursal: sucursal.nombre_sucursal || '',
+        codigo_sucursal: sucursal.codigo_sucursal || '',
+        telefono: sucursal.telefono || '',
+        telefono_alternativo: sucursal.telefono_alternativo || '',
+        email: sucursal.email || '',
+        calle: sucursal.calle || '',
+        numero_exterior: sucursal.numero_exterior || '',
+        numero_interior: sucursal.numero_interior || '',
+        colonia: sucursal.colonia || '',
+        codigo_postal: sucursal.codigo_postal || '',
+        ciudad: sucursal.ciudad || '',
+        estado: sucursal.estado || '',
+        notas: sucursal.notas || ''
+      });
+    } else {
+      setEditingSucursal(null);
+      setSucursalFormData({
+        nombre_sucursal: '',
+        codigo_sucursal: '',
+        telefono: '',
+        telefono_alternativo: '',
+        email: '',
+        calle: '',
+        numero_exterior: '',
+        numero_interior: '',
+        colonia: '',
+        codigo_postal: '',
+        ciudad: '',
+        estado: '',
+        notas: ''
+      });
+    }
+    setOpenSucursalDialog(true);
+  };
+
+  const handleCloseSucursalDialog = () => {
+    setOpenSucursalDialog(false);
+    setEditingSucursal(null);
+    setSucursalFormData({
+      nombre_sucursal: '',
+      codigo_sucursal: '',
+      telefono: '',
+      telefono_alternativo: '',
+      email: '',
+      calle: '',
+      numero_exterior: '',
+      numero_interior: '',
+      colonia: '',
+      codigo_postal: '',
+      ciudad: '',
+      estado: '',
+      notas: ''
+    });
+  };
+
+  const handleSucursalChange = (e) => {
+    const { name, value } = e.target;
+    setSucursalFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSaveSucursal = async () => {
+    try {
+      if (!editingCliente) {
+        setError('Debes guardar el cliente primero antes de agregar sucursales');
+        setTimeout(() => setError(''), 5000);
+        return;
+      }
+
+      if (!sucursalFormData.nombre_sucursal || !sucursalFormData.telefono) {
+        setError('El nombre de la sucursal y el teléfono son obligatorios');
+        setTimeout(() => setError(''), 5000);
+        return;
+      }
+
+      const sucursalData = {
+        ...sucursalFormData,
+        cliente_id: editingCliente.id
+      };
+
+      if (editingSucursal) {
+        await sucursalesAPI.update(editingSucursal.id, sucursalData);
+        setSuccessMessage('Sucursal actualizada correctamente');
+      } else {
+        await sucursalesAPI.create(sucursalData);
+        setSuccessMessage('Sucursal creada correctamente');
+      }
+
+      await loadSucursales(editingCliente.id);
+      handleCloseSucursalDialog();
+      setOpenSuccessDialog(true);
+      setTimeout(() => setOpenSuccessDialog(false), 2000);
+    } catch (err) {
+      console.error('Error al guardar sucursal:', err);
+      setError(err.response?.data?.detail || 'Error al guardar la sucursal');
+      setTimeout(() => setError(''), 5000);
+    }
+  };
+
+  const handleDeleteSucursal = async (sucursalId) => {
+    if (!window.confirm('¿Estás seguro de eliminar esta sucursal?')) {
+      return;
+    }
+
+    try {
+      await sucursalesAPI.delete(sucursalId);
+      await loadSucursales(editingCliente.id);
+      setSuccessMessage('Sucursal eliminada correctamente');
+      setOpenSuccessDialog(true);
+      setTimeout(() => setOpenSuccessDialog(false), 2000);
+    } catch (err) {
+      console.error('Error al eliminar sucursal:', err);
+      setError(err.response?.data?.detail || 'Error al eliminar la sucursal');
+      setTimeout(() => setError(''), 5000);
+    }
+  };
+
+  const handleOpenDialog = async (cliente = null) => {
     if (cliente) {
       setEditingCliente(cliente);
       setFormData({
@@ -136,6 +292,8 @@ const Clientes = () => {
         preferencias: cliente.preferencias || '',
         activo: cliente.activo
       });
+      // Cargar sucursales del cliente
+      await loadSucursales(cliente.id);
     } else {
       setEditingCliente(null);
       setFormData({
@@ -510,6 +668,7 @@ const Clientes = () => {
                 <Tab label="Información Básica" />
                 <Tab label="Dirección" />
                 <Tab label="Notas" />
+                <Tab label="Sucursales" disabled={!editingCliente} />
               </Tabs>
             </Box>
 
@@ -729,6 +888,105 @@ const Clientes = () => {
                 />
               </Box>
             )}
+
+            {/* Tab 3: Sucursales */}
+            {tabValue === 3 && editingCliente && (
+              <Box sx={{ mt: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <StoreIcon /> Sucursales del Cliente
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={() => handleOpenSucursalDialog()}
+                    size="small"
+                  >
+                    Agregar Sucursal
+                  </Button>
+                </Box>
+
+                {sucursales.length === 0 ? (
+                  <Alert severity="info">
+                    Este cliente no tiene sucursales registradas. Haz clic en "Agregar Sucursal" para crear una.
+                  </Alert>
+                ) : (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {sucursales.map((sucursal) => (
+                      <Paper key={sucursal.id} sx={{ p: 2, border: '1px solid', borderColor: 'divider' }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <Box sx={{ flex: 1 }}>
+                            <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                              <LocationIcon color="primary" />
+                              {sucursal.nombre_sucursal}
+                              {sucursal.codigo_sucursal && (
+                                <Chip label={sucursal.codigo_sucursal} size="small" color="primary" variant="outlined" />
+                              )}
+                            </Typography>
+                            
+                            <Grid container spacing={2}>
+                              <Grid item xs={12} sm={6}>
+                                <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                  <PhoneIcon fontSize="small" />
+                                  <strong>Teléfono:</strong> {sucursal.telefono}
+                                </Typography>
+                                {sucursal.telefono_alternativo && (
+                                  <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                                    <PhoneIcon fontSize="small" />
+                                    <strong>Tel. Alt:</strong> {sucursal.telefono_alternativo}
+                                  </Typography>
+                                )}
+                                {sucursal.email && (
+                                  <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                                    <EmailIcon fontSize="small" />
+                                    {sucursal.email}
+                                  </Typography>
+                                )}
+                              </Grid>
+                              <Grid item xs={12} sm={6}>
+                                {sucursal.direccion_completa && sucursal.direccion_completa !== 'Sin dirección registrada' && (
+                                  <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                                    <HomeIcon fontSize="small" />
+                                    <span>{sucursal.direccion_completa}</span>
+                                  </Typography>
+                                )}
+                              </Grid>
+                            </Grid>
+                            
+                            {sucursal.notas && (
+                              <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontStyle: 'italic' }}>
+                                {sucursal.notas}
+                              </Typography>
+                            )}
+                          </Box>
+                          
+                          <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Tooltip title="Editar">
+                              <IconButton
+                                size="small"
+                                color="primary"
+                                onClick={() => handleOpenSucursalDialog(sucursal)}
+                              >
+                                <EditIcon />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Eliminar">
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => handleDeleteSucursal(sucursal.id)}
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        </Box>
+                      </Paper>
+                    ))}
+                  </Box>
+                )}
+              </Box>
+            )}
           </DialogContent>
           <DialogActions sx={{ p: 3 }}>
             <Button onClick={handleCloseDialog} color="inherit">
@@ -835,6 +1093,188 @@ const Clientes = () => {
               startIcon={<DeleteIcon />}
             >
               Desactivar
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Diálogo de Crear/Editar Sucursal */}
+        <Dialog open={openSucursalDialog} onClose={handleCloseSucursalDialog} maxWidth="md" fullWidth>
+          <DialogTitle>
+            {editingSucursal ? 'Editar Sucursal' : 'Nueva Sucursal'}
+          </DialogTitle>
+          <DialogContent>
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" color="primary" sx={{ mb: 1, fontWeight: 'bold' }}>
+                  Información de la Sucursal
+                </Typography>
+              </Grid>
+              
+              <Grid item xs={12} sm={8}>
+                <TextField
+                  fullWidth
+                  label="Nombre de la Sucursal *"
+                  name="nombre_sucursal"
+                  value={sucursalFormData.nombre_sucursal}
+                  onChange={handleSucursalChange}
+                  required
+                  placeholder="Ej: Sucursal Centro, Planta Norte"
+                />
+              </Grid>
+              
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label="Código"
+                  name="codigo_sucursal"
+                  value={sucursalFormData.codigo_sucursal}
+                  onChange={handleSucursalChange}
+                  placeholder="SUC-001"
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" color="primary" sx={{ mb: 1, fontWeight: 'bold' }}>
+                  Información de Contacto
+                </Typography>
+              </Grid>
+              
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Teléfono *"
+                  name="telefono"
+                  value={sucursalFormData.telefono}
+                  onChange={handleSucursalChange}
+                  required
+                  inputProps={{ maxLength: 15 }}
+                />
+              </Grid>
+              
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Teléfono Alternativo"
+                  name="telefono_alternativo"
+                  value={sucursalFormData.telefono_alternativo}
+                  onChange={handleSucursalChange}
+                  inputProps={{ maxLength: 15 }}
+                />
+              </Grid>
+              
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Email"
+                  name="email"
+                  type="email"
+                  value={sucursalFormData.email}
+                  onChange={handleSucursalChange}
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" color="primary" sx={{ mb: 1, fontWeight: 'bold' }}>
+                  Dirección
+                </Typography>
+              </Grid>
+              
+              <Grid item xs={12} sm={8}>
+                <TextField
+                  fullWidth
+                  label="Calle"
+                  name="calle"
+                  value={sucursalFormData.calle}
+                  onChange={handleSucursalChange}
+                />
+              </Grid>
+              
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label="Número"
+                  name="numero_exterior"
+                  value={sucursalFormData.numero_exterior}
+                  onChange={handleSucursalChange}
+                />
+              </Grid>
+              
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label="Número Interior"
+                  name="numero_interior"
+                  value={sucursalFormData.numero_interior}
+                  onChange={handleSucursalChange}
+                />
+              </Grid>
+              
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label="Colonia"
+                  name="colonia"
+                  value={sucursalFormData.colonia}
+                  onChange={handleSucursalChange}
+                />
+              </Grid>
+              
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label="Código Postal"
+                  name="codigo_postal"
+                  value={sucursalFormData.codigo_postal}
+                  onChange={handleSucursalChange}
+                  inputProps={{ maxLength: 5 }}
+                />
+              </Grid>
+              
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Ciudad"
+                  name="ciudad"
+                  value={sucursalFormData.ciudad}
+                  onChange={handleSucursalChange}
+                />
+              </Grid>
+              
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Estado"
+                  name="estado"
+                  value={sucursalFormData.estado}
+                  onChange={handleSucursalChange}
+                />
+              </Grid>
+              
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Notas"
+                  name="notas"
+                  value={sucursalFormData.notas}
+                  onChange={handleSucursalChange}
+                  multiline
+                  rows={3}
+                  placeholder="Información adicional sobre la sucursal..."
+                />
+              </Grid>
+            </Grid>
+          </DialogContent>
+          <DialogActions sx={{ p: 3 }}>
+            <Button onClick={handleCloseSucursalDialog} color="inherit">
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSaveSucursal}
+              variant="contained"
+              color="primary"
+              startIcon={editingSucursal ? <EditIcon /> : <AddIcon />}
+            >
+              {editingSucursal ? 'Actualizar' : 'Crear'}
             </Button>
           </DialogActions>
         </Dialog>

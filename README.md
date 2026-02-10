@@ -1,306 +1,242 @@
-# 🚗 Sistema CRM para Talleres
+# CRM Talleres - Sistema de Gestión
 
-Sistema de gestión de relaciones con clientes (CRM) diseñado específicamente para talleres mecánicos.
+Sistema completo de CRM para gestión de talleres con módulos de clientes, órdenes de trabajo, sucursales, usuarios, vacaciones e incidencias.
 
-## 📋 Requisitos Previos
+## 🏗️ Arquitectura
 
-- **Git** instalado
-- **Docker** y **Docker Compose** instalados
-- Puertos disponibles: `3000` (Frontend), `8000` (Backend), `3306` (MariaDB), `8080` (Adminer)
+- **Backend**: FastAPI (Python 3.11)
+- **Frontend**: React + Vite + Material-UI
+- **Base de datos**: MariaDB 10.6
+- **Despliegue**: Docker + Docker Compose
 
-## 🚀 Instalación Rápida
+## 🌍 Ambientes
 
-### 1. Clonar el Repositorio
-
-```bash
-git clone https://github.com/eduardofelixlopez/CRM-Proyecto.git
-cd CRM-Proyecto
+```
+desarrollo (local) → testeo/QA (local) → main (AWS Producción)
 ```
 
-### 2. Configurar Variables de Entorno
+- **desarrollo**: Ambiente local de desarrollo con cambios frecuentes
+- **testeo**: Ambiente local de QA para pruebas antes de producción
+- **main**: Ambiente de producción en AWS con despliegue automático
 
-Crea el archivo `.env` en la raíz del proyecto:
+## 🚀 CI/CD Pipeline
+
+El proyecto cuenta con despliegue continuo automático a producción:
+
+- **DEV y QA**: Ambientes locales usando Docker Compose
+- **Producción**: Push a `main` → Despliega automáticamente a AWS
+
+Ver [CICD_SETUP.md](CICD_SETUP.md) para configuración completa.
+
+## 📋 Requisitos
+
+### Para Desarrollo Local
+- Docker y Docker Compose
+- Git
+- Node.js 18+ (opcional, para desarrollo frontend)
+- Python 3.11+ (opcional, para desarrollo backend)
+
+### Para Servidor de Producción
+- 1 servidor AWS (producción)
+- Ubuntu 22.04 LTS
+- Docker y Docker Compose
+- Ver [INFRAESTRUCTURA.md](INFRAESTRUCTURA.md)
+
+## 🛠️ Instalación Local
 
 ```bash
-# Copiar el archivo de ejemplo
+# Clonar repositorio
+git clone https://github.com/TU_REPO/crm-proyecto.git
+cd crm-proyecto
+
+# Copiar variables de entorno
 cp .env.example .env
+# Editar .env con tus valores
+
+# Iniciar con Docker
+docker-compose up -d
+
+# Acceder a:
+# Frontend: http://localhost:3000
+# Backend: http://localhost:8000/docs
+# Adminer: http://localhost:8080
 ```
 
-Edita el archivo `.env` con tus valores (o usa los valores por defecto para desarrollo):
+## 📦 Despliegue
 
-```env
-# Database
-MYSQL_ROOT_PASSWORD=tu_password_seguro
-MYSQL_DATABASE=crm_talleres
-MYSQL_USER=crm_user
-MYSQL_PASSWORD=tu_password_usuario
+### Desarrollo y QA Local
 
+```bash
+# Iniciar ambiente local
+docker-compose up -d
+
+# Acceder a:
+# Frontend: http://localhost:3000
+# Backend: http://localhost:8000/docs
+```
+
+### Configuración del Servidor de Producción
+
+```bash
+# Conectar al servidor AWS
+ssh -i clave.pem ubuntu@IP_SERVIDOR
+
+# Ejecutar setup
+./setup-server.sh
+
+# Clonar proyecto
+cd ~/crm-proyecto
+git clone https://github.com/TU_REPO/crm-proyecto.git .
+git checkout main
+
+# Configurar .env
+nano .env
+
+# Iniciar
+./deploy.sh start
+```
+
+### Flujo de Trabajo
+
+#### 1. Desarrollo Local
+```bash
+git checkout desarrollo
+# Hacer cambios y probar localmente
+docker-compose up -d
+# Hacer pruebas
+git add .
+git commit -m "feat: nueva funcionalidad"
+git push origin desarrollo
+```
+
+#### 2. QA Local
+```bash
+git checkout testeo
+git merge desarrollo
+# Probar en ambiente local de QA
+docker-compose up -d
+# Hacer pruebas de calidad
+```
+
+#### 3. Desplegar a Producción
+```bash
+# Opción A: Usar script (recomendado)
+# Windows
+.\scripts\promote-to-production.ps1
+
+# Linux/Mac
+./scripts/promote-to-production.sh
+
+# Opción B: Manual
+git checkout main
+git merge testeo
+git push origin main
+# ✅ Se despliega automáticamente a AWS
+```
+
+## 🔧 Comandos Útiles
+
+```bash
+# Iniciar aplicación
+./deploy.sh start
+
+# Ver logs
+./deploy.sh logs
+
+# Ver estado
+./deploy.sh status
+
+# Reiniciar
+./deploy.sh restart
+
+# Detener
+./deploy.sh stop
+
+# Actualizar
+./deploy.sh update
+
+# Backup de BD
+./deploy.sh backup
+
+# Limpiar Docker
+./deploy.sh clean
+```
+
+## 📁 Estructura del Proyecto
+
+```
+crm-proyecto/
+├── backend/              # API FastAPI
+│   ├── app/
+│   │   ├── api/v1/      # Endpoints
+│   │   ├── models/      # Modelos SQLAlchemy
+│   │   ├── schemas/     # Schemas Pydantic
+│   │   └── main.py      # Aplicación principal
+│   ├── Dockerfile
+│   └── Dockerfile.prod
+├── frontend/            # Aplicación React
+│   ├── src/
+│   │   ├── components/  # Componentes reutilizables
+│   │   ├── pages/       # Páginas
+│   │   └── services/    # Servicios API
+│   ├── Dockerfile
+│   └── Dockerfile.prod
+├── database/            # Scripts SQL
+├── scripts/             # Scripts de utilidad
+├── config/              # Configuraciones por ambiente
+├── .github/workflows/   # CI/CD
+├── docker-compose.yml   # Desarrollo
+├── docker-compose.prod.yml  # Producción
+└── deploy.sh           # Script de despliegue
+```
+
+## 🔐 Configuración de Secrets
+
+Ver [CICD_SETUP.md](CICD_SETUP.md) para configurar los secrets en GitHub.
+
+## 📚 Documentación
+
+- [CICD_SETUP.md](CICD_SETUP.md) - Configuración del pipeline CI/CD
+- [INFRAESTRUCTURA.md](INFRAESTRUCTURA.md) - Especificaciones de servidores
+- [config/](config/) - Ejemplos de configuración por ambiente
+
+## 🧪 Testing
+
+```bash
 # Backend
-DATABASE_URL=mysql+pymysql://crm_user:tu_password_usuario@db:3306/crm_talleres
-SECRET_KEY=tu_clave_secreta_muy_larga_y_segura
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
+cd backend
+pytest
 
 # Frontend
-REACT_APP_API_URL=http://localhost:8000
-```
-
-### 3. Iniciar el Proyecto con Docker
-
-```bash
-docker-compose up -d
-```
-
-Este comando iniciará:
-- 🗄️ **MariaDB** en el puerto `3306`
-- 🐍 **Backend (FastAPI)** en el puerto `8000`
-- ⚛️ **Frontend (React)** en el puerto `3000`
-- 🔧 **Adminer** en el puerto `8080`
-
-### 4. Verificar que Todo Esté Funcionando
-
-```bash
-docker-compose ps
-```
-
-Deberías ver todos los servicios en estado `Up`.
-
-### 5. Acceder a la Aplicación
-
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8000
-- **API Docs**: http://localhost:8000/docs
-- **Adminer (DB Manager)**: http://localhost:8080
-
-### 6. Credenciales Iniciales
-
-**Usuario Administrador por defecto:**
-- **Usuario**: `ADMIN`
-- **Contraseña**: `admin123`
-
-⚠️ **IMPORTANTE**: Cambia estas credenciales después del primer inicio de sesión.
-
-## 📦 Estructura del Proyecto
-
-```
-CRM-Proyecto/
-├── backend/                 # API FastAPI
-│   ├── app/
-│   │   ├── api/            # Endpoints
-│   │   ├── core/           # Configuración y seguridad
-│   │   ├── models/         # Modelos de base de datos
-│   │   ├── schemas/        # Esquemas Pydantic
-│   │   └── services/       # Lógica de negocio
-│   ├── requirements.txt
-│   └── Dockerfile
-├── frontend/               # Aplicación React
-│   ├── src/
-│   │   ├── components/    # Componentes reutilizables
-│   │   ├── contexts/      # Context API
-│   │   ├── pages/         # Páginas principales
-│   │   └── services/      # Servicios API
-│   ├── package.json
-│   └── Dockerfile
-├── database/              # Scripts SQL
-├── docs/                  # Documentación
-├── docker-compose.yml
-└── .env.example
-```
-
-## 🛠️ Comandos Útiles
-
-### Ver logs de los servicios
-
-```bash
-# Todos los servicios
-docker-compose logs -f
-
-# Solo backend
-docker-compose logs -f backend
-
-# Solo frontend
-docker-compose logs -f frontend
-```
-
-### Detener los servicios
-
-```bash
-docker-compose down
-```
-
-### Detener y eliminar volúmenes (⚠️ elimina la base de datos)
-
-```bash
-docker-compose down -v
-```
-
-### Reiniciar un servicio específico
-
-```bash
-docker-compose restart backend
-docker-compose restart frontend
-```
-
-### Reconstruir los contenedores
-
-```bash
-docker-compose up -d --build
-```
-
-### Acceder a la base de datos
-
-```bash
-docker-compose exec db mysql -u root -p
-```
-
-## 🔧 Instalación Local (Sin Docker)
-
-### Backend
-
-```bash
-cd backend
-
-# Crear entorno virtual
-python -m venv venv
-
-# Activar entorno virtual
-# Windows:
-venv\Scripts\activate
-# Linux/Mac:
-source venv/bin/activate
-
-# Instalar dependencias
-pip install -r requirements.txt
-
-# Configurar .env (ajustar DATABASE_URL para tu MySQL local)
-
-# Iniciar servidor
-python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-### Frontend
-
-```bash
 cd frontend
-
-# Instalar dependencias
-npm install
-
-# Iniciar servidor de desarrollo
-npm start
+npm test
 ```
 
-### Base de Datos
+## 📊 Monitoreo
 
-```bash
-# Crear base de datos
-mysql -u root -p
+- **Health check**: `/api/health`
+- **Documentación API**: `/docs`
+- **Logs**: `./deploy.sh logs`
 
-CREATE DATABASE crm_talleres;
+## 🤝 Contribución
 
-# Ejecutar script de inicialización
-mysql -u root -p crm_talleres < database/init.sql
-```
+1. Crea una rama desde `desarrollo`
+2. Haz tus cambios
+3. Crea un Pull Request a `desarrollo`
+4. Después de revisión, se mergea y despliega automáticamente
 
-## 👥 Roles de Usuario
+## 📝 Licencia
 
-El sistema incluye los siguientes roles:
+Privado - Todos los derechos reservados
 
-- **ADMIN**: Administrador con acceso total
-- **TECNICO**: Técnico mecánico
-- **RECEPCION**: Personal de recepción
-- **CAJA**: Cajero
-- **AUXILIAR**: Personal auxiliar
-- **JEFE_TALLER**: Jefe de taller
+## 👥 Equipo
 
-## 🔒 Seguridad
+- Desarrollo: [Tu equipo]
+- DevOps: [Tu equipo]
 
-- Autenticación mediante JWT (JSON Web Tokens)
-- Contraseñas hasheadas con bcrypt
-- Protección CORS configurada
-- Rutas protegidas por roles
-- Validación de datos con Pydantic
+## 🆘 Soporte
 
-## 📚 Documentación API
-
-Una vez iniciado el backend, puedes acceder a la documentación interactiva:
-
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
-
-## 🐛 Solución de Problemas
-
-### El contenedor de backend no inicia
-
-```bash
-# Ver logs detallados
-docker-compose logs backend
-
-# Verificar que el puerto 8000 no esté en uso
-netstat -ano | findstr :8000  # Windows
-lsof -i :8000                 # Linux/Mac
-```
-
-### El contenedor de frontend no inicia
-
-```bash
-# Ver logs detallados
-docker-compose logs frontend
-
-# Verificar que el puerto 3000 no esté en uso
-netstat -ano | findstr :3000  # Windows
-lsof -i :3000                 # Linux/Mac
-```
-
-### Error de conexión a la base de datos
-
-```bash
-# Verificar que MariaDB esté corriendo
-docker-compose ps
-
-# Verificar logs de la base de datos
-docker-compose logs db
-
-# Reiniciar el servicio de base de datos
-docker-compose restart db
-```
-
-### Resetear la base de datos
-
-```bash
-# Detener servicios
-docker-compose down
-
-# Eliminar volúmenes
-docker volume rm crm-proyecto_mysql_data
-
-# Iniciar nuevamente
-docker-compose up -d
-```
-
-## 🔄 Ramas del Repositorio
-
-- **main**: Rama de producción (estable)
-- **desarrollo**: Rama de desarrollo (nuevas características)
-- **testeo**: Rama de pruebas
-
-## 📝 Contribuir
-
-1. Clona el repositorio
-2. Crea una rama desde `desarrollo`
-3. Realiza tus cambios
-4. Haz commit con mensajes descriptivos
-5. Push a tu rama
-6. Crea un Pull Request a `desarrollo`
-
-## 📧 Contacto
-
-Para soporte o consultas: eduardofelixlopez@gmail.com
-
-## 📄 Licencia
-
-Este proyecto es privado y de uso interno.
-
----
-
-**¡Listo para usar! 🚀**
+Para problemas o preguntas:
+1. Revisa los logs: `./deploy.sh logs`
+2. Consulta la documentación
+3. Abre un issue en GitHub

@@ -38,6 +38,7 @@ class OrdenTrabajo(Base):
     
     # Relaciones
     cliente_id = Column(Integer, ForeignKey("clientes.id"), nullable=False, index=True)
+    sucursal_id = Column(Integer, ForeignKey("sucursales.id"), nullable=True, index=True)
     categoria_id = Column(Integer, ForeignKey("categorias_orden.id"), nullable=True, index=True)
     subcategoria_id = Column(Integer, ForeignKey("subcategorias_orden.id"), nullable=True, index=True)
     usuario_recepcion_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)
@@ -48,6 +49,10 @@ class OrdenTrabajo(Base):
     observaciones = Column(Text, nullable=True)  # Observaciones adicionales
     foto_entrada = Column(String(255), nullable=True)  # Ruta de la foto de la pieza
     foto_salida = Column(String(255), nullable=True)  # Ruta de la foto del trabajo terminado
+    
+    # Información de contacto para notificaciones
+    nombre_contacto_notificacion = Column(String(200), nullable=True)  # Nombre del contacto para notificar
+    telefono_contacto_notificacion = Column(String(15), nullable=True)  # Teléfono del contacto para notificar
     
     # Tipo de permiso/documento
     tipo_permiso = Column(SQLEnum(TipoPermisoEnum), nullable=True)
@@ -75,6 +80,7 @@ class OrdenTrabajo(Base):
     
     # Relaciones
     cliente = relationship("Cliente", backref="ordenes_trabajo")
+    sucursal = relationship("Sucursal", back_populates="ordenes_trabajo")
     categoria = relationship("CategoriaOrden", backref="ordenes")
     subcategoria = relationship("SubcategoriaOrden", backref="ordenes")
     usuario_recepcion = relationship("User", foreign_keys=[usuario_recepcion_id], backref="ordenes_recepcionadas")

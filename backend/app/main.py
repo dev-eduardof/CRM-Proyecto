@@ -5,7 +5,7 @@ import os
 import pathlib
 
 # Importar routers
-from app.api.v1 import auth, users, vacaciones, incidencias, clientes, ordenes
+from app.api.v1 import auth, users, vacaciones, incidencias, clientes, ordenes, sucursales
 
 app = FastAPI(
     title="CRM Talleres API",
@@ -33,10 +33,12 @@ app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 
 # Health check
 @app.get("/health")
+@app.get("/api/health")
 def health_check():
     return {
-        "status": "healthy",
-        "service": "crm-talleres-backend"
+        "status": "ok",
+        "service": "crm-talleres-backend",
+        "version": "1.0.0"
     }
 
 # Incluir routers ANTES de montar el frontend
@@ -45,6 +47,7 @@ app.include_router(users.router, prefix="/api/v1")
 app.include_router(vacaciones.router, prefix="/api/v1")
 app.include_router(incidencias.router, prefix="/api/v1")
 app.include_router(clientes.router, prefix="/api/v1")
+app.include_router(sucursales.router, prefix="/api/v1")
 app.include_router(ordenes.router, prefix="/api/v1")
 
 # Servir frontend estático al final (debe ser lo último)

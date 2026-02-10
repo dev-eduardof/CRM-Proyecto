@@ -89,6 +89,16 @@ export const clientesAPI = {
   delete: (id) => api.delete(`/api/v1/clientes/${id}`)
 };
 
+// API de sucursales
+export const sucursalesAPI = {
+  getAll: (params) => api.get('/api/v1/sucursales', { params }),
+  getById: (id) => api.get(`/api/v1/sucursales/${id}`),
+  getByCliente: (clienteId) => api.get('/api/v1/sucursales', { params: { cliente_id: clienteId } }),
+  create: (sucursalData) => api.post('/api/v1/sucursales', sucursalData),
+  update: (id, sucursalData) => api.put(`/api/v1/sucursales/${id}`, sucursalData),
+  delete: (id) => api.delete(`/api/v1/sucursales/${id}`)
+};
+
 // API de órdenes de trabajo
 export const ordenesAPI = {
   getAll: (params) => api.get('/api/v1/ordenes', { params }),

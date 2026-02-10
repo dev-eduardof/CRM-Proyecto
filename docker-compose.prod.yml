@@ -5,10 +5,10 @@ services:
     container_name: crm_db
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
-      MYSQL_DATABASE: ${DB_NAME:-crm_talleres}
-      MYSQL_USER: ${DB_USER:-crm_user}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-crm_password}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
       - "3306:3306"
     volumes:
@@ -25,46 +25,40 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.prod
     container_name: crm_backend
     restart: always
     environment:
-      DATABASE_URL: mysql+pymysql://${DB_USER:-crm_user}:${DB_PASSWORD:-crm_password}@db:3306/${DB_NAME:-crm_talleres}
-      SECRET_KEY: ${SECRET_KEY:-tu-secret-key-super-segura-cambiala}
-      ALGORITHM: HS256
-      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      DATABASE_URL: mysql+pymysql://${DB_USER}:${DB_PASSWORD}@db:3306/${DB_NAME}
+      SECRET_KEY: ${SECRET_KEY}
+      ALGORITHM: ${ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/app
       - ./uploads:/app/uploads
-      - ./frontend/dist:/frontend/dist
     depends_on:
       db:
         condition: service_healthy
     networks:
       - crm_network
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
 
   # Frontend React
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.prod
+      args:
+        VITE_API_URL: ${VITE_API_URL}
     container_name: crm_frontend
     restart: always
-    environment:
-      VITE_API_URL: 
     ports:
-      - "3000:3000"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      - "3000:80"
     depends_on:
       - backend
     networks:
       - crm_network
-    command: npm run dev -- --host
 
   # Adminer (opcional - para gestión de BD)
   adminer:

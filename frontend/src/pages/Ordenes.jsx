@@ -45,13 +45,15 @@ import {
   Close as CloseIcon
 } from '@mui/icons-material';
 import Layout from '../components/Layout';
-import { ordenesAPI, clientesAPI, usersAPI } from '../services/api';
+import ImageEditor from '../components/ImageEditor';
+import { ordenesAPI, clientesAPI, usersAPI, sucursalesAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const Ordenes = () => {
   const { user } = useAuth();
   const [ordenes, setOrdenes] = useState([]);
   const [clientes, setClientes] = useState([]);
+  const [sucursales, setSucursales] = useState([]);
   const [tecnicos, setTecnicos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [subcategorias, setSubcategorias] = useState([]);
@@ -69,17 +71,26 @@ const Ordenes = () => {
   const [selectedOrden, setSelectedOrden] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   
-  // Foto states
-  const [fotoEntrada, setFotoEntrada] = useState(null);
+  // Foto states - Múltiples secciones (foto + información)
+  const [seccionesFotos, setSeccionesFotos] = useState([{
+    id: Date.now(),
+    foto: null,
+    preview: null,
+    trabajo_realizar: '',
+    medidas_especificaciones: ''
+  }]);
   const [fotoSalida, setFotoSalida] = useState(null);
-  const [fotoEntradaPreview, setFotoEntradaPreview] = useState(null);
   const [fotoSalidaPreview, setFotoSalidaPreview] = useState(null);
   const fileInputRef = useRef(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const [currentFotoType, setCurrentFotoType] = useState('');
+  const [currentSeccionIndex, setCurrentSeccionIndex] = useState(0);
   const [showCamera, setShowCamera] = useState(false);
   const [stream, setStream] = useState(null);
+  const [openImageEditor, setOpenImageEditor] = useState(false);
+  const [editingImageUrl, setEditingImageUrl] = useState(null);
+  const [editingImageIndex, setEditingImageIndex] = useState(null);
   
   // Cliente nuevo states
   const [esClienteNuevo, setEsClienteNuevo] = useState(false);
@@ -89,14 +100,31 @@ const Ordenes = () => {
     telefono: ''
   });
   
+  // Sucursal nueva states
+  const [openSucursalDialog, setOpenSucursalDialog] = useState(false);
+  const [nuevaSucursalData, setNuevaSucursalData] = useState({
+    nombre_sucursal: '',
+    codigo_sucursal: '',
+    telefono: '',
+    nombre_contacto: '',
+    calle: '',
+    numero_exterior: '',
+    colonia: '',
+    ciudad: '',
+    estado: ''
+  });
+  
   // Form data
   const [formData, setFormData] = useState({
     cliente_id: '',
+    sucursal_id: '',
     categoria_id: '',
     subcategoria_id: '',
     tecnico_asignado_id: '',
     descripcion: '',
     observaciones: '',
+    nombre_contacto_notificacion: '',
+    telefono_contacto_notificacion: '',
     tipo_permiso: '',
     numero_permiso: '',
     precio_estimado: '',
@@ -198,6 +226,16 @@ const Ordenes = () => {
     }
   };
 
+  const fetchSucursales = async (clienteId) => {
+    try {
+      const response = await sucursalesAPI.getByCliente(clienteId);
+      setSucursales(response.data);
+    } catch (err) {
+      console.error('Error al cargar sucursales:', err);
+      setSucursales([]);
+    }
+  };
+
   const fetchTecnicos = async () => {
     try {
       const response = await usersAPI.getAll();
@@ -233,11 +271,14 @@ const Ordenes = () => {
       setSelectedOrden(orden);
       setFormData({
         cliente_id: orden.cliente_id || '',
+        sucursal_id: orden.sucursal_id || '',
         categoria_id: orden.categoria_id || '',
         subcategoria_id: orden.subcategoria_id || '',
         tecnico_asignado_id: orden.tecnico_asignado_id || '',
         descripcion: orden.descripcion || '',
         observaciones: orden.observaciones || '',
+        nombre_contacto_notificacion: orden.nombre_contacto_notificacion || '',
+        telefono_contacto_notificacion: orden.telefono_contacto_notificacion || '',
         tipo_permiso: orden.tipo_permiso || '',
         numero_permiso: orden.numero_permiso || '',
         precio_estimado: orden.precio_estimado || '',
@@ -250,16 +291,22 @@ const Ordenes = () => {
       if (orden.categoria_id) {
         fetchSubcategorias(orden.categoria_id);
       }
+      if (orden.cliente_id) {
+        fetchSucursales(orden.cliente_id);
+      }
     } else {
       setIsEditing(false);
       setSelectedOrden(null);
       setFormData({
         cliente_id: '',
+        sucursal_id: '',
         categoria_id: '',
         subcategoria_id: '',
         tecnico_asignado_id: '',
         descripcion: '',
         observaciones: '',
+        nombre_contacto_notificacion: '',
+        telefono_contacto_notificacion: '',
         tipo_permiso: '',
         numero_permiso: '',
         precio_estimado: '',
@@ -270,6 +317,7 @@ const Ordenes = () => {
         fecha_promesa: ''
       });
       setSubcategorias([]);
+      setSucursales([]);
     }
     setOpenDialog(true);
   };
@@ -278,9 +326,14 @@ const Ordenes = () => {
     setOpenDialog(false);
     setSelectedOrden(null);
     setIsEditing(false);
-    setFotoEntrada(null);
+    setSeccionesFotos([{
+      id: Date.now(),
+      foto: null,
+      preview: null,
+      trabajo_realizar: '',
+      medidas_especificaciones: ''
+    }]);
     setFotoSalida(null);
-    setFotoEntradaPreview(null);
     setFotoSalidaPreview(null);
     setEsClienteNuevo(false);
     setNuevoClienteData({ nombre: '', apellido_paterno: '', telefono: '' });
@@ -293,6 +346,94 @@ const Ordenes = () => {
       fetchSubcategorias(categoriaId);
     } else {
       setSubcategorias([]);
+    }
+  };
+
+  const handleClienteChange = (clienteId) => {
+    setFormData({ ...formData, cliente_id: clienteId, sucursal_id: '' });
+    if (clienteId) {
+      fetchSucursales(clienteId);
+    } else {
+      setSucursales([]);
+    }
+  };
+
+  const handleOpenSucursalDialog = () => {
+    setNuevaSucursalData({
+      nombre_sucursal: '',
+      codigo_sucursal: '',
+      telefono: '',
+      nombre_contacto: '',
+      calle: '',
+      numero_exterior: '',
+      colonia: '',
+      ciudad: '',
+      estado: ''
+    });
+    setOpenSucursalDialog(true);
+  };
+
+  const handleCloseSucursalDialog = () => {
+    setOpenSucursalDialog(false);
+    setNuevaSucursalData({
+      nombre_sucursal: '',
+      codigo_sucursal: '',
+      telefono: '',
+      nombre_contacto: '',
+      calle: '',
+      numero_exterior: '',
+      colonia: '',
+      ciudad: '',
+      estado: ''
+    });
+  };
+
+  const handleCreateSucursal = async () => {
+    try {
+      if (!formData.cliente_id) {
+        setError('Debes seleccionar un cliente primero');
+        setTimeout(() => setError(''), 5000);
+        return;
+      }
+
+      if (!nuevaSucursalData.nombre_sucursal || !nuevaSucursalData.telefono || !nuevaSucursalData.nombre_contacto) {
+        setError('Por favor completa los campos obligatorios: Nombre de sucursal, Teléfono y Nombre de contacto');
+        setTimeout(() => setError(''), 5000);
+        return;
+      }
+
+      const sucursalData = {
+        cliente_id: formData.cliente_id,
+        nombre_sucursal: nuevaSucursalData.nombre_sucursal,
+        codigo_sucursal: nuevaSucursalData.codigo_sucursal || null,
+        telefono: nuevaSucursalData.telefono,
+        calle: nuevaSucursalData.calle || null,
+        numero_exterior: nuevaSucursalData.numero_exterior || null,
+        colonia: nuevaSucursalData.colonia || null,
+        ciudad: nuevaSucursalData.ciudad || null,
+        estado: nuevaSucursalData.estado || null,
+        activo: true
+      };
+
+      const response = await sucursalesAPI.create(sucursalData);
+      
+      // Actualizar la lista de sucursales
+      await fetchSucursales(formData.cliente_id);
+      
+      // Seleccionar automáticamente la nueva sucursal
+      setFormData({ 
+        ...formData, 
+        sucursal_id: response.data.id,
+        nombre_contacto_notificacion: nuevaSucursalData.nombre_contacto,
+        telefono_contacto_notificacion: nuevaSucursalData.telefono
+      });
+      
+      setSuccess('Sucursal creada correctamente');
+      handleCloseSucursalDialog();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Error al crear la sucursal');
+      setTimeout(() => setError(''), 5000);
     }
   };
 
@@ -357,9 +498,24 @@ const Ordenes = () => {
         }
       }
       
+      // Compilar información de todas las secciones
+      let descripcionCompleta = '';
+      seccionesFotos.forEach((seccion, index) => {
+        if (seccion.trabajo_realizar || seccion.medidas_especificaciones) {
+          descripcionCompleta += `\n=== PRODUCTO ${index + 1} ===\n`;
+          if (seccion.trabajo_realizar) {
+            descripcionCompleta += `Trabajo a Realizar:\n${seccion.trabajo_realizar}\n\n`;
+          }
+          if (seccion.medidas_especificaciones) {
+            descripcionCompleta += `Medidas y Especificaciones:\n${seccion.medidas_especificaciones}\n\n`;
+          }
+        }
+      });
+
       const dataToSend = {
         ...formData,
         cliente_id: clienteId,
+        descripcion: descripcionCompleta.trim() || formData.descripcion,
         precio_estimado: formData.precio_estimado ? parseFloat(formData.precio_estimado) : null,
         anticipo: parseFloat(formData.anticipo) || 0,
         precio_final: formData.precio_final ? parseFloat(formData.precio_final) : null,
@@ -375,9 +531,12 @@ const Ordenes = () => {
         const response = await ordenesAPI.create(dataToSend);
         setSuccess('Orden creada correctamente');
         
-        // Si hay fotos, subirlas
-        if (fotoEntrada) {
-          await handleUploadFoto(response.data.id, 'entrada', fotoEntrada);
+        // Si hay fotos de entrada, subirlas todas
+        const fotosConArchivo = seccionesFotos.filter(s => s.foto);
+        if (fotosConArchivo.length > 0) {
+          for (const seccion of fotosConArchivo) {
+            await handleUploadFoto(response.data.id, 'entrada', seccion.foto);
+          }
         }
         if (fotoSalida) {
           await handleUploadFoto(response.data.id, 'salida', fotoSalida);
@@ -408,30 +567,37 @@ const Ordenes = () => {
     }
   };
 
-  const handleFotoChange = (tipo) => {
-    setCurrentFotoType(tipo);
-    fileInputRef.current.click();
-  };
-
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (currentFotoType === 'entrada') {
-          setFotoEntrada(file);
-          setFotoEntradaPreview(reader.result);
-        } else {
+      if (currentFotoType === 'entrada') {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setSeccionesFotos(prev => {
+            const newSecciones = [...prev];
+            newSecciones[currentSeccionIndex] = {
+              ...newSecciones[currentSeccionIndex],
+              foto: file,
+              preview: reader.result
+            };
+            return newSecciones;
+          });
+        };
+        reader.readAsDataURL(file);
+      } else {
+        const reader = new FileReader();
+        reader.onloadend = () => {
           setFotoSalida(file);
           setFotoSalidaPreview(reader.result);
-        }
-      };
-      reader.readAsDataURL(file);
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 
-  const startCamera = async (tipo) => {
+  const startCamera = async (tipo, seccionIndex = 0) => {
     setCurrentFotoType(tipo);
+    setCurrentSeccionIndex(seccionIndex);
     setShowCamera(true);
     
     try {
@@ -477,8 +643,15 @@ const Ordenes = () => {
         const preview = canvas.toDataURL('image/jpeg');
         
         if (currentFotoType === 'entrada') {
-          setFotoEntrada(file);
-          setFotoEntradaPreview(preview);
+          setSeccionesFotos(prev => {
+            const newSecciones = [...prev];
+            newSecciones[currentSeccionIndex] = {
+              ...newSecciones[currentSeccionIndex],
+              foto: file,
+              preview: preview
+            };
+            return newSecciones;
+          });
         } else {
           setFotoSalida(file);
           setFotoSalidaPreview(preview);
@@ -491,14 +664,88 @@ const Ordenes = () => {
     }
   };
 
-  const removeFoto = (tipo) => {
+  const removeFoto = (tipo, index = null) => {
     if (tipo === 'entrada') {
-      setFotoEntrada(null);
-      setFotoEntradaPreview(null);
+      if (index !== null) {
+        setSeccionesFotos(prev => {
+          const newSecciones = [...prev];
+          newSecciones[index] = {
+            ...newSecciones[index],
+            foto: null,
+            preview: null
+          };
+          return newSecciones;
+        });
+      }
     } else {
       setFotoSalida(null);
       setFotoSalidaPreview(null);
     }
+  };
+
+  const agregarSeccionFoto = () => {
+    setSeccionesFotos(prev => [...prev, {
+      id: Date.now(),
+      foto: null,
+      preview: null,
+      trabajo_realizar: '',
+      medidas_especificaciones: ''
+    }]);
+  };
+
+  const eliminarSeccionFoto = (index) => {
+    if (seccionesFotos.length > 1) {
+      setSeccionesFotos(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  const actualizarInfoSeccion = (index, field, value) => {
+    setSeccionesFotos(prev => {
+      const newSecciones = [...prev];
+      newSecciones[index] = {
+        ...newSecciones[index],
+        [field]: value
+      };
+      return newSecciones;
+    });
+  };
+
+  const handleFotoChange = (seccionIndex) => {
+    setCurrentSeccionIndex(seccionIndex);
+    setCurrentFotoType('entrada');
+    fileInputRef.current.click();
+  };
+
+  const handleEditImage = (seccionIndex) => {
+    const seccion = seccionesFotos[seccionIndex];
+    console.log('Editando imagen de sección:', seccionIndex);
+    console.log('Sección:', seccion);
+    console.log('Preview existe:', !!seccion.preview);
+    console.log('Preview length:', seccion.preview?.length);
+    
+    if (seccion && seccion.preview) {
+      setEditingImageUrl(seccion.preview);
+      setEditingImageIndex(seccionIndex);
+      setOpenImageEditor(true);
+      console.log('Editor abierto con URL:', seccion.preview.substring(0, 50) + '...');
+    } else {
+      console.error('No hay preview disponible para esta sección');
+    }
+  };
+
+  const handleSaveEditedImage = (file, preview) => {
+    setSeccionesFotos(prev => {
+      const newSecciones = [...prev];
+      newSecciones[editingImageIndex] = {
+        ...newSecciones[editingImageIndex],
+        foto: file,
+        preview: preview
+      };
+      return newSecciones;
+    });
+    setOpenImageEditor(false);
+    setEditingImageUrl(null);
+    setEditingImageIndex(null);
   };
 
   const handleDelete = async (ordenId) => {
@@ -770,9 +1017,8 @@ const Ordenes = () => {
               }}
             >
               <Tab label="Información General" />
-              <Tab label="Detalles del Trabajo" />
               <Tab label="Costos" />
-              <Tab label="Fotos" />
+              <Tab label="Foto de Entrada" />
             </Tabs>
 
             {/* Tab 1: Información General */}
@@ -806,7 +1052,7 @@ const Ordenes = () => {
                       getOptionLabel={(option) => option.nombre_completo || ''}
                       value={clientes.find(c => c.id === formData.cliente_id) || null}
                       onChange={(event, newValue) => {
-                        setFormData({ ...formData, cliente_id: newValue ? newValue.id : '' });
+                        handleClienteChange(newValue ? newValue.id : '');
                       }}
                       renderOption={(props, option) => (
                         <Box component="li" {...props} key={option.id}>
@@ -877,6 +1123,72 @@ const Ordenes = () => {
                     </Grid>
                   </>
                 )}
+                
+                {/* Selector de Sucursal */}
+                {!esClienteNuevo && formData.cliente_id && (
+                  <>
+                    <Grid item xs={12} sm={sucursales.length === 0 ? 8 : 12}>
+                      <TextField
+                        select
+                        fullWidth
+                        label="Sucursal"
+                        value={formData.sucursal_id}
+                        onChange={(e) => setFormData({ ...formData, sucursal_id: e.target.value })}
+                        helperText={sucursales.length === 0 ? "Este cliente no tiene sucursales registradas" : "Selecciona la sucursal del cliente"}
+                      >
+                        <MenuItem value="">Sin sucursal específica</MenuItem>
+                        {sucursales.map((sucursal) => (
+                          <MenuItem key={sucursal.id} value={sucursal.id}>
+                            {sucursal.nombre_sucursal} {sucursal.codigo_sucursal ? `(${sucursal.codigo_sucursal})` : ''}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    </Grid>
+                    {sucursales.length === 0 && (
+                      <Grid item xs={12} sm={4}>
+                        <Button
+                          fullWidth
+                          variant="outlined"
+                          color="primary"
+                          startIcon={<AddIcon />}
+                          onClick={handleOpenSucursalDialog}
+                          sx={{ height: '56px' }}
+                        >
+                          Agregar Sucursal
+                        </Button>
+                      </Grid>
+                    )}
+                  </>
+                )}
+                
+                {/* Campos de Contacto para Notificaciones */}
+                <Grid item xs={12}>
+                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                    Contacto para Notificaciones
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Nombre del Contacto"
+                    value={formData.nombre_contacto_notificacion}
+                    onChange={(e) => setFormData({ ...formData, nombre_contacto_notificacion: e.target.value })}
+                    placeholder="Nombre de quien recibirá notificaciones"
+                    helperText="Persona a quien se notificará sobre el estado de la orden"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Teléfono del Contacto"
+                    value={formData.telefono_contacto_notificacion}
+                    onChange={(e) => setFormData({ ...formData, telefono_contacto_notificacion: e.target.value })}
+                    placeholder="Teléfono para notificaciones"
+                    inputProps={{ maxLength: 15 }}
+                    helperText="Número de teléfono para enviar notificaciones"
+                  />
+                </Grid>
+                
                 <Grid item xs={12} sm={6}>
                   <TextField
                     select
@@ -999,12 +1311,13 @@ const Ordenes = () => {
                     InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
-              </Grid>
-            )}
-
-            {/* Tab 2: Detalles del Trabajo */}
-            {tabValue === 1 && (
-              <Grid container spacing={2} sx={{ mt: 1 }}>
+                
+                {/* Detalles del Trabajo */}
+                <Grid item xs={12}>
+                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, mt: 2 }}>
+                    Detalles del Trabajo
+                  </Typography>
+                </Grid>
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
@@ -1031,8 +1344,8 @@ const Ordenes = () => {
               </Grid>
             )}
 
-            {/* Tab 3: Costos */}
-            {tabValue === 2 && (
+            {/* Tab 1: Costos */}
+            {tabValue === 1 && (
               <Grid container spacing={2} sx={{ mt: 1 }}>
                 <Grid item xs={12} sm={4}>
                   <TextField
@@ -1080,114 +1393,188 @@ const Ordenes = () => {
               </Grid>
             )}
 
-            {/* Tab 4: Fotos */}
-            {tabValue === 3 && (
+            {/* Tab 2: Foto de Entrada */}
+            {tabValue === 2 && (
               <Grid container spacing={2} sx={{ mt: 1 }}>
                 {!showCamera ? (
                   <>
-                    <Grid item xs={12} sm={6}>
-                      <Paper sx={{ p: 2, textAlign: 'center' }}>
-                        <Typography variant="h6" gutterBottom>
-                          Foto de Entrada
-                        </Typography>
-                        <ButtonGroup variant="outlined" fullWidth sx={{ mb: 2 }}>
-                          <Button
-                            startIcon={<PhotoCameraIcon />}
-                            onClick={() => startCamera('entrada')}
-                          >
-                            Tomar Foto
-                          </Button>
-                          <Button
-                            startIcon={<ImageIcon />}
-                            onClick={() => handleFotoChange('entrada')}
-                          >
-                            Seleccionar
-                          </Button>
-                        </ButtonGroup>
-                        {fotoEntradaPreview ? (
-                          <Box sx={{ position: 'relative' }}>
-                            <img 
-                              src={fotoEntradaPreview} 
-                              alt="Foto de entrada" 
-                              style={{ width: '100%', maxHeight: 300, objectFit: 'contain', borderRadius: 8 }}
-                            />
-                            <IconButton
-                              sx={{ position: 'absolute', top: 8, right: 8, bgcolor: 'background.paper' }}
-                              onClick={() => removeFoto('entrada')}
-                              size="small"
-                            >
-                              <CloseIcon />
-                            </IconButton>
-                          </Box>
-                        ) : (
-                          <Box sx={{ 
-                            border: '2px dashed', 
-                            borderColor: 'grey.300', 
-                            borderRadius: 2, 
-                            p: 4,
-                            bgcolor: 'grey.50'
-                          }}>
-                            <PhotoCameraIcon sx={{ fontSize: 60, color: 'grey.400' }} />
-                            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                              Sin foto
+                    {/* Título */}
+                    <Grid item xs={12}>
+                      <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <PhotoCameraIcon color="primary" />
+                        Fotos e Información del Producto
+                      </Typography>
+                    </Grid>
+
+                    {/* Secciones de Foto + Información */}
+                    {seccionesFotos.map((seccion, index) => (
+                      <Grid item xs={12} key={seccion.id}>
+                        <Paper sx={{ p: 2, border: '2px solid', borderColor: 'primary.light' }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                            <Typography variant="subtitle1" fontWeight="bold" color="primary">
+                              Producto {index + 1}
                             </Typography>
+                            {seccionesFotos.length > 1 && (
+                              <IconButton
+                                color="error"
+                                size="small"
+                                onClick={() => eliminarSeccionFoto(index)}
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            )}
                           </Box>
-                        )}
+
+                          <Grid container spacing={2}>
+                            {/* Columna Izquierda: Foto */}
+                            <Grid item xs={12} md={5}>
+                              <Box sx={{ textAlign: 'center' }}>
+                                <ButtonGroup variant="outlined" fullWidth size="small" sx={{ mb: 2 }}>
+                                  <Button
+                                    startIcon={<PhotoCameraIcon />}
+                                    onClick={() => startCamera('entrada', index)}
+                                  >
+                                    Tomar
+                                  </Button>
+                                  <Button
+                                    startIcon={<ImageIcon />}
+                                    onClick={() => handleFotoChange(index)}
+                                  >
+                                    Seleccionar
+                                  </Button>
+                                </ButtonGroup>
+
+                                {seccion.preview ? (
+                                  <Box sx={{ position: 'relative' }}>
+                                    <img 
+                                      src={seccion.preview} 
+                                      alt={`Producto ${index + 1}`}
+                                      style={{ 
+                                        width: '100%', 
+                                        height: 250, 
+                                        objectFit: 'cover', 
+                                        borderRadius: 8,
+                                        border: '1px solid #ddd'
+                                      }}
+                                    />
+                                    <Box sx={{ 
+                                      position: 'absolute', 
+                                      top: 8, 
+                                      right: 8,
+                                      display: 'flex',
+                                      gap: 1
+                                    }}>
+                                      <IconButton
+                                        sx={{ 
+                                          bgcolor: 'background.paper',
+                                          '&:hover': { bgcolor: 'primary.light', color: 'white' }
+                                        }}
+                                        onClick={() => handleEditImage(index)}
+                                        size="small"
+                                        title="Editar imagen"
+                                      >
+                                        <EditIcon />
+                                      </IconButton>
+                                      <IconButton
+                                        sx={{ 
+                                          bgcolor: 'background.paper',
+                                          '&:hover': { bgcolor: 'error.light', color: 'white' }
+                                        }}
+                                        onClick={() => removeFoto('entrada', index)}
+                                        size="small"
+                                        title="Eliminar imagen"
+                                      >
+                                        <CloseIcon />
+                                      </IconButton>
+                                    </Box>
+                                  </Box>
+                                ) : (
+                                  <Box sx={{ 
+                                    border: '2px dashed', 
+                                    borderColor: 'grey.300', 
+                                    borderRadius: 2, 
+                                    p: 3,
+                                    bgcolor: 'grey.50',
+                                    height: 250,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}>
+                                    <PhotoCameraIcon sx={{ fontSize: 50, color: 'grey.400' }} />
+                                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                      Sin foto
+                                    </Typography>
+                                  </Box>
+                                )}
+                              </Box>
+                            </Grid>
+
+                            {/* Columna Derecha: Información */}
+                            <Grid item xs={12} md={7}>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                <TextField
+                                  fullWidth
+                                  label="Trabajo a Realizar"
+                                  multiline
+                                  rows={4}
+                                  value={seccion.trabajo_realizar}
+                                  onChange={(e) => actualizarInfoSeccion(index, 'trabajo_realizar', e.target.value)}
+                                  placeholder="Ej: Rectificar eje, pulir superficie, aplicar recubrimiento..."
+                                  helperText="Especifica el trabajo solicitado"
+                                />
+                                
+                                <TextField
+                                  fullWidth
+                                  label="Medidas y Especificaciones"
+                                  multiline
+                                  rows={4}
+                                  value={seccion.medidas_especificaciones}
+                                  onChange={(e) => actualizarInfoSeccion(index, 'medidas_especificaciones', e.target.value)}
+                                  placeholder="Ej: Diámetro: 50mm ±0.05mm, Longitud: 200mm, Material: Acero 1045..."
+                                  helperText="Dimensiones, tolerancias, materiales"
+                                />
+                              </Box>
+                            </Grid>
+                          </Grid>
+                        </Paper>
+                      </Grid>
+                    ))}
+
+                    {/* Botón para agregar nueva sección - Abajo */}
+                    <Grid item xs={12}>
+                      <Button
+                        variant="contained"
+                        startIcon={<AddIcon />}
+                        onClick={agregarSeccionFoto}
+                        fullWidth
+                        size="large"
+                      >
+                        Agregar Foto
+                      </Button>
+                    </Grid>
+
+                    {/* Detalles Adicionales */}
+                    <Grid item xs={12}>
+                      <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
+                        <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                          Detalles Adicionales
+                        </Typography>
+                        <TextField
+                          fullWidth
+                          multiline
+                          rows={4}
+                          value={formData.observaciones || ''}
+                          onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
+                          placeholder="Observaciones generales, notas especiales, instrucciones adicionales..."
+                          helperText="Información adicional que no corresponde a un producto específico"
+                        />
                       </Paper>
                     </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <Paper sx={{ p: 2, textAlign: 'center' }}>
-                        <Typography variant="h6" gutterBottom>
-                          Foto de Salida
-                        </Typography>
-                        <ButtonGroup variant="outlined" fullWidth sx={{ mb: 2 }}>
-                          <Button
-                            startIcon={<PhotoCameraIcon />}
-                            onClick={() => startCamera('salida')}
-                          >
-                            Tomar Foto
-                          </Button>
-                          <Button
-                            startIcon={<ImageIcon />}
-                            onClick={() => handleFotoChange('salida')}
-                          >
-                            Seleccionar
-                          </Button>
-                        </ButtonGroup>
-                        {fotoSalidaPreview ? (
-                          <Box sx={{ position: 'relative' }}>
-                            <img 
-                              src={fotoSalidaPreview} 
-                              alt="Foto de salida" 
-                              style={{ width: '100%', maxHeight: 300, objectFit: 'contain', borderRadius: 8 }}
-                            />
-                            <IconButton
-                              sx={{ position: 'absolute', top: 8, right: 8, bgcolor: 'background.paper' }}
-                              onClick={() => removeFoto('salida')}
-                              size="small"
-                            >
-                              <CloseIcon />
-                            </IconButton>
-                          </Box>
-                        ) : (
-                          <Box sx={{ 
-                            border: '2px dashed', 
-                            borderColor: 'grey.300', 
-                            borderRadius: 2, 
-                            p: 4,
-                            bgcolor: 'grey.50'
-                          }}>
-                            <PhotoCameraIcon sx={{ fontSize: 60, color: 'grey.400' }} />
-                            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                              Sin foto
-                            </Typography>
-                          </Box>
-                        )}
-                      </Paper>
-                    </Grid>
+
                     <Grid item xs={12}>
                       <Alert severity="info">
-                        Las fotos de entrada se toman al recibir la pieza. Las fotos de salida se toman al completar el trabajo.
+                        Agrega una sección por cada pieza o producto. La foto de salida se agregará al completar el trabajo.
                       </Alert>
                     </Grid>
                   </>
@@ -1241,6 +1628,135 @@ const Ordenes = () => {
             <Button onClick={handleCloseDialog}>Cancelar</Button>
             <Button onClick={handleSubmit} variant="contained">
               {isEditing ? 'Actualizar' : 'Crear'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Dialog Crear Sucursal */}
+        <Dialog open={openSucursalDialog} onClose={handleCloseSucursalDialog} maxWidth="sm" fullWidth>
+          <DialogTitle>
+            Agregar Nueva Sucursal
+          </DialogTitle>
+          <DialogContent>
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid item xs={12}>
+                <Alert severity="info">
+                  Completa los datos de la sucursal y el contacto para notificaciones
+                </Alert>
+              </Grid>
+              
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" color="primary" sx={{ mb: 1, fontWeight: 'bold' }}>
+                  Datos de la Sucursal
+                </Typography>
+              </Grid>
+              
+              <Grid item xs={12} sm={8}>
+                <TextField
+                  fullWidth
+                  label="Nombre de la Sucursal *"
+                  value={nuevaSucursalData.nombre_sucursal}
+                  onChange={(e) => setNuevaSucursalData({ ...nuevaSucursalData, nombre_sucursal: e.target.value })}
+                  required
+                  placeholder="Ej: Sucursal Centro, Planta Norte, etc."
+                />
+              </Grid>
+              
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label="Código"
+                  value={nuevaSucursalData.codigo_sucursal}
+                  onChange={(e) => setNuevaSucursalData({ ...nuevaSucursalData, codigo_sucursal: e.target.value })}
+                  placeholder="SUC-001"
+                />
+              </Grid>
+              
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" color="primary" sx={{ mb: 1, fontWeight: 'bold' }}>
+                  Dirección de la Sucursal
+                </Typography>
+              </Grid>
+              
+              <Grid item xs={12} sm={8}>
+                <TextField
+                  fullWidth
+                  label="Calle"
+                  value={nuevaSucursalData.calle}
+                  onChange={(e) => setNuevaSucursalData({ ...nuevaSucursalData, calle: e.target.value })}
+                />
+              </Grid>
+              
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label="Número"
+                  value={nuevaSucursalData.numero_exterior}
+                  onChange={(e) => setNuevaSucursalData({ ...nuevaSucursalData, numero_exterior: e.target.value })}
+                />
+              </Grid>
+              
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Colonia"
+                  value={nuevaSucursalData.colonia}
+                  onChange={(e) => setNuevaSucursalData({ ...nuevaSucursalData, colonia: e.target.value })}
+                />
+              </Grid>
+              
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Ciudad"
+                  value={nuevaSucursalData.ciudad}
+                  onChange={(e) => setNuevaSucursalData({ ...nuevaSucursalData, ciudad: e.target.value })}
+                />
+              </Grid>
+              
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Estado"
+                  value={nuevaSucursalData.estado}
+                  onChange={(e) => setNuevaSucursalData({ ...nuevaSucursalData, estado: e.target.value })}
+                />
+              </Grid>
+              
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" color="primary" sx={{ mb: 1, fontWeight: 'bold' }}>
+                  Contacto para Notificaciones *
+                </Typography>
+              </Grid>
+              
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Nombre del Contacto *"
+                  value={nuevaSucursalData.nombre_contacto}
+                  onChange={(e) => setNuevaSucursalData({ ...nuevaSucursalData, nombre_contacto: e.target.value })}
+                  required
+                  placeholder="Nombre completo"
+                />
+              </Grid>
+              
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Teléfono *"
+                  value={nuevaSucursalData.telefono}
+                  onChange={(e) => setNuevaSucursalData({ ...nuevaSucursalData, telefono: e.target.value })}
+                  required
+                  placeholder="10 dígitos"
+                  inputProps={{ maxLength: 15 }}
+                />
+              </Grid>
+            </Grid>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseSucursalDialog}>Cancelar</Button>
+            <Button onClick={handleCreateSucursal} variant="contained" color="primary">
+              Guardar Sucursal
             </Button>
           </DialogActions>
         </Dialog>
@@ -1339,6 +1855,14 @@ const Ordenes = () => {
             </Button>
           </DialogActions>
         </Dialog>
+
+        {/* Editor de Imágenes */}
+        <ImageEditor
+          open={openImageEditor}
+          onClose={() => setOpenImageEditor(false)}
+          imageUrl={editingImageUrl}
+          onSave={handleSaveEditedImage}
+        />
 
       </Container>
     </Layout>

@@ -83,6 +83,7 @@ class SubtareaOrdenResponse(SubtareaOrdenBase):
 # Schemas para Órdenes de Trabajo
 class OrdenTrabajoBase(BaseModel):
     cliente_id: int = Field(..., description="ID del cliente")
+    sucursal_id: Optional[int] = Field(None, description="ID de la sucursal del cliente")
     categoria_id: Optional[int] = Field(None, description="ID de la categoría")
     subcategoria_id: Optional[int] = Field(None, description="ID de la subcategoría")
     tecnico_asignado_id: Optional[int] = Field(None, description="ID del técnico asignado")
@@ -90,6 +91,10 @@ class OrdenTrabajoBase(BaseModel):
     # Información del trabajo
     descripcion: str = Field(..., min_length=10, description="Descripción del trabajo a realizar")
     observaciones: Optional[str] = Field(None, description="Observaciones adicionales")
+    
+    # Información de contacto para notificaciones
+    nombre_contacto_notificacion: Optional[str] = Field(None, max_length=200, description="Nombre del contacto para notificaciones")
+    telefono_contacto_notificacion: Optional[str] = Field(None, max_length=15, description="Teléfono del contacto para notificaciones")
     
     # Tipo de permiso/documento
     tipo_permiso: Optional[TipoPermisoEnum] = Field(None, description="Tipo de permiso o documento")
@@ -113,11 +118,14 @@ class OrdenTrabajoCreate(OrdenTrabajoBase):
 
 
 class OrdenTrabajoUpdate(BaseModel):
+    sucursal_id: Optional[int] = None
     categoria_id: Optional[int] = None
     subcategoria_id: Optional[int] = None
     tecnico_asignado_id: Optional[int] = None
     descripcion: Optional[str] = Field(None, min_length=10)
     observaciones: Optional[str] = None
+    nombre_contacto_notificacion: Optional[str] = Field(None, max_length=200)
+    telefono_contacto_notificacion: Optional[str] = Field(None, max_length=15)
     tipo_permiso: Optional[str] = None
     numero_permiso: Optional[str] = Field(None, max_length=50)
     precio_estimado: Optional[Decimal] = Field(None, ge=0)
@@ -152,6 +160,7 @@ class OrdenTrabajoResponse(OrdenTrabajoBase):
     
     # Información adicional calculada
     cliente_nombre: Optional[str] = None
+    sucursal_nombre: Optional[str] = None
     categoria_nombre: Optional[str] = None
     subcategoria_nombre: Optional[str] = None
     tecnico_nombre: Optional[str] = None
@@ -173,6 +182,8 @@ class OrdenTrabajoListResponse(BaseModel):
     folio: str
     cliente_id: int
     cliente_nombre: Optional[str] = None
+    sucursal_id: Optional[int] = None
+    sucursal_nombre: Optional[str] = None
     categoria_nombre: Optional[str] = None
     subcategoria_nombre: Optional[str] = None
     descripcion: str

@@ -123,6 +123,7 @@ def get_ordenes(
     """Obtener lista de órdenes de trabajo con filtros"""
     query = db.query(OrdenTrabajo).options(
         joinedload(OrdenTrabajo.cliente),
+        joinedload(OrdenTrabajo.sucursal),
         joinedload(OrdenTrabajo.tecnico),
         joinedload(OrdenTrabajo.usuario_recepcion),
         joinedload(OrdenTrabajo.categoria),
@@ -168,6 +169,8 @@ def get_ordenes(
             "folio": orden.folio,
             "cliente_id": orden.cliente_id,
             "cliente_nombre": orden.cliente.nombre_completo if orden.cliente else None,
+            "sucursal_id": orden.sucursal_id,
+            "sucursal_nombre": orden.sucursal.nombre_sucursal if orden.sucursal else None,
             "categoria_nombre": orden.categoria.nombre if orden.categoria else None,
             "subcategoria_nombre": orden.subcategoria.nombre if orden.subcategoria else None,
             "descripcion": orden.descripcion,
@@ -195,6 +198,7 @@ def get_orden(
     """Obtener una orden de trabajo específica"""
     orden = db.query(OrdenTrabajo).options(
         joinedload(OrdenTrabajo.cliente),
+        joinedload(OrdenTrabajo.sucursal),
         joinedload(OrdenTrabajo.tecnico),
         joinedload(OrdenTrabajo.usuario_recepcion),
         joinedload(OrdenTrabajo.categoria),
@@ -213,6 +217,7 @@ def get_orden(
     orden_dict = {
         **orden.__dict__,
         "cliente_nombre": orden.cliente.nombre_completo if orden.cliente else None,
+        "sucursal_nombre": orden.sucursal.nombre_sucursal if orden.sucursal else None,
         "categoria_nombre": orden.categoria.nombre if orden.categoria else None,
         "subcategoria_nombre": orden.subcategoria.nombre if orden.subcategoria else None,
         "tecnico_nombre": orden.tecnico.nombre_completo if orden.tecnico else None,
@@ -271,6 +276,7 @@ def create_orden(
     # Cargar relaciones
     db_orden = db.query(OrdenTrabajo).options(
         joinedload(OrdenTrabajo.cliente),
+        joinedload(OrdenTrabajo.sucursal),
         joinedload(OrdenTrabajo.tecnico),
         joinedload(OrdenTrabajo.usuario_recepcion),
         joinedload(OrdenTrabajo.categoria),
@@ -282,6 +288,7 @@ def create_orden(
     orden_dict = {
         **db_orden.__dict__,
         "cliente_nombre": db_orden.cliente.nombre_completo if db_orden.cliente else None,
+        "sucursal_nombre": db_orden.sucursal.nombre_sucursal if db_orden.sucursal else None,
         "categoria_nombre": db_orden.categoria.nombre if db_orden.categoria else None,
         "subcategoria_nombre": db_orden.subcategoria.nombre if db_orden.subcategoria else None,
         "tecnico_nombre": db_orden.tecnico.nombre_completo if db_orden.tecnico else None,
@@ -330,6 +337,7 @@ def update_orden(
     # Cargar relaciones
     db_orden = db.query(OrdenTrabajo).options(
         joinedload(OrdenTrabajo.cliente),
+        joinedload(OrdenTrabajo.sucursal),
         joinedload(OrdenTrabajo.tecnico),
         joinedload(OrdenTrabajo.usuario_recepcion),
         joinedload(OrdenTrabajo.categoria),
@@ -341,6 +349,7 @@ def update_orden(
     orden_dict = {
         **db_orden.__dict__,
         "cliente_nombre": db_orden.cliente.nombre_completo if db_orden.cliente else None,
+        "sucursal_nombre": db_orden.sucursal.nombre_sucursal if db_orden.sucursal else None,
         "categoria_nombre": db_orden.categoria.nombre if db_orden.categoria else None,
         "subcategoria_nombre": db_orden.subcategoria.nombre if db_orden.subcategoria else None,
         "tecnico_nombre": db_orden.tecnico.nombre_completo if db_orden.tecnico else None,
@@ -404,6 +413,7 @@ def cambiar_estado_orden(
     # Cargar relaciones y preparar respuesta
     db_orden = db.query(OrdenTrabajo).options(
         joinedload(OrdenTrabajo.cliente),
+        joinedload(OrdenTrabajo.sucursal),
         joinedload(OrdenTrabajo.tecnico),
         joinedload(OrdenTrabajo.usuario_recepcion),
         joinedload(OrdenTrabajo.categoria),
@@ -414,6 +424,7 @@ def cambiar_estado_orden(
     orden_dict = {
         **db_orden.__dict__,
         "cliente_nombre": db_orden.cliente.nombre_completo if db_orden.cliente else None,
+        "sucursal_nombre": db_orden.sucursal.nombre_sucursal if db_orden.sucursal else None,
         "categoria_nombre": db_orden.categoria.nombre if db_orden.categoria else None,
         "subcategoria_nombre": db_orden.subcategoria.nombre if db_orden.subcategoria else None,
         "tecnico_nombre": db_orden.tecnico.nombre_completo if db_orden.tecnico else None,
