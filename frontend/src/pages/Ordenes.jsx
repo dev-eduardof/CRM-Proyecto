@@ -49,6 +49,26 @@ import ImageEditor from '../components/ImageEditor';
 import { ordenesAPI, clientesAPI, usersAPI, sucursalesAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+/** Misma lógica que "Detalles de la Orden": bloques de descripción + lista de fotos + URL. */
+const getBloquesFotosDetalle = (orden) => {
+  if (!orden) return { bloques: [], fotosEntrada: [], numBloques: 0, buildFotoUrl: () => null };
+  const desc = orden.descripcion || '';
+  const partes = desc.split(/\s*===\s*PRODUCTO\s*\d+\s*===\s*/i).filter(Boolean);
+  const bloques = partes.length >= 1 ? partes : [desc || 'Sin descripción'];
+  const fotosEntrada = Array.isArray(orden.fotos_entrada_list) && orden.fotos_entrada_list.length > 0
+    ? [...orden.fotos_entrada_list]
+    : (orden.foto_entrada ? [orden.foto_entrada] : []);
+  const numBloques = Math.max(bloques.length, fotosEntrada.length, 1);
+  const buildFotoUrl = (path) => {
+    if (path == null || typeof path !== 'string' || !path.trim()) return null;
+    const p = path.trim();
+    return `${API_BASE_URL}${p.startsWith('/') ? p : '/' + p}`;
+  };
+  return { bloques, fotosEntrada, numBloques, buildFotoUrl };
+};
+
 const Ordenes = () => {
   const { user } = useAuth();
   const [ordenes, setOrdenes] = useState([]);
@@ -79,6 +99,9 @@ const Ordenes = () => {
     trabajo_realizar: '',
     medidas_especificaciones: ''
   }]);
+  // Al editar: bloques existentes (foto + texto editable) para mostrar como en Detalles
+  const [seccionesExistentes, setSeccionesExistentes] = useState([]);
+  const lastInitializedOrdenIdRef = useRef(null);
   const [fotoSalida, setFotoSalida] = useState(null);
   const [fotoSalidaPreview, setFotoSalidaPreview] = useState(null);
   const fileInputRef = useRef(null);
@@ -187,9 +210,53 @@ const Ordenes = () => {
   useEffect(() => {
     fetchOrdenes();
     fetchClientes();
-    fetchTecnicos();
+    // Solo ADMIN y RECEPCION pueden asignar técnico; TECNICO no llama a la API de usuarios para evitar 403
+    if (user?.rol === 'ADMIN' || user?.rol === 'RECEPCION') {
+      fetchTecnicos();
+    }
     fetchCategorias();
-  }, [estatusFilter]);
+  }, [estatusFilter, user?.rol]);
+
+  // Al abrir Editar: cargar orden completa y lista de fotos (misma lógica que Detalles/Ver)
+  useEffect(() => {
+    if (!openDialog || !isEditing || !selectedOrden?.id) return;
+    const yaTieneFotos = Array.isArray(selectedOrden.fotos_entrada_list) || selectedOrden.foto_entrada;
+    if (yaTieneFotos) return;
+    let cancelled = false;
+    const ordenId = selectedOrden.id;
+    ordenesAPI.getById(ordenId)
+      .then((res) => {
+        if (cancelled || !res?.data) return;
+        const orden = res.data;
+        return ordenesAPI.getFotos(ordenId)
+          .then((fotosRes) => {
+            if (cancelled) return;
+            const list = fotosRes?.data?.fotos_entrada_list;
+            if (Array.isArray(list)) orden.fotos_entrada_list = list;
+            setSelectedOrden(orden);
+          })
+          .catch(() => setSelectedOrden(orden));
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [openDialog, isEditing, selectedOrden?.id]);
+
+  // Inicializar secciones existentes (editable) con la misma lógica que Detalles de la Orden
+  useEffect(() => {
+    if (!openDialog || !isEditing || !selectedOrden?.id) return;
+    const { fotosEntrada, numBloques, buildFotoUrl } = getBloquesFotosDetalle(selectedOrden);
+    if (numBloques === 0) return;
+    if (lastInitializedOrdenIdRef.current === selectedOrden.id) return;
+    lastInitializedOrdenIdRef.current = selectedOrden.id;
+    const textos = parsearDescripcionBloques(selectedOrden.descripcion || '');
+    const secciones = Array.from({ length: numBloques }, (_, idx) => ({
+      id: `existente-${selectedOrden.id}-${idx}`,
+      url: fotosEntrada[idx] || '',
+      trabajo_realizar: textos[idx]?.trabajo_realizar ?? '',
+      medidas_especificaciones: textos[idx]?.medidas_especificaciones ?? ''
+    }));
+    setSeccionesExistentes(secciones);
+  }, [openDialog, isEditing, selectedOrden?.id, selectedOrden?.descripcion, selectedOrden?.fotos_entrada_list, selectedOrden?.foto_entrada]);
 
   // Generar número de permiso automáticamente cuando se selecciona el tipo
   useEffect(() => {
@@ -201,6 +268,16 @@ const Ordenes = () => {
     }
   }, [formData.tipo_permiso, isEditing]);
 
+  // Formatear error de API (FastAPI devuelve detail como array en validación)
+  const formatApiError = (detail) => {
+    if (detail == null) return '';
+    if (Array.isArray(detail)) {
+      return detail.map(e => e.msg || e.loc?.join('.') || JSON.stringify(e)).join('. ') || 'Error de validación';
+    }
+    if (typeof detail === 'object') return JSON.stringify(detail);
+    return String(detail);
+  };
+
   const fetchOrdenes = async () => {
     try {
       setLoading(true);
@@ -211,7 +288,7 @@ const Ordenes = () => {
       const response = await ordenesAPI.getAll(params);
       setOrdenes(response.data);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Error al cargar las órdenes');
+      setError(formatApiError(err.response?.data?.detail) || 'Error al cargar las órdenes');
     } finally {
       setLoading(false);
     }
@@ -220,16 +297,17 @@ const Ordenes = () => {
   const fetchClientes = async () => {
     try {
       const response = await clientesAPI.getAll({ activo: true });
-      setClientes(response.data);
+      setClientes(Array.isArray(response?.data) ? response.data : []);
     } catch (err) {
       console.error('Error al cargar clientes:', err);
+      setClientes([]);
     }
   };
 
   const fetchSucursales = async (clienteId) => {
     try {
       const response = await sucursalesAPI.getByCliente(clienteId);
-      setSucursales(response.data);
+      setSucursales(Array.isArray(response?.data) ? response.data : []);
     } catch (err) {
       console.error('Error al cargar sucursales:', err);
       setSucursales([]);
@@ -239,19 +317,21 @@ const Ordenes = () => {
   const fetchTecnicos = async () => {
     try {
       const response = await usersAPI.getAll();
-      const tecnicosActivos = response.data.filter(u => u.rol === 'TECNICO' && u.activo);
-      setTecnicos(tecnicosActivos);
+      const data = Array.isArray(response?.data) ? response.data : [];
+      setTecnicos(data.filter(u => u.rol === 'TECNICO' && u.activo));
     } catch (err) {
       console.error('Error al cargar técnicos:', err);
+      setTecnicos([]);
     }
   };
 
   const fetchCategorias = async () => {
     try {
       const response = await ordenesAPI.getCategorias();
-      setCategorias(response.data);
+      setCategorias(Array.isArray(response?.data) ? response.data : []);
     } catch (err) {
       console.error('Error al cargar categorías:', err);
+      setCategorias([]);
     }
   };
 
@@ -326,6 +406,8 @@ const Ordenes = () => {
     setOpenDialog(false);
     setSelectedOrden(null);
     setIsEditing(false);
+    setSeccionesExistentes([]);
+    lastInitializedOrdenIdRef.current = null;
     setSeccionesFotos([{
       id: Date.now(),
       foto: null,
@@ -338,6 +420,22 @@ const Ordenes = () => {
     setEsClienteNuevo(false);
     setNuevoClienteData({ nombre: '', apellido_paterno: '', telefono: '' });
     stopCamera();
+  };
+
+  // Parsear descripción para extraer Trabajo a Realizar y Medidas por bloque
+  const parsearDescripcionBloques = (descripcion) => {
+    if (!descripcion || typeof descripcion !== 'string') return [];
+    const partes = descripcion.split(/\s*===\s*PRODUCTO\s*\d+\s*===\s*/i).filter(Boolean);
+    const bloques = partes.length >= 1 ? partes : [descripcion];
+    return bloques.map((texto) => {
+      const t = texto.trim();
+      const trabajoMatch = t.match(/Trabajo\s+a\s+Realizar:\s*\n?([\s\S]*?)(?=Medidas\s+y\s+Especificaciones:|$)/i);
+      const medidasMatch = t.match(/Medidas\s+y\s+Especificaciones:\s*\n?([\s\S]*?)$/i);
+      return {
+        trabajo_realizar: trabajoMatch ? trabajoMatch[1].trim() : t,
+        medidas_especificaciones: medidasMatch ? medidasMatch[1].trim() : ''
+      };
+    });
   };
 
   const handleCategoriaChange = (categoriaId) => {
@@ -432,7 +530,7 @@ const Ordenes = () => {
       handleCloseSucursalDialog();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Error al crear la sucursal');
+      setError(formatApiError(err.response?.data?.detail) || 'Error al crear la sucursal');
       setTimeout(() => setError(''), 5000);
     }
   };
@@ -440,10 +538,21 @@ const Ordenes = () => {
   const handleViewOrden = async (ordenId) => {
     try {
       const response = await ordenesAPI.getById(ordenId);
-      setSelectedOrden(response.data);
+      const orden = response.data;
+      // Asegurar lista completa de fotos para todos los roles (evitar diferencias por caché/serialización)
+      try {
+        const fotosRes = await ordenesAPI.getFotos(ordenId);
+        const list = fotosRes?.data?.fotos_entrada_list;
+        if (Array.isArray(list)) {
+          orden.fotos_entrada_list = list;
+        }
+      } catch (_) {
+        // Si falla el endpoint de fotos, se usa la lista del getById
+      }
+      setSelectedOrden(orden);
       setOpenViewDialog(true);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Error al cargar la orden');
+      setError(formatApiError(err.response?.data?.detail) || 'Error al cargar la orden');
     }
   };
 
@@ -464,7 +573,7 @@ const Ordenes = () => {
       fetchOrdenes();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Error al cambiar el estado');
+      setError(formatApiError(err.response?.data?.detail) || 'Error al cambiar el estado');
       setTimeout(() => setError(''), 5000);
     }
   };
@@ -489,80 +598,108 @@ const Ordenes = () => {
             telefono: nuevoClienteData.telefono,
             activo: true
           });
-          clienteId = clienteResponse.data.id;
+          clienteId = clienteResponse.data?.id;
           setSuccess('Cliente creado correctamente');
         } catch (clienteErr) {
-          setError('Error al crear el cliente: ' + (clienteErr.response?.data?.detail || 'Error desconocido'));
+          setError('Error al crear el cliente: ' + formatApiError(clienteErr.response?.data?.detail));
           setTimeout(() => setError(''), 5000);
           return;
         }
       }
+
+      // Validar cliente seleccionado
+      const idNum = clienteId === '' || clienteId == null ? null : Number(clienteId);
+      if (idNum == null || isNaN(idNum)) {
+        setError('Debes seleccionar un cliente');
+        setTimeout(() => setError(''), 5000);
+        return;
+      }
       
-      // Compilar información de todas las secciones
+      // Compilar información: al editar primero bloques existentes, luego nuevas secciones
       let descripcionCompleta = '';
-      seccionesFotos.forEach((seccion, index) => {
-        if (seccion.trabajo_realizar || seccion.medidas_especificaciones) {
-          descripcionCompleta += `\n=== PRODUCTO ${index + 1} ===\n`;
-          if (seccion.trabajo_realizar) {
-            descripcionCompleta += `Trabajo a Realizar:\n${seccion.trabajo_realizar}\n\n`;
-          }
-          if (seccion.medidas_especificaciones) {
-            descripcionCompleta += `Medidas y Especificaciones:\n${seccion.medidas_especificaciones}\n\n`;
-          }
+      const agregarBloque = (numero, trabajo, medidas) => {
+        if (trabajo || medidas) {
+          descripcionCompleta += `\n=== PRODUCTO ${numero} ===\n`;
+          if (trabajo) descripcionCompleta += `Trabajo a Realizar:\n${trabajo}\n\n`;
+          if (medidas) descripcionCompleta += `Medidas y Especificaciones:\n${medidas}\n\n`;
         }
+      };
+      if (isEditing && seccionesExistentes.length > 0) {
+        seccionesExistentes.forEach((sec, idx) => agregarBloque(idx + 1, sec.trabajo_realizar, sec.medidas_especificaciones));
+      }
+      const offset = isEditing ? seccionesExistentes.length : 0;
+      seccionesFotos.forEach((seccion, index) => {
+        agregarBloque(offset + index + 1, seccion.trabajo_realizar, seccion.medidas_especificaciones);
       });
+
+      const descripcionFinal = (descripcionCompleta.trim() || formData.descripcion || '').trim();
+      if (descripcionFinal.length < 10) {
+        setError('La descripción del trabajo debe tener al menos 10 caracteres');
+        setTimeout(() => setError(''), 5000);
+        return;
+      }
 
       const dataToSend = {
         ...formData,
-        cliente_id: clienteId,
-        descripcion: descripcionCompleta.trim() || formData.descripcion,
+        cliente_id: idNum,
+        descripcion: descripcionFinal,
         precio_estimado: formData.precio_estimado ? parseFloat(formData.precio_estimado) : null,
         anticipo: parseFloat(formData.anticipo) || 0,
         precio_final: formData.precio_final ? parseFloat(formData.precio_final) : null,
-        categoria_id: formData.categoria_id || null,
-        subcategoria_id: formData.subcategoria_id || null,
-        tecnico_asignado_id: formData.tecnico_asignado_id || null
+        categoria_id: formData.categoria_id ? Number(formData.categoria_id) : null,
+        subcategoria_id: formData.subcategoria_id ? Number(formData.subcategoria_id) : null,
+        tecnico_asignado_id: formData.tecnico_asignado_id ? Number(formData.tecnico_asignado_id) : null,
+        sucursal_id: formData.sucursal_id ? Number(formData.sucursal_id) : null
       };
+      // En PUT no enviar fechas vacías como string; el backend espera null o datetime
+      if (isEditing) {
+        ['fecha_promesa', 'fecha_inicio_trabajo', 'fecha_terminado', 'fecha_entrega'].forEach((key) => {
+          if (dataToSend[key] === '' || dataToSend[key] == null) dataToSend[key] = null;
+        });
+      }
 
+      let ordenId = null;
       if (isEditing) {
         await ordenesAPI.update(selectedOrden.id, dataToSend);
+        ordenId = selectedOrden.id;
         setSuccess('Orden actualizada correctamente');
       } else {
         const response = await ordenesAPI.create(dataToSend);
+        ordenId = response?.data?.id;
         setSuccess('Orden creada correctamente');
-        
-        // Si hay fotos de entrada, subirlas todas
-        const fotosConArchivo = seccionesFotos.filter(s => s.foto);
-        if (fotosConArchivo.length > 0) {
-          for (const seccion of fotosConArchivo) {
-            await handleUploadFoto(response.data.id, 'entrada', seccion.foto);
-          }
+      }
+
+      // Subir fotos de entrada y salida (tanto al crear como al editar). Solo si es un File real.
+      if (ordenId) {
+        const fotosConArchivo = seccionesFotos.filter(s => s.foto && s.foto instanceof File);
+        for (const seccion of fotosConArchivo) {
+          await handleUploadFoto(ordenId, 'entrada', seccion.foto);
         }
-        if (fotoSalida) {
-          await handleUploadFoto(response.data.id, 'salida', fotoSalida);
+        if (fotoSalida && fotoSalida instanceof File) {
+          await handleUploadFoto(ordenId, 'salida', fotoSalida);
         }
       }
       
       handleCloseDialog();
       fetchOrdenes();
-      fetchClientes(); // Recargar lista de clientes
+      fetchClientes();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Error al guardar la orden');
+      setError(formatApiError(err.response?.data?.detail) || err.message || 'Error al guardar la orden');
       setTimeout(() => setError(''), 5000);
     }
   };
 
   const handleUploadFoto = async (ordenId, tipo, file) => {
+    if (!file || !(file instanceof File)) return;
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', file, file.name || `foto_${tipo}.jpg`);
       
-      // Enviar tipo como query parameter
       await ordenesAPI.uploadFoto(ordenId, tipo, formData);
     } catch (err) {
       console.error(`Error al subir foto de ${tipo}:`, err);
-      setError(`Error al subir foto de ${tipo}: ${err.response?.data?.detail || err.message}`);
+      setError(`Error al subir foto de ${tipo}: ${formatApiError(err.response?.data?.detail) || err.message}`);
       setTimeout(() => setError(''), 5000);
     }
   };
@@ -710,6 +847,14 @@ const Ordenes = () => {
     });
   };
 
+  const actualizarSeccionExistente = (index, field, value) => {
+    setSeccionesExistentes(prev => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: value };
+      return next;
+    });
+  };
+
   const handleFotoChange = (seccionIndex) => {
     setCurrentSeccionIndex(seccionIndex);
     setCurrentFotoType('entrada');
@@ -759,7 +904,7 @@ const Ordenes = () => {
       fetchOrdenes();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Error al eliminar la orden');
+      setError(formatApiError(err.response?.data?.detail) || 'Error al eliminar la orden');
       setTimeout(() => setError(''), 5000);
     }
   };
@@ -805,15 +950,17 @@ const Ordenes = () => {
   };
 
   const filteredOrdenes = ordenes.filter(orden => {
+    // No mostrar en el panel las órdenes ya finalizadas (ENTREGADO o FINALIZADO)
+    if (['ENTREGADO', 'FINALIZADO'].includes(orden.estatus)) return false;
     const matchesSearch = searchTerm === '' || 
       orden.folio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       orden.cliente_nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       orden.descripcion?.toLowerCase().includes(searchTerm.toLowerCase());
-    
     return matchesSearch;
   });
 
   const canEdit = user?.rol === 'ADMIN' || user?.rol === 'RECEPCION' || user?.rol === 'TECNICO';
+  const canEditOrderForm = user?.rol === 'ADMIN' || user?.rol === 'RECEPCION'; // Técnico no puede editar datos de la orden
   const canDelete = user?.rol === 'ADMIN';
   const canCreate = user?.rol === 'ADMIN' || user?.rol === 'RECEPCION';
 
@@ -836,6 +983,13 @@ const Ordenes = () => {
             </Button>
           )}
         </Box>
+
+        {/* Mensaje para técnicos: solo ven sus órdenes asignadas */}
+        {user?.rol === 'TECNICO' && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            Solo se muestran las órdenes asignadas a ti. No puedes ver órdenes de otros técnicos.
+          </Alert>
+        )}
 
         {/* Alerts */}
         {error && (
@@ -909,26 +1063,30 @@ const Ordenes = () => {
                 <TableCell>Prioridad</TableCell>
                 <TableCell>Técnico</TableCell>
                 <TableCell>Fecha Recepción</TableCell>
-                <TableCell>Precio Final</TableCell>
                 <TableCell align="center">Acciones</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={10} align="center">
+                  <TableCell colSpan={9} align="center">
                     Cargando...
                   </TableCell>
                 </TableRow>
               ) : filteredOrdenes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} align="center">
+                  <TableCell colSpan={9} align="center">
                     No hay órdenes de trabajo
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredOrdenes.map((orden) => (
-                  <TableRow key={orden.id} hover>
+                  <TableRow
+                    key={orden.id}
+                    hover
+                    onClick={() => handleViewOrden(orden.id)}
+                    sx={{ cursor: 'pointer' }}
+                  >
                     <TableCell>
                       <Typography variant="body2" fontWeight="bold">
                         {orden.folio}
@@ -962,20 +1120,21 @@ const Ordenes = () => {
                         {orden.dias_desde_recepcion} día(s)
                       </Typography>
                     </TableCell>
-                    <TableCell>{formatCurrency(orden.precio_final)}</TableCell>
-                    <TableCell align="center">
+                    <TableCell align="center" onClick={(e) => e.stopPropagation()}>
                       <Tooltip title="Ver detalles">
                         <IconButton size="small" onClick={() => handleViewOrden(orden.id)}>
                           <ViewIcon />
                         </IconButton>
                       </Tooltip>
+                      {canEditOrderForm && (
+                        <Tooltip title="Editar">
+                          <IconButton size="small" onClick={() => handleOpenDialog(orden)}>
+                            <EditIcon />
+                          </IconButton>
+                        </Tooltip>
+                      )}
                       {canEdit && (
                         <>
-                          <Tooltip title="Editar">
-                            <IconButton size="small" onClick={() => handleOpenDialog(orden)}>
-                              <EditIcon />
-                            </IconButton>
-                          </Tooltip>
                           <Tooltip title="Cambiar estado">
                             <IconButton size="small" onClick={() => handleOpenEstadoDialog(orden)}>
                               <CheckCircleIcon />
@@ -1047,10 +1206,13 @@ const Ordenes = () => {
                       fullWidth
                       options={[
                         { id: 4, nombre_completo: 'CLIENTE GENERAL', esGeneral: true },
-                        ...clientes.filter(c => c.id !== 4)
+                        ...(Array.isArray(clientes) ? clientes.filter(c => c.id !== 4) : [])
                       ]}
-                      getOptionLabel={(option) => option.nombre_completo || ''}
-                      value={clientes.find(c => c.id === formData.cliente_id) || null}
+                      getOptionLabel={(option) => (option && (option.nombre_completo || option.nombre)) || ''}
+                      value={[
+                        { id: 4, nombre_completo: 'CLIENTE GENERAL', esGeneral: true },
+                        ...(Array.isArray(clientes) ? clientes : [])
+                      ].find(o => o.id === formData.cliente_id) || null}
                       onChange={(event, newValue) => {
                         handleClienteChange(newValue ? newValue.id : '');
                       }}
@@ -1083,7 +1245,7 @@ const Ordenes = () => {
                         />
                       )}
                       noOptionsText="No se encontraron clientes"
-                      isOptionEqualToValue={(option, value) => option.id === value.id}
+                      isOptionEqualToValue={(option, value) => !value || (option && option.id === value.id)}
                     />
                   </Grid>
                 ) : (
@@ -1127,24 +1289,24 @@ const Ordenes = () => {
                 {/* Selector de Sucursal */}
                 {!esClienteNuevo && formData.cliente_id && (
                   <>
-                    <Grid item xs={12} sm={sucursales.length === 0 ? 8 : 12}>
+                    <Grid item xs={12} sm={(sucursales || []).length === 0 ? 8 : 12}>
                       <TextField
                         select
                         fullWidth
                         label="Sucursal"
                         value={formData.sucursal_id}
                         onChange={(e) => setFormData({ ...formData, sucursal_id: e.target.value })}
-                        helperText={sucursales.length === 0 ? "Este cliente no tiene sucursales registradas" : "Selecciona la sucursal del cliente"}
+                        helperText={(sucursales || []).length === 0 ? "Este cliente no tiene sucursales registradas" : "Selecciona la sucursal del cliente"}
                       >
                         <MenuItem value="">Sin sucursal específica</MenuItem>
-                        {sucursales.map((sucursal) => (
+                        {(sucursales || []).map((sucursal) => (
                           <MenuItem key={sucursal.id} value={sucursal.id}>
                             {sucursal.nombre_sucursal} {sucursal.codigo_sucursal ? `(${sucursal.codigo_sucursal})` : ''}
                           </MenuItem>
                         ))}
                       </TextField>
                     </Grid>
-                    {sucursales.length === 0 && (
+                    {(sucursales || []).length === 0 && (
                       <Grid item xs={12} sm={4}>
                         <Button
                           fullWidth
@@ -1198,7 +1360,7 @@ const Ordenes = () => {
                     onChange={(e) => handleCategoriaChange(e.target.value)}
                   >
                     <MenuItem value="">Sin categoría</MenuItem>
-                    {categorias.map((cat) => (
+                    {(categorias || []).map((cat) => (
                       <MenuItem key={cat.id} value={cat.id}>
                         {cat.nombre}
                       </MenuItem>
@@ -1294,8 +1456,8 @@ const Ordenes = () => {
                     onChange={(e) => setFormData({ ...formData, tecnico_asignado_id: e.target.value })}
                   >
                     <MenuItem value="">Sin asignar</MenuItem>
-                    {tecnicos.map((tecnico) => (
-                      <MenuItem key={tecnico.id} value={tecnico.id}>
+                    {(tecnicos || []).map((tecnico) => (
+                        <MenuItem key={tecnico.id} value={tecnico.id}>
                         {tecnico.nombre_completo}
                       </MenuItem>
                     ))}
@@ -1347,7 +1509,7 @@ const Ordenes = () => {
             {/* Tab 1: Costos */}
             {tabValue === 1 && (
               <Grid container spacing={2} sx={{ mt: 1 }}>
-                <Grid item xs={12} sm={4}>
+                <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
                     label="Precio Sugerido/Estimado"
@@ -1357,23 +1519,13 @@ const Ordenes = () => {
                     InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
                   />
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
                     label="Anticipo"
                     type="number"
                     value={formData.anticipo}
                     onChange={(e) => setFormData({ ...formData, anticipo: e.target.value })}
-                    InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <TextField
-                    fullWidth
-                    label="Precio Final"
-                    type="number"
-                    value={formData.precio_final}
-                    onChange={(e) => setFormData({ ...formData, precio_final: e.target.value })}
                     InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
                   />
                 </Grid>
@@ -1386,7 +1538,7 @@ const Ordenes = () => {
                       Anticipo: {formatCurrency(formData.anticipo || 0)}
                     </Typography>
                     <Typography variant="h6" sx={{ mt: 1 }}>
-                      Saldo Pendiente: {formatCurrency((parseFloat(formData.precio_final) || 0) - (parseFloat(formData.anticipo) || 0))}
+                      Saldo Pendiente Estimado: {formatCurrency((parseFloat(formData.precio_estimado) || 0) - (parseFloat(formData.anticipo) || 0))}
                     </Typography>
                   </Paper>
                 </Grid>
@@ -1406,13 +1558,80 @@ const Ordenes = () => {
                       </Typography>
                     </Grid>
 
-                    {/* Secciones de Foto + Información */}
+                    {/* Al editar: bloques existentes (misma lógica que Detalles: imagen + campos editables) */}
+                    {isEditing && seccionesExistentes.length > 0 && seccionesExistentes.map((sec, idx) => {
+                      const { buildFotoUrl } = getBloquesFotosDetalle({});
+                      const fotoUrl = buildFotoUrl(sec.url);
+                      return (
+                      <Grid item xs={12} key={sec.id}>
+                        <Paper variant="outlined" sx={{ p: 2, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: 'flex-start' }}>
+                          <Box sx={{ flexShrink: 0, width: { xs: '100%', sm: 280 }, minHeight: 200 }}>
+                            {fotoUrl ? (
+                              <img
+                                src={fotoUrl}
+                                alt={`Producto ${idx + 1}`}
+                                style={{
+                                  width: '100%',
+                                  maxHeight: 320,
+                                  objectFit: 'contain',
+                                  borderRadius: 8,
+                                  border: '1px solid #e0e0e0',
+                                  display: 'block'
+                                }}
+                              />
+                            ) : (
+                              <Box sx={{ width: '100%', minHeight: 200, border: '1px dashed', borderColor: 'divider', borderRadius: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', bgcolor: 'action.hover' }}>
+                                <PhotoCameraIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
+                                <Typography variant="body2" color="text.secondary">Sin foto</Typography>
+                              </Box>
+                            )}
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                              Producto {idx + 1}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            <Typography variant="subtitle2" color="text.secondary">Trabajo a realizar / Medidas y especificaciones</Typography>
+                            <TextField
+                              fullWidth
+                              label="Trabajo a Realizar"
+                              multiline
+                              rows={3}
+                              value={sec.trabajo_realizar}
+                              onChange={(e) => actualizarSeccionExistente(idx, 'trabajo_realizar', e.target.value)}
+                              placeholder="Especifica el trabajo solicitado"
+                            />
+                            <TextField
+                              fullWidth
+                              label="Medidas y Especificaciones"
+                              multiline
+                              rows={3}
+                              value={sec.medidas_especificaciones}
+                              onChange={(e) => actualizarSeccionExistente(idx, 'medidas_especificaciones', e.target.value)}
+                              placeholder="Dimensiones, tolerancias, materiales"
+                            />
+                          </Box>
+                        </Paper>
+                      </Grid>
+                    ); })}
+
+                    {/* Título para agregar más fotos (solo al editar cuando ya hay existentes) */}
+                    {isEditing && seccionesExistentes.length > 0 && (
+                      <Grid item xs={12}>
+                        <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 1, mb: 0.5 }}>
+                          Agregar otra imagen (como si se agregara por primera vez)
+                        </Typography>
+                      </Grid>
+                    )}
+
+                    {/* Secciones nuevas (agregar foto): misma UI que al crear */}
                     {seccionesFotos.map((seccion, index) => (
                       <Grid item xs={12} key={seccion.id}>
                         <Paper sx={{ p: 2, border: '2px solid', borderColor: 'primary.light' }}>
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                             <Typography variant="subtitle1" fontWeight="bold" color="primary">
-                              Producto {index + 1}
+                              {isEditing && seccionesExistentes.length > 0
+                                ? `Producto ${seccionesExistentes.length + index + 1}`
+                                : `Producto ${index + 1}`}
                             </Typography>
                             {seccionesFotos.length > 1 && (
                               <IconButton
@@ -1789,10 +2008,6 @@ const Ordenes = () => {
                   <Typography variant="body2" color="text.secondary">Prioridad</Typography>
                   {getPrioridadChip(selectedOrden.prioridad)}
                 </Grid>
-                <Grid item xs={12}>
-                  <Typography variant="body2" color="text.secondary">Descripción del Trabajo</Typography>
-                  <Typography>{selectedOrden.descripcion}</Typography>
-                </Grid>
                 {selectedOrden.observaciones && (
                   <Grid item xs={12}>
                     <Typography variant="body2" color="text.secondary">Observaciones</Typography>
@@ -1800,13 +2015,67 @@ const Ordenes = () => {
                   </Grid>
                 )}
                 <Grid item xs={12}>
-                  <Typography variant="h6">Costos</Typography>
-                  <Typography>Precio Estimado: {formatCurrency(selectedOrden.precio_estimado)}</Typography>
-                  <Typography>Anticipo: {formatCurrency(selectedOrden.anticipo)}</Typography>
-                  <Typography>Precio Final: {formatCurrency(selectedOrden.precio_final)}</Typography>
-                  <Typography variant="h6" sx={{ mt: 1 }}>
-                    Saldo Pendiente: {formatCurrency(selectedOrden.saldo_pendiente)}
-                  </Typography>
+                  <Typography variant="h6" sx={{ mb: 2 }}>Fotos de entrada y detalles</Typography>
+                  {(() => {
+                    const { bloques, fotosEntrada, numBloques, buildFotoUrl } = getBloquesFotosDetalle(selectedOrden);
+                    return Array.from({ length: numBloques }, (_, idx) => ({ texto: bloques[idx] || '', idx })).map(({ texto, idx }) => {
+                      const fotoUrl = buildFotoUrl(fotosEntrada[idx]);
+                      return (
+                      <Paper
+                        key={idx}
+                        variant="outlined"
+                        sx={{ p: 2, mb: 2, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: 'flex-start' }}
+                      >
+                        <Box sx={{ flexShrink: 0, width: { xs: '100%', sm: 280 }, minHeight: 200 }}>
+                          {fotoUrl ? (
+                            <img
+                              src={fotoUrl}
+                              alt={`Foto de entrada ${idx + 1}`}
+                              style={{
+                                width: '100%',
+                                maxHeight: 320,
+                                objectFit: 'contain',
+                                borderRadius: 8,
+                                border: '1px solid #e0e0e0',
+                                display: 'block'
+                              }}
+                            />
+                          ) : (
+                            <Box
+                              sx={{
+                                width: '100%',
+                                minHeight: 200,
+                                border: '1px dashed',
+                                borderColor: 'divider',
+                                borderRadius: 2,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                bgcolor: 'action.hover'
+                              }}
+                            >
+                              <CameraIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
+                              <Typography variant="body2" color="text.secondary">Sin foto</Typography>
+                            </Box>
+                          )}
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                            Producto {idx + 1}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>Trabajo a realizar / Medidas y especificaciones</Typography>
+                            <Typography variant="body2" component="pre" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', m: 0, fontFamily: 'inherit' }}>
+                            {texto.trim() || '—'}
+                          </Typography>
+                        </Box>
+                      </Paper>
+                    );
+                  });
+                  })()}
+                  {!selectedOrden.foto_entrada && !(Array.isArray(selectedOrden.fotos_entrada_list) && selectedOrden.fotos_entrada_list.length > 0) && !selectedOrden.descripcion && (
+                    <Typography variant="body2" color="text.secondary">No hay fotos de entrada ni descripción registradas.</Typography>
+                  )}
                 </Grid>
               </Grid>
             )}

@@ -1,8 +1,9 @@
-import { Container, Paper, Typography, Box, Chip, Grid, Card, CardContent, Collapse, IconButton } from '@mui/material';
+import { Container, Paper, Typography, Box, Chip, Grid, Card, CardContent, Collapse, IconButton, Badge } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
+import { ordenesAPI } from '../services/api';
 import {
   Dashboard as DashboardIcon,
   Person,
@@ -20,6 +21,21 @@ const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [userInfoExpanded, setUserInfoExpanded] = useState(false);
+  const [otRecibidoDiagnosticoCount, setOtRecibidoDiagnosticoCount] = useState(0);
+
+  // Para técnicos: contar OT en RECIBIDO y DIAGNOSTICO (notificación en el card)
+  useEffect(() => {
+    if (user?.rol !== 'TECNICO') return;
+    ordenesAPI.getAll()
+      .then((res) => {
+        const list = Array.isArray(res?.data) ? res.data : [];
+        const count = list.filter(
+          (o) => o.estatus === 'RECIBIDO' || o.estatus === 'DIAGNOSTICO'
+        ).length;
+        setOtRecibidoDiagnosticoCount(count);
+      })
+      .catch(() => setOtRecibidoDiagnosticoCount(0));
+  }, [user?.rol]);
 
   const getRolColor = (rol) => {
     const colors = {
@@ -139,6 +155,58 @@ const Dashboard = () => {
           Módulos del Sistema
         </Typography>
         <Grid container spacing={3} sx={{ mt: 1 }}>
+          {/* Órdenes de Trabajo - Primera posición. Para técnicos: badge con cantidad en RECIBIDO + DIAGNOSTICO */}
+          {(user?.rol === 'ADMIN' || user?.rol === 'RECEPCION' || user?.rol === 'TECNICO') && (
+            <Grid item xs={12} sm={6} md={4}>
+              {user?.rol === 'TECNICO' ? (
+                <Badge
+                  badgeContent={otRecibidoDiagnosticoCount}
+                  color="error"
+                  showZero
+                  sx={{ '& .MuiBadge-badge': { fontSize: '0.85rem', minWidth: 22, height: 22 } }}
+                >
+                  <Card 
+                    sx={{ 
+                      cursor: 'pointer',
+                      transition: 'all 0.3s',
+                      '&:hover': { transform: 'translateY(-4px)', boxShadow: 6 }
+                    }}
+                    onClick={() => navigate('/ordenes')}
+                  >
+                    <CardContent>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                        <Build sx={{ fontSize: 40, color: 'primary.main', mr: 2 }} />
+                        <Typography variant="h6">Órdenes de Trabajo</Typography>
+                      </Box>
+                      <Typography variant="body2" color="text.secondary">
+                        Tus órdenes asignadas · Recibido y diagnóstico
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Badge>
+              ) : (
+                <Card 
+                  sx={{ 
+                    cursor: 'pointer',
+                    transition: 'all 0.3s',
+                    '&:hover': { transform: 'translateY(-4px)', boxShadow: 6 }
+                  }}
+                  onClick={() => navigate('/ordenes')}
+                >
+                  <CardContent>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <Build sx={{ fontSize: 40, color: 'primary.main', mr: 2 }} />
+                      <Typography variant="h6">Órdenes de Trabajo</Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary">
+                      Gestión de servicios y reparaciones
+                    </Typography>
+                  </CardContent>
+                </Card>
+              )}
+            </Grid>
+          )}
+
           {/* Gestión de Usuarios - Solo ADMIN */}
           {user?.rol === 'ADMIN' && (
             <Grid item xs={12} sm={6} md={4}>
@@ -218,35 +286,6 @@ const Dashboard = () => {
                   </Box>
                   <Typography variant="body2" color="text.secondary">
                     Gestión de clientes y base de datos
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          )}
-
-          {/* Órdenes de Trabajo - ADMIN, RECEPCION y TECNICO */}
-          {(user?.rol === 'ADMIN' || user?.rol === 'RECEPCION' || user?.rol === 'TECNICO') && (
-            <Grid item xs={12} sm={6} md={4}>
-              <Card 
-                sx={{ 
-                  cursor: 'pointer',
-                  transition: 'all 0.3s',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: 6
-                  }
-                }}
-                onClick={() => navigate('/ordenes')}
-              >
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Build sx={{ fontSize: 40, color: 'primary.main', mr: 2 }} />
-                    <Typography variant="h6">
-                      Órdenes de Trabajo
-                    </Typography>
-                  </Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Gestión de servicios y reparaciones
                   </Typography>
                 </CardContent>
               </Card>

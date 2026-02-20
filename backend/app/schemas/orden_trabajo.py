@@ -148,6 +148,7 @@ class OrdenTrabajoResponse(OrdenTrabajoBase):
     
     # Fotos
     foto_entrada: Optional[str] = None
+    fotos_entrada_list: Optional[List[str]] = None  # Todas las URLs de fotos de entrada
     foto_salida: Optional[str] = None
     
     # Fechas

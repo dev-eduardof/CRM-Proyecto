@@ -2,7 +2,7 @@ from datetime import timedelta
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from app.models.user import User
-from app.schemas.user import UserCreate, UserLogin, Token
+from app.schemas.user import UserCreate, UserLogin, Token, LoginTecnicoCodigo
 from app.core.security import verify_password, get_password_hash, create_access_token
 from app.config import settings
 
@@ -60,6 +60,23 @@ class AuthService:
         user = AuthService.authenticate_user(db, credentials.username, credentials.password)
         token = AuthService.create_token(user)
         return token
+
+    @staticmethod
+    def login_tecnico_por_codigo(db: Session, codigo: str) -> Token:
+        """Login de técnico por código de 4 dígitos. Redirige a dashboard de trabajo."""
+        from app.models.user import RolEnum
+        user = db.query(User).filter(
+            User.codigo == codigo,
+            User.rol == RolEnum.TECNICO,
+            User.activo == True
+        ).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Código incorrecto o no corresponde a un técnico activo",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        return AuthService.create_token(user)
     
     @staticmethod
     def register_user(db: Session, user_data: UserCreate) -> User:
@@ -88,7 +105,8 @@ class AuthService:
             nombre_completo=user_data.nombre_completo,
             password_hash=hashed_password,
             rol=user_data.rol,
-            activo=True
+            activo=True,
+            codigo=getattr(user_data, "codigo", None)
         )
         
         db.add(new_user)

@@ -1,0 +1,122 @@
+================================================================================
+  CONFIGURACIÓN COMPLETA - Amazon_Torno (CRM Producción)
+  IP: 16.148.80.123  |  Oregon, Zona A  |  1 GB RAM, 2 vCPU, 40 GB SSD
+================================================================================
+
+PASO 1 - FIREWALL EN AWS (Consola)
+----------------------------------
+En la consola de AWS (Lightsail o EC2):
+- Networking / Security groups
+- Abre estos puertos INBOUND:
+  - 22   (SSH)
+  - 80   (HTTP)
+  - 443  (HTTPS)
+  - 3000 (Frontend)
+  - 8000 (Backend API)
+  - 8080 (Adminer, opcional)
+
+
+PASO 2 - CONECTAR POR SSH
+-------------------------
+En tu PC (PowerShell o CMD), con la clave .pem descargada:
+
+  ssh -i "ruta\a\tu-clave.pem" ec2-user@16.148.80.123
+
+Si pide confirmación de fingerprint, escribe: yes
+
+
+PASO 3 - INSTALAR GIT Y CLONAR PROYECTO
+----------------------------------------
+En el servidor (ya conectado por SSH):
+
+  sudo dnf install -y git
+  cd ~
+  git clone https://github.com/dev-eduardof/CRM-Proyecto.git crm-proyecto
+  cd crm-proyecto
+  git checkout main
+
+
+PASO 4 - EJECUTAR SCRIPT DE CONFIGURACIÓN
+-----------------------------------------
+  chmod +x setup-amazon-linux.sh
+  ./setup-amazon-linux.sh
+
+Luego CIERRA SESIÓN y vuelve a conectar (para que Docker funcione sin sudo):
+
+  exit
+  ssh -i "ruta\a\tu-clave.pem" ec2-user@16.148.80.123
+
+Vuelve al proyecto:
+
+  cd ~/crm-proyecto
+
+
+PASO 5 - CREAR ARCHIVO .env (en ~/crm-proyecto)
+----------------------------
+  nano .env
+
+Pega este contenido (ajusta las contraseñas y SECRET_KEY):
+
+--- INICIO .env ---
+DB_ROOT_PASSWORD=CambiaEstaPasswordRoot123!
+DB_NAME=crm_talleres
+DB_USER=crm_user
+DB_PASSWORD=CambiaEstaPasswordUser456!
+SECRET_KEY=genera-una-clave-aleatoria-larga-aqui-64-chars
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+VITE_API_URL=http://16.148.80.123:8000
+NODE_ENV=production
+TZ=America/Mexico_City
+--- FIN .env ---
+
+Para generar SECRET_KEY en tu PC (PowerShell):
+  [Convert]::ToBase64String((1..64 | ForEach-Object { Get-Random -Maximum 256 }) -as [byte[]])
+
+Guardar en nano: Ctrl+O, Enter, Ctrl+X
+
+
+PASO 6 - INICIAR LA APLICACIÓN (en ~/crm-proyecto)
+------------------------------
+  chmod +x deploy.sh
+  ./deploy.sh start
+
+Espera unos minutos a que construya las imágenes y levante los contenedores.
+
+
+PASO 7 - VERIFICAR EN EL NAVEGADOR
+------------------
+En tu navegador:
+
+  Frontend:    http://16.148.80.123:3000
+  Backend API: http://16.148.80.123:8000/docs
+  Health:      http://16.148.80.123:8000/api/health
+  Adminer (BD): http://16.148.80.123:8080  (sistema=MySQL, servidor=db, usuario=crm_user, BD=crm_talleres)
+
+
+PASO 8 - SEGURIDAD ADICIONAL (RECOMENDADO) (RECOMENDADO)
+------------------------------------------
+- Cambiar contraseñas por otras fuertes y únicas.
+- En producción, cerrar puerto 8080 (Adminer) cuando no lo uses.
+- Configurar backups:  ./deploy.sh backup  (o cron diario).
+- Mantener actualizado:  cd ~/crm-proyecto && git pull origin main && ./deploy.sh update
+
+
+COMANDOS ÚTILES
+---------------
+  ./deploy.sh status   - Ver estado de contenedores
+  ./deploy.sh logs     - Ver logs
+  ./deploy.sh restart  - Reiniciar servicios
+  ./deploy.sh stop     - Detener todo
+  ./deploy.sh backup   - Backup de la base de datos
+  ./deploy.sh update   - Actualizar y reconstruir
+
+
+SI ALGO FALLA
+-------------
+- Logs:           ./deploy.sh logs
+- Solo backend:   docker-compose -f docker-compose.prod.yml logs backend
+- Solo base datos: docker-compose -f docker-compose.prod.yml logs db
+- Reiniciar BD:   docker-compose -f docker-compose.prod.yml restart db
+
+================================================================================

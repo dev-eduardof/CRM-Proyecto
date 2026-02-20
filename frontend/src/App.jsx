@@ -9,6 +9,7 @@ import Users from './pages/Users';
 import Vacaciones from './pages/Vacaciones';
 import Clientes from './pages/Clientes';
 import Ordenes from './pages/Ordenes';
+import DashboardTaller from './pages/DashboardTaller';
 // import Recepcion from './pages/Recepcion';
 // import Tecnicos from './pages/Tecnicos';
 // import Caja from './pages/Caja';
@@ -62,6 +63,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['ADMIN', 'RECEPCION']}>
                   <Clientes />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard-taller"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN', 'RECEPCION', 'TECNICO']}>
+                  <DashboardTaller />
                 </ProtectedRoute>
               }
             />

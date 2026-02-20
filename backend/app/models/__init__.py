@@ -4,9 +4,11 @@ from app.models.asistencia import Asistencia, TipoAsistenciaEnum
 from app.models.documento_empleado import DocumentoEmpleado, TipoDocumentoEnum, EstadoDocumentoEnum
 from app.models.incidencia_empleado import IncidenciaEmpleado, TipoIncidenciaEnum, SeveridadEnum
 from app.models.cliente import Cliente, TipoClienteEnum
+from app.models.sucursal import Sucursal
 from app.models.categoria_orden import CategoriaOrden, SubcategoriaOrden
 from app.models.subtarea_orden import SubtareaOrden, EstadoSubtareaEnum
 from app.models.orden_trabajo import OrdenTrabajo, EstadoOrdenEnum, PrioridadEnum, TipoPermisoEnum
+from app.models.orden_foto_entrada import OrdenFotoEntrada
 
 __all__ = [
     "User", 
@@ -26,6 +28,7 @@ __all__ = [
     "SeveridadEnum",
     "Cliente",
     "TipoClienteEnum",
+    "Sucursal",
     "CategoriaOrden",
     "SubcategoriaOrden",
     "SubtareaOrden",
@@ -33,5 +36,6 @@ __all__ = [
     "OrdenTrabajo",
     "EstadoOrdenEnum",
     "PrioridadEnum",
-    "TipoPermisoEnum"
+    "TipoPermisoEnum",
+    "OrdenFotoEntrada"
 ]

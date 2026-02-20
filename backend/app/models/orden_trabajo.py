@@ -47,7 +47,7 @@ class OrdenTrabajo(Base):
     # Información de la pieza/trabajo
     descripcion = Column(Text, nullable=False)  # Descripción del trabajo a realizar
     observaciones = Column(Text, nullable=True)  # Observaciones adicionales
-    foto_entrada = Column(String(255), nullable=True)  # Ruta de la foto de la pieza
+    foto_entrada = Column(String(255), nullable=True)  # Primera foto de entrada (compatibilidad)
     foto_salida = Column(String(255), nullable=True)  # Ruta de la foto del trabajo terminado
     
     # Información de contacto para notificaciones
@@ -90,21 +90,35 @@ class OrdenTrabajo(Base):
     def __repr__(self):
         return f"<OrdenTrabajo {self.folio} - {self.estatus}>"
     
+    def _normalize_dt(self, dt):
+        """Convierte datetime naive a aware (UTC) para evitar errores de comparación con MySQL."""
+        from datetime import timezone
+        if dt is None:
+            return None
+        if getattr(dt, "tzinfo", None) is None:
+            return dt.replace(tzinfo=timezone.utc)
+        return dt
+
     @property
     def dias_desde_recepcion(self):
         """Calcula los días desde la recepción"""
         from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        recepcion = self._normalize_dt(self.fecha_recepcion)
         if self.fecha_entrega:
-            return (self.fecha_entrega - self.fecha_recepcion).days
-        return (datetime.now(timezone.utc) - self.fecha_recepcion).days
-    
+            entrega = self._normalize_dt(self.fecha_entrega)
+            return (entrega - recepcion).days
+        return (now - recepcion).days
+
     @property
     def esta_retrasada(self):
         """Verifica si la orden está retrasada respecto a la fecha promesa"""
         from datetime import datetime, timezone
-        if self.fecha_promesa and self.estatus not in [EstadoOrdenEnum.ENTREGADO, EstadoOrdenEnum.FINALIZADO]:
-            return datetime.now(timezone.utc) > self.fecha_promesa
-        return False
+        if not self.fecha_promesa or self.estatus in [EstadoOrdenEnum.ENTREGADO, EstadoOrdenEnum.FINALIZADO]:
+            return False
+        now = datetime.now(timezone.utc)
+        promesa = self._normalize_dt(self.fecha_promesa)
+        return now > promesa
     
     @property
     def saldo_pendiente(self):

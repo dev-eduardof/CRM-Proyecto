@@ -64,11 +64,11 @@ const Layout = ({ children }) => {
   };
 
   const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard', roles: ['ADMIN', 'TECNICO', 'RECEPCION', 'CAJA', 'AUXILIAR', 'JEFE_TALLER'] },
+    { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard', roles: ['ADMIN', 'RECEPCION', 'CAJA', 'AUXILIAR', 'JEFE_TALLER'] },
     { text: 'Usuarios', icon: <PeopleIcon />, path: '/users', roles: ['ADMIN'] },
-    { text: 'Mis Vacaciones', icon: <BeachAccessIcon />, path: '/vacaciones', roles: ['ADMIN', 'TECNICO', 'RECEPCION', 'CAJA', 'AUXILIAR', 'JEFE_TALLER'] },
+    { text: 'Mis Vacaciones', icon: <BeachAccessIcon />, path: '/vacaciones', roles: ['ADMIN', 'RECEPCION', 'CAJA', 'AUXILIAR', 'JEFE_TALLER'] },
     { text: 'Clientes', icon: <PersonAddIcon />, path: '/clientes', roles: ['ADMIN', 'RECEPCION'] },
-    { text: 'Órdenes de Trabajo', icon: <BuildIcon />, path: '/ordenes', roles: ['ADMIN', 'TECNICO', 'RECEPCION'] },
+    { text: 'Órdenes de Trabajo', icon: <ReceiptIcon />, path: '/ordenes', roles: ['ADMIN', 'RECEPCION'] },
     { text: 'Caja', icon: <AttachMoneyIcon />, path: '/cashier', roles: ['ADMIN', 'CAJA'] },
     { text: 'Reportes', icon: <BarChartIcon />, path: '/reports', roles: ['ADMIN'] },
   ];

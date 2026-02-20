@@ -64,6 +64,10 @@ uploads/*
 backend/.env
 frontend/.env
 
+# Claves/credenciales (no subir a repo)
+pem/
+*.pem
+
 # OS
 .DS_Store
 Thumbs.db

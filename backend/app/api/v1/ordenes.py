@@ -4,10 +4,12 @@ from typing import List, Optional
 from datetime import datetime
 import os
 import shutil
+import logging
+from pydantic import ValidationError as PydanticValidationError
 from app.database import get_db
 from app.models import (
-    OrdenTrabajo, Cliente, User, CategoriaOrden, SubcategoriaOrden, 
-    SubtareaOrden, EstadoOrdenEnum
+    OrdenTrabajo, Cliente, User, CategoriaOrden, SubcategoriaOrden,
+    SubtareaOrden, EstadoOrdenEnum, PrioridadEnum, OrdenFotoEntrada
 )
 from app.schemas import (
     OrdenTrabajoCreate,
@@ -27,6 +29,73 @@ from app.schemas import (
 from app.core.dependencies import get_current_user, require_role
 
 router = APIRouter(tags=["ordenes"])
+
+
+# Columnas de OrdenTrabajo que van en la respuesta (evitar relaciones y atributos internos)
+_ORDEN_RESPONSE_KEYS = {
+    "id", "folio", "cliente_id", "sucursal_id", "categoria_id", "subcategoria_id",
+    "usuario_recepcion_id", "tecnico_asignado_id", "descripcion", "observaciones",
+    "foto_entrada", "foto_salida", "nombre_contacto_notificacion", "telefono_contacto_notificacion",
+    "tipo_permiso", "numero_permiso", "precio_estimado", "anticipo", "precio_final",
+    "estatus", "prioridad", "fecha_recepcion", "fecha_promesa", "fecha_inicio_trabajo",
+    "fecha_terminado", "fecha_entrega", "created_at", "updated_at"
+}
+
+
+def _orden_to_response_dict(db: Session, orden, subtareas_with_tech=True) -> dict:
+    """Construye un dict seguro para OrdenTrabajoResponse (solo columnas, enums serializados)."""
+    d = {}
+    for k, v in orden.__dict__.items():
+        if k not in _ORDEN_RESPONSE_KEYS or k == "_sa_instance_state":
+            continue
+        if k == "estatus":
+            d[k] = v.value if hasattr(v, "value") else str(v)
+        elif k == "prioridad":
+            d[k] = v.value if hasattr(v, "value") else str(v)
+        elif k == "tipo_permiso" and v is not None and hasattr(v, "value"):
+            d[k] = v.value
+        else:
+            d[k] = v
+    d["fotos_entrada_list"] = _fotos_entrada_list(db, orden)
+    d["cliente_nombre"] = orden.cliente.nombre_completo if orden.cliente else None
+    d["sucursal_nombre"] = orden.sucursal.nombre_sucursal if orden.sucursal else None
+    d["categoria_nombre"] = orden.categoria.nombre if orden.categoria else None
+    d["subcategoria_nombre"] = orden.subcategoria.nombre if orden.subcategoria else None
+    d["tecnico_nombre"] = orden.tecnico.nombre_completo if orden.tecnico else None
+    d["usuario_recepcion_nombre"] = orden.usuario_recepcion.nombre_completo if orden.usuario_recepcion else None
+    d["dias_desde_recepcion"] = orden.dias_desde_recepcion
+    d["esta_retrasada"] = orden.esta_retrasada
+    d["saldo_pendiente"] = orden.saldo_pendiente
+    d["porcentaje_completado"] = orden.porcentaje_completado
+    if subtareas_with_tech:
+        _st_keys = {"id", "orden_trabajo_id", "titulo", "descripcion", "tecnico_asignado_id", "orden",
+                    "fecha_inicio", "fecha_completada", "created_at", "updated_at"}
+        d["subtareas"] = []
+        for st in orden.subtareas:
+            st_d = {k: getattr(st, k, None) for k in _st_keys}
+            st_d["estado"] = st.estado.value if hasattr(getattr(st, "estado", None), "value") else getattr(st, "estado", None)
+            st_d["tecnico_nombre"] = st.tecnico.nombre_completo if st.tecnico else None
+            d["subtareas"].append(st_d)
+    else:
+        d["subtareas"] = []
+    return d
+
+
+def _fotos_entrada_list(db: Session, orden) -> List[str]:
+    """Obtiene la lista completa de URLs de fotos de entrada (todos los roles, sin límite)."""
+    orden_id = orden.id if hasattr(orden, "id") else int(orden)
+    rows = (
+        db.query(OrdenFotoEntrada)
+        .filter(OrdenFotoEntrada.orden_id == orden_id)
+        .order_by(OrdenFotoEntrada.id)
+        .all()
+    )
+    if rows:
+        return [r.url for r in rows]
+    if hasattr(orden, "foto_entrada") and orden.foto_entrada:
+        return [orden.foto_entrada]
+    return []
+
 
 # Crear directorio para fotos si no existe
 UPLOAD_DIR = "uploads/ordenes"
@@ -131,11 +200,12 @@ def get_ordenes(
         joinedload(OrdenTrabajo.subtareas)
     )
     
-    # Si es técnico, solo ver sus órdenes asignadas
+    # Si es técnico, solo puede ver sus propias órdenes asignadas (nunca las de otros)
     if current_user.rol.value == "TECNICO":
         query = query.filter(OrdenTrabajo.tecnico_asignado_id == current_user.id)
+        tecnico_id = None  # Ignorar filtro por técnico: un técnico no puede listar órdenes de otros
     
-    # Filtros
+    # Filtros (tecnico_id solo aplica para ADMIN/RECEPCION)
     if estatus:
         query = query.filter(OrdenTrabajo.estatus == estatus)
     
@@ -213,29 +283,24 @@ def get_orden(
     if current_user.rol.value == "TECNICO" and orden.tecnico_asignado_id != current_user.id:
         raise HTTPException(status_code=403, detail="No tienes permiso para ver esta orden")
     
-    # Preparar respuesta
-    orden_dict = {
-        **orden.__dict__,
-        "cliente_nombre": orden.cliente.nombre_completo if orden.cliente else None,
-        "sucursal_nombre": orden.sucursal.nombre_sucursal if orden.sucursal else None,
-        "categoria_nombre": orden.categoria.nombre if orden.categoria else None,
-        "subcategoria_nombre": orden.subcategoria.nombre if orden.subcategoria else None,
-        "tecnico_nombre": orden.tecnico.nombre_completo if orden.tecnico else None,
-        "usuario_recepcion_nombre": orden.usuario_recepcion.nombre_completo if orden.usuario_recepcion else None,
-        "dias_desde_recepcion": orden.dias_desde_recepcion,
-        "esta_retrasada": orden.esta_retrasada,
-        "saldo_pendiente": orden.saldo_pendiente,
-        "porcentaje_completado": orden.porcentaje_completado,
-        "subtareas": [
-            {
-                **st.__dict__,
-                "tecnico_nombre": st.tecnico.nombre_completo if st.tecnico else None
-            }
-            for st in orden.subtareas
-        ]
-    }
-    
+    orden_dict = _orden_to_response_dict(db, orden)
     return OrdenTrabajoResponse(**orden_dict)
+
+
+@router.get("/ordenes/{orden_id}/fotos")
+def get_orden_fotos(
+    orden_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(["ADMIN", "RECEPCION", "TECNICO"]))
+):
+    """Devuelve solo la lista de fotos de entrada (misma lógica para todos los roles)."""
+    orden = db.query(OrdenTrabajo).filter(OrdenTrabajo.id == orden_id).first()
+    if not orden:
+        raise HTTPException(status_code=404, detail="Orden no encontrada")
+    if current_user.rol.value == "TECNICO" and orden.tecnico_asignado_id != current_user.id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para ver esta orden")
+    fotos = _fotos_entrada_list(db, orden)
+    return {"fotos_entrada_list": fotos}
 
 
 @router.post("/ordenes", response_model=OrdenTrabajoResponse, status_code=status.HTTP_201_CREATED)
@@ -284,22 +349,7 @@ def create_orden(
         joinedload(OrdenTrabajo.subtareas)
     ).filter(OrdenTrabajo.id == db_orden.id).first()
     
-    # Preparar respuesta
-    orden_dict = {
-        **db_orden.__dict__,
-        "cliente_nombre": db_orden.cliente.nombre_completo if db_orden.cliente else None,
-        "sucursal_nombre": db_orden.sucursal.nombre_sucursal if db_orden.sucursal else None,
-        "categoria_nombre": db_orden.categoria.nombre if db_orden.categoria else None,
-        "subcategoria_nombre": db_orden.subcategoria.nombre if db_orden.subcategoria else None,
-        "tecnico_nombre": db_orden.tecnico.nombre_completo if db_orden.tecnico else None,
-        "usuario_recepcion_nombre": db_orden.usuario_recepcion.nombre_completo if db_orden.usuario_recepcion else None,
-        "dias_desde_recepcion": db_orden.dias_desde_recepcion,
-        "esta_retrasada": db_orden.esta_retrasada,
-        "saldo_pendiente": db_orden.saldo_pendiente,
-        "porcentaje_completado": db_orden.porcentaje_completado,
-        "subtareas": []
-    }
-    
+    orden_dict = _orden_to_response_dict(db, db_orden, subtareas_with_tech=False)
     return OrdenTrabajoResponse(**orden_dict)
 
 
@@ -327,7 +377,25 @@ def update_orden(
     else:
         update_data = orden_update.model_dump(exclude_unset=True)
     
-    # Actualizar campos
+    # Convertir enums y no actualizar fotos por PUT (se suben por endpoint /foto)
+    if "estatus" in update_data and update_data["estatus"] is not None:
+        try:
+            update_data["estatus"] = EstadoOrdenEnum(update_data["estatus"])
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Estado no válido")
+    if "prioridad" in update_data and update_data["prioridad"] is not None:
+        try:
+            update_data["prioridad"] = PrioridadEnum(update_data["prioridad"])
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Prioridad no válida")
+    update_data.pop("foto_entrada", None)
+    update_data.pop("foto_salida", None)
+    
+    # Normalizar fechas vacías o inválidas a None para evitar error en BD
+    for date_field in ("fecha_promesa", "fecha_inicio_trabajo", "fecha_terminado", "fecha_entrega"):
+        if date_field in update_data and (update_data[date_field] is None or update_data[date_field] == ""):
+            update_data[date_field] = None
+    
     for field, value in update_data.items():
         setattr(db_orden, field, value)
     
@@ -345,29 +413,12 @@ def update_orden(
         joinedload(OrdenTrabajo.subtareas).joinedload(SubtareaOrden.tecnico)
     ).filter(OrdenTrabajo.id == db_orden.id).first()
     
-    # Preparar respuesta
-    orden_dict = {
-        **db_orden.__dict__,
-        "cliente_nombre": db_orden.cliente.nombre_completo if db_orden.cliente else None,
-        "sucursal_nombre": db_orden.sucursal.nombre_sucursal if db_orden.sucursal else None,
-        "categoria_nombre": db_orden.categoria.nombre if db_orden.categoria else None,
-        "subcategoria_nombre": db_orden.subcategoria.nombre if db_orden.subcategoria else None,
-        "tecnico_nombre": db_orden.tecnico.nombre_completo if db_orden.tecnico else None,
-        "usuario_recepcion_nombre": db_orden.usuario_recepcion.nombre_completo if db_orden.usuario_recepcion else None,
-        "dias_desde_recepcion": db_orden.dias_desde_recepcion,
-        "esta_retrasada": db_orden.esta_retrasada,
-        "saldo_pendiente": db_orden.saldo_pendiente,
-        "porcentaje_completado": db_orden.porcentaje_completado,
-        "subtareas": [
-            {
-                **st.__dict__,
-                "tecnico_nombre": st.tecnico.nombre_completo if st.tecnico else None
-            }
-            for st in db_orden.subtareas
-        ]
-    }
-    
-    return OrdenTrabajoResponse(**orden_dict)
+    try:
+        orden_dict = _orden_to_response_dict(db, db_orden)
+        return OrdenTrabajoResponse(**orden_dict)
+    except PydanticValidationError as e:
+        logging.exception("Error construyendo respuesta PUT orden: %s", e.errors())
+        raise HTTPException(status_code=500, detail="Error al serializar la orden actualizada")
 
 
 @router.patch("/ordenes/{orden_id}/estado", response_model=OrdenTrabajoResponse)
@@ -382,6 +433,10 @@ def cambiar_estado_orden(
     
     if not db_orden:
         raise HTTPException(status_code=404, detail="Orden de trabajo no encontrada")
+    
+    # Técnico solo puede cambiar estado de sus órdenes asignadas
+    if current_user.rol.value == "TECNICO" and db_orden.tecnico_asignado_id != current_user.id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para modificar esta orden")
     
     # Validar el estado
     try:
@@ -421,27 +476,7 @@ def cambiar_estado_orden(
         joinedload(OrdenTrabajo.subtareas).joinedload(SubtareaOrden.tecnico)
     ).filter(OrdenTrabajo.id == db_orden.id).first()
     
-    orden_dict = {
-        **db_orden.__dict__,
-        "cliente_nombre": db_orden.cliente.nombre_completo if db_orden.cliente else None,
-        "sucursal_nombre": db_orden.sucursal.nombre_sucursal if db_orden.sucursal else None,
-        "categoria_nombre": db_orden.categoria.nombre if db_orden.categoria else None,
-        "subcategoria_nombre": db_orden.subcategoria.nombre if db_orden.subcategoria else None,
-        "tecnico_nombre": db_orden.tecnico.nombre_completo if db_orden.tecnico else None,
-        "usuario_recepcion_nombre": db_orden.usuario_recepcion.nombre_completo if db_orden.usuario_recepcion else None,
-        "dias_desde_recepcion": db_orden.dias_desde_recepcion,
-        "esta_retrasada": db_orden.esta_retrasada,
-        "saldo_pendiente": db_orden.saldo_pendiente,
-        "porcentaje_completado": db_orden.porcentaje_completado,
-        "subtareas": [
-            {
-                **st.__dict__,
-                "tecnico_nombre": st.tecnico.nombre_completo if st.tecnico else None
-            }
-            for st in db_orden.subtareas
-        ]
-    }
-    
+    orden_dict = _orden_to_response_dict(db, db_orden)
     return OrdenTrabajoResponse(**orden_dict)
 
 
@@ -449,15 +484,19 @@ def cambiar_estado_orden(
 async def upload_foto(
     orden_id: int,
     tipo: str = Query(..., description="Tipo de foto: 'entrada' o 'salida'"),
-    file: UploadFile = File(...),
+    file: UploadFile = File(..., description="Archivo de imagen"),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(["ADMIN", "RECEPCION", "TECNICO"]))
 ):
-    """Subir foto de la pieza"""
+    """Subir foto de la pieza. El form debe enviar el archivo con el nombre de campo 'file'."""
     db_orden = db.query(OrdenTrabajo).filter(OrdenTrabajo.id == orden_id).first()
     
     if not db_orden:
         raise HTTPException(status_code=404, detail="Orden no encontrada")
+    
+    # Técnico solo puede subir fotos de sus órdenes asignadas
+    if current_user.rol.value == "TECNICO" and db_orden.tecnico_asignado_id != current_user.id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para subir fotos a esta orden")
     
     # Validar tipo
     if tipo not in ["entrada", "salida"]:
@@ -473,10 +512,14 @@ async def upload_foto(
         shutil.copyfileobj(file.file, buffer)
     
     # Actualizar base de datos
+    url = f"/uploads/ordenes/{filename}"
     if tipo == "entrada":
-        db_orden.foto_entrada = f"/uploads/ordenes/{filename}"
+        # Añadir fila en orden_fotos_entrada (múltiples fotos sin alterar tabla ordenes_trabajo)
+        db.add(OrdenFotoEntrada(orden_id=orden_id, url=url))
+        if not db_orden.foto_entrada:
+            db_orden.foto_entrada = url
     else:
-        db_orden.foto_salida = f"/uploads/ordenes/{filename}"
+        db_orden.foto_salida = url
     
     db.commit()
     
@@ -496,6 +539,10 @@ def create_subtarea(
     orden = db.query(OrdenTrabajo).filter(OrdenTrabajo.id == orden_id).first()
     if not orden:
         raise HTTPException(status_code=404, detail="Orden no encontrada")
+    
+    # Técnico solo puede crear subtareas en sus órdenes asignadas
+    if current_user.rol.value == "TECNICO" and orden.tecnico_asignado_id != current_user.id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para modificar esta orden")
     
     db_subtarea = SubtareaOrden(
         **subtarea.model_dump(),
@@ -528,10 +575,17 @@ def update_subtarea(
     current_user: User = Depends(require_role(["ADMIN", "RECEPCION", "TECNICO"]))
 ):
     """Actualizar una subtarea"""
-    db_subtarea = db.query(SubtareaOrden).filter(SubtareaOrden.id == subtarea_id).first()
+    db_subtarea = db.query(SubtareaOrden).options(
+        joinedload(SubtareaOrden.orden_trabajo)
+    ).filter(SubtareaOrden.id == subtarea_id).first()
     
     if not db_subtarea:
         raise HTTPException(status_code=404, detail="Subtarea no encontrada")
+    
+    # Técnico solo puede actualizar subtareas de sus órdenes asignadas
+    orden = db_subtarea.orden_trabajo
+    if current_user.rol.value == "TECNICO" and orden.tecnico_asignado_id != current_user.id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para modificar esta subtarea")
     
     update_data = subtarea_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():
