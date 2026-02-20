@@ -41,6 +41,8 @@ api.interceptors.response.use(
 export const authAPI = {
   login: (username, password) => 
     api.post('/api/v1/auth/login/json', { username, password }),
+  loginTecnico: (codigo) =>
+    api.post('/api/v1/auth/login/tecnico', { codigo }),
   loginForm: (username, password) => {
     const formData = new FormData();
     formData.append('username', username);
@@ -103,15 +105,28 @@ export const sucursalesAPI = {
 export const ordenesAPI = {
   getAll: (params) => api.get('/api/v1/ordenes', { params }),
   getById: (id) => api.get(`/api/v1/ordenes/${id}`),
+  getFotos: (id) => api.get(`/api/v1/ordenes/${id}/fotos`),
   create: (ordenData) => api.post('/api/v1/ordenes', ordenData),
   update: (id, ordenData) => api.put(`/api/v1/ordenes/${id}`, ordenData),
   cambiarEstado: (id, estadoData) => api.patch(`/api/v1/ordenes/${id}/estado`, estadoData),
   delete: (id) => api.delete(`/api/v1/ordenes/${id}`),
   getCategorias: () => api.get('/api/v1/categorias'),
   getSubcategorias: (categoriaId) => api.get(`/api/v1/categorias/${categoriaId}/subcategorias`),
-  uploadFoto: (ordenId, tipo, formData) => api.post(`/api/v1/ordenes/${ordenId}/foto?tipo=${tipo}`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  })
+  uploadFoto: async (ordenId, tipo, formData) => {
+    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${baseURL}/api/v1/ordenes/${ordenId}/foto?tipo=${tipo}`, {
+      method: 'POST',
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      body: formData
+    });
+    if (!res.ok) {
+      const err = new Error(res.statusText || 'Error al subir foto');
+      err.response = { status: res.status, data: await res.json().catch(() => ({})) };
+      throw err;
+    }
+    return { data: await res.json() };
+  }
 };
 
 export default api;

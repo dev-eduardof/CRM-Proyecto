@@ -15,10 +15,10 @@ def get_users(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(["ADMIN"]))
+    current_user: User = Depends(require_role(["ADMIN", "RECEPCION"]))
 ):
     """
-    Obtener lista de usuarios (solo ADMIN)
+    Obtener lista de usuarios (ADMIN y RECEPCION, para asignar técnicos en órdenes).
     """
     users = db.query(User).offset(skip).limit(limit).all()
     return users
@@ -67,7 +67,8 @@ def create_user(
             detail="El email ya está registrado"
         )
     
-    # Crear usuario
+    if user_data.codigo and db.query(User).filter(User.codigo == user_data.codigo).first():
+        raise HTTPException(status_code=400, detail="El código ya está asignado a otro usuario")
     hashed_password = get_password_hash(user_data.password)
     new_user = User(
         username=user_data.username,
@@ -75,7 +76,8 @@ def create_user(
         nombre_completo=user_data.nombre_completo,
         password_hash=hashed_password,
         rol=user_data.rol,
-        activo=True
+        activo=True,
+        codigo=user_data.codigo
     )
     
     db.add(new_user)
@@ -127,7 +129,10 @@ def update_user(
     # Actualizar campos si se proporcionan
     update_data = user_data.model_dump(exclude_unset=True)
     
-    # Verificar email único si se está actualizando
+    if 'codigo' in update_data and update_data['codigo']:
+        existing_codigo = db.query(User).filter(User.codigo == update_data['codigo'], User.id != user_id).first()
+        if existing_codigo:
+            raise HTTPException(status_code=400, detail="El código ya está asignado a otro usuario")
     if 'email' in update_data:
         existing_email = db.query(User).filter(
             User.email == update_data['email'],

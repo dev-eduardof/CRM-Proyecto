@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.schemas.user import Token, UserLogin, UserCreate, UserResponse
+from app.schemas.user import Token, UserLogin, UserCreate, UserResponse, LoginTecnicoCodigo
 from app.services.auth_service import AuthService
 from app.core.dependencies import get_current_active_user
 from app.models.user import User
@@ -42,6 +42,20 @@ def login_json(
     Retorna un token JWT
     """
     token = AuthService.login(db, credentials)
+    return token
+
+
+@router.post("/login/tecnico", response_model=Token)
+def login_tecnico(
+    body: LoginTecnicoCodigo,
+    db: Session = Depends(get_db)
+):
+    """
+    Login de técnico por código de 4 dígitos.
+    El técnico debe tener asignado un código en su perfil de usuario.
+    Redirige al dashboard de trabajo (órdenes).
+    """
+    token = AuthService.login_tecnico_por_codigo(db, body.codigo)
     return token
 
 

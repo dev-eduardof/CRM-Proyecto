@@ -13,14 +13,14 @@ router = APIRouter(tags=["clientes"])
 @router.get("/clientes", response_model=List[ClienteResponse])
 def get_clientes(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(["ADMIN", "RECEPCION"])),
+    current_user: User = Depends(require_role(["ADMIN", "RECEPCION", "TECNICO"])),
     skip: int = 0,
     limit: int = 100,
     buscar: Optional[str] = None,
     activo: Optional[bool] = None
 ):
     """
-    Obtener lista de clientes (ADMIN y RECEPCION)
+    Obtener lista de clientes (ADMIN, RECEPCION y TECNICO para uso en órdenes de trabajo)
     """
     query = db.query(Cliente)
     

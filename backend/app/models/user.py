@@ -40,6 +40,7 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     rol = Column(Enum(RolEnum), nullable=False, default=RolEnum.RECEPCION)
     activo = Column(Boolean, default=True, nullable=False)
+    codigo = Column(String(4), nullable=True, unique=True, index=True)  # Código 4 dígitos para login técnicos
     
     # Información Personal
     rfc = Column(String(13), nullable=True, index=True)

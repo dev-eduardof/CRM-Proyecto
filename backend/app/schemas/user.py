@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional
 from datetime import datetime, date
 from decimal import Decimal
@@ -11,6 +11,17 @@ class UserBase(BaseModel):
     email: EmailStr
     nombre_completo: str = Field(..., min_length=3, max_length=100)
     rol: RolEnum = RolEnum.RECEPCION
+    codigo: Optional[str] = Field(None, max_length=4)
+
+    @field_validator("codigo")
+    @classmethod
+    def codigo_cuatro_digitos(cls, v):
+        if v is None or (isinstance(v, str) and v.strip() == ""):
+            return None
+        v = v.strip()
+        if len(v) != 4 or not v.isdigit():
+            raise ValueError("El código debe tener exactamente 4 dígitos numéricos")
+        return v
 
 
 # Schema para crear usuario (campos mínimos requeridos)
@@ -53,6 +64,17 @@ class UserUpdate(BaseModel):
     rol: Optional[RolEnum] = None
     activo: Optional[bool] = None
     password: Optional[str] = Field(None, min_length=6, max_length=100)
+    codigo: Optional[str] = Field(None, max_length=4)
+
+    @field_validator("codigo")
+    @classmethod
+    def codigo_cuatro_digitos(cls, v):
+        if v is None or (isinstance(v, str) and v.strip() == ""):
+            return None
+        v = v.strip()
+        if len(v) != 4 or not v.isdigit():
+            raise ValueError("El código debe tener exactamente 4 dígitos numéricos")
+        return v
     
     # Información Personal
     rfc: Optional[str] = None
@@ -97,6 +119,7 @@ class UserResponse(BaseModel):
     nombre_completo: str
     rol: RolEnum
     activo: bool
+    codigo: Optional[str] = None
     
     # Información Personal
     rfc: Optional[str] = None
@@ -153,6 +176,7 @@ class UserListResponse(BaseModel):
     nombre_completo: str
     rol: RolEnum
     activo: bool
+    codigo: Optional[str] = None
     departamento: Optional[str] = None
     puesto_especifico: Optional[str] = None
     fecha_ingreso: Optional[date] = None
@@ -165,6 +189,11 @@ class UserListResponse(BaseModel):
 class UserLogin(BaseModel):
     username: str
     password: str
+
+
+# Schema para login de técnico por código (4 dígitos)
+class LoginTecnicoCodigo(BaseModel):
+    codigo: str = Field(..., min_length=4, max_length=4, pattern=r"^\d{4}$")
 
 
 # Schema para token

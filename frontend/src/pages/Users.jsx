@@ -86,6 +86,7 @@ const Users = () => {
     email: '',
     nombre_completo: '',
     rol: 'RECEPCION',
+    codigo: '',
     password: '',
     confirmPassword: '',
     // Información Personal
@@ -169,6 +170,7 @@ const Users = () => {
         email: user.email || '',
         nombre_completo: user.nombre_completo || '',
         rol: user.rol || 'RECEPCION',
+        codigo: user.codigo || '',
         password: '',
         confirmPassword: '',
         // Información Personal
@@ -208,6 +210,7 @@ const Users = () => {
         email: '',
         nombre_completo: '',
         rol: 'RECEPCION',
+        codigo: '',
         password: '',
         confirmPassword: '',
         // Información Personal
@@ -355,6 +358,7 @@ const Users = () => {
         email: formData.email,
         nombre_completo: formData.nombre_completo,
         rol: formData.rol,
+        codigo: (formData.codigo && formData.codigo.replace(/\D/g, '').length === 4) ? formData.codigo.replace(/\D/g, '') : null,
         // Información Personal
         rfc: formData.rfc || null,
         curp: formData.curp || null,
@@ -915,6 +919,16 @@ const Users = () => {
                   <MenuItem value="RECEPCION">Cargando roles...</MenuItem>
                 )}
               </TextField>
+              <TextField
+                label="Código (4 dígitos)"
+                name="codigo"
+                value={formData.codigo}
+                onChange={(e) => setFormData({ ...formData, codigo: e.target.value.replace(/\D/g, '').slice(0, 4) })}
+                fullWidth
+                placeholder="Para login de técnicos"
+                inputProps={{ maxLength: 4, inputMode: 'numeric' }}
+                helperText="Opcional. Los técnicos pueden iniciar sesión con este código."
+              />
               <TextField
                 label={editingUser ? 'Nueva Contraseña (dejar vacío para no cambiar)' : 'Contraseña'}
                 name="password"
