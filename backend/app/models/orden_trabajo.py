@@ -1,8 +1,41 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Numeric, ForeignKey, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from sqlalchemy.types import TypeDecorator, VARCHAR
 from app.database import Base
 import enum
+
+
+class _EnumStringType(TypeDecorator):
+    """Acepta en BD valores en mayúsculas o minúsculas y los convierte al enum en Python."""
+    impl = VARCHAR(20)
+    cache_ok = True
+
+    def __init__(self, enum_class, *args, **kwargs):
+        self.enum_class = enum_class
+        super().__init__(*args, **kwargs)
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        if hasattr(value, "value"):
+            value = value.value
+        # La BD (init.sql) tiene el ENUM en minúsculas; escribimos en minúsculas
+        return str(value).lower()
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return None
+        if hasattr(value, "value"):
+            return value
+        s = str(value).strip().upper()
+        try:
+            return self.enum_class(s)
+        except ValueError:
+            for m in self.enum_class:
+                if m.value.upper() == s:
+                    return m
+            return None
 
 
 class EstadoOrdenEnum(str, enum.Enum):
@@ -63,9 +96,9 @@ class OrdenTrabajo(Base):
     anticipo = Column(Numeric(10, 2), default=0.00, nullable=False)  # Anticipo recibido
     precio_final = Column(Numeric(10, 2), nullable=True)  # Precio final acordado
     
-    # Estado y prioridad
-    estatus = Column(SQLEnum(EstadoOrdenEnum), default=EstadoOrdenEnum.RECIBIDO, nullable=False, index=True)
-    prioridad = Column(SQLEnum(PrioridadEnum), default=PrioridadEnum.NORMAL, nullable=False, index=True)
+    # Estado y prioridad (aceptan mayúsculas/minúsculas en BD para compatibilidad)
+    estatus = Column(_EnumStringType(EstadoOrdenEnum), default=EstadoOrdenEnum.RECIBIDO, nullable=False, index=True)
+    prioridad = Column(_EnumStringType(PrioridadEnum), default=PrioridadEnum.NORMAL, nullable=False, index=True)
     
     # Fechas
     fecha_recepcion = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
@@ -99,38 +132,60 @@ class OrdenTrabajo(Base):
             return dt.replace(tzinfo=timezone.utc)
         return dt
 
+    def _estatus_entregado_o_finalizado(self):
+        """True si la orden está entregada o finalizada (acepta enum o string de la BD)."""
+        if self.estatus is None:
+            return False
+        val = getattr(self.estatus, "value", None) or str(self.estatus)
+        return str(val).upper() in ("ENTREGADO", "FINALIZADO")
+
     @property
     def dias_desde_recepcion(self):
         """Calcula los días desde la recepción"""
         from datetime import datetime, timezone
-        now = datetime.now(timezone.utc)
         recepcion = self._normalize_dt(self.fecha_recepcion)
+        if recepcion is None:
+            return 0
+        now = datetime.now(timezone.utc)
         if self.fecha_entrega:
             entrega = self._normalize_dt(self.fecha_entrega)
-            return (entrega - recepcion).days
+            if entrega is not None:
+                return (entrega - recepcion).days
         return (now - recepcion).days
 
     @property
     def esta_retrasada(self):
         """Verifica si la orden está retrasada respecto a la fecha promesa"""
         from datetime import datetime, timezone
-        if not self.fecha_promesa or self.estatus in [EstadoOrdenEnum.ENTREGADO, EstadoOrdenEnum.FINALIZADO]:
+        if not self.fecha_promesa or self._estatus_entregado_o_finalizado():
+            return False
+        promesa = self._normalize_dt(self.fecha_promesa)
+        if promesa is None:
             return False
         now = datetime.now(timezone.utc)
-        promesa = self._normalize_dt(self.fecha_promesa)
         return now > promesa
-    
+
     @property
     def saldo_pendiente(self):
         """Calcula el saldo pendiente"""
-        if self.precio_final:
-            return float(self.precio_final - self.anticipo)
-        return 0.0
-    
+        if self.precio_final is None:
+            return 0.0
+        try:
+            anticipo = self.anticipo if self.anticipo is not None else 0
+            return float(self.precio_final - anticipo)
+        except (TypeError, ValueError):
+            return 0.0
+
     @property
     def porcentaje_completado(self):
         """Calcula el porcentaje de completado basado en subtareas"""
         if not self.subtareas:
             return 0
-        completadas = sum(1 for st in self.subtareas if st.estado == "COMPLETADA")
-        return int((completadas / len(self.subtareas)) * 100)
+        try:
+            completadas = sum(
+                1 for st in self.subtareas
+                if (getattr(st.estado, "value", None) or str(st.estado or "")).upper() == "COMPLETADA"
+            )
+            return int((completadas / len(self.subtareas)) * 100)
+        except (TypeError, ZeroDivisionError):
+            return 0

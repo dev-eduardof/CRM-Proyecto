@@ -17,6 +17,9 @@ COPY . .
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 
+# Limitar memoria de Node para servidores con poca RAM (ej. 1GB)
+ENV NODE_OPTIONS="--max-old-space-size=460"
+
 # Build de producción
 RUN npm run build
 

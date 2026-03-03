@@ -129,4 +129,14 @@ export const ordenesAPI = {
   }
 };
 
+// API de gastos
+export const gastosAPI = {
+  getAll: (params) => api.get('/api/v1/gastos', { params }),
+  getResumen: (params) => api.get('/api/v1/gastos/resumen', { params }),
+  getById: (id) => api.get(`/api/v1/gastos/${id}`),
+  create: (data) => api.post('/api/v1/gastos', data),
+  update: (id, data) => api.put(`/api/v1/gastos/${id}`, data),
+  delete: (id) => api.delete(`/api/v1/gastos/${id}`)
+};
+
 export default api;

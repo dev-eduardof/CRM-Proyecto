@@ -217,17 +217,20 @@ const Ordenes = () => {
     fetchCategorias();
   }, [estatusFilter, user?.rol]);
 
-  // Al abrir Editar: cargar orden completa y lista de fotos (misma lógica que Detalles/Ver)
+  // Al abrir Editar: cargar orden completa (incluye gastos) y lista de fotos
   useEffect(() => {
     if (!openDialog || !isEditing || !selectedOrden?.id) return;
-    const yaTieneFotos = Array.isArray(selectedOrden.fotos_entrada_list) || selectedOrden.foto_entrada;
-    if (yaTieneFotos) return;
     let cancelled = false;
     const ordenId = selectedOrden.id;
     ordenesAPI.getById(ordenId)
       .then((res) => {
         if (cancelled || !res?.data) return;
         const orden = res.data;
+        const yaTieneFotos = Array.isArray(orden.fotos_entrada_list) || orden.foto_entrada;
+        if (yaTieneFotos) {
+          setSelectedOrden(orden);
+          return;
+        }
         return ordenesAPI.getFotos(ordenId)
           .then((fotosRes) => {
             if (cancelled) return;
@@ -268,13 +271,20 @@ const Ordenes = () => {
     }
   }, [formData.tipo_permiso, isEditing]);
 
-  // Formatear error de API (FastAPI devuelve detail como array en validación)
+  // Formatear error de API (FastAPI devuelve detail como array en validación u objeto con message/error)
   const formatApiError = (detail) => {
     if (detail == null) return '';
     if (Array.isArray(detail)) {
       return detail.map(e => e.msg || e.loc?.join('.') || JSON.stringify(e)).join('. ') || 'Error de validación';
     }
-    if (typeof detail === 'object') return JSON.stringify(detail);
+    if (typeof detail === 'object') {
+      if (detail.validation_errors?.length) {
+        return detail.message + ': ' + detail.validation_errors.map(e => e.msg || e.loc?.join('.')).join('; ');
+      }
+      if (detail.error) return detail.message ? `${detail.message}: ${detail.error}` : detail.error;
+      if (detail.message) return detail.message;
+      return JSON.stringify(detail);
+    }
     return String(detail);
   };
 
@@ -1529,16 +1539,55 @@ const Ordenes = () => {
                     InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
                   />
                 </Grid>
+                {isEditing && selectedOrden && (selectedOrden.gastos?.length > 0 || (selectedOrden.total_gastos != null && selectedOrden.total_gastos > 0)) && (
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                      Gastos registrados en esta OT
+                    </Typography>
+                    <TableContainer component={Paper} variant="outlined" sx={{ mb: 2 }}>
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>Descripción</TableCell>
+                            <TableCell>Fecha</TableCell>
+                            <TableCell align="right">Monto</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {(selectedOrden.gastos || []).map((g) => (
+                            <TableRow key={g.id}>
+                              <TableCell>{g.descripcion}</TableCell>
+                              <TableCell>{g.fecha_gasto || '—'}</TableCell>
+                              <TableCell align="right">{formatCurrency(g.monto)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </Grid>
+                )}
                 <Grid item xs={12}>
                   <Paper sx={{ p: 2, bgcolor: 'grey.100' }}>
                     <Typography variant="body2" color="text.secondary">
                       Precio Estimado: {formatCurrency(formData.precio_estimado || 0)}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    {isEditing && selectedOrden && (selectedOrden.total_gastos != null && selectedOrden.total_gastos > 0) && (
+                      <>
+                        <Typography variant="body2" color="text.secondary">
+                          Total Gastos OT: {formatCurrency(selectedOrden.total_gastos)}
+                        </Typography>
+                        <Typography variant="body1" sx={{ mt: 0.5, fontWeight: 600 }}>
+                          Precio Estimado + Gastos: {formatCurrency((parseFloat(formData.precio_estimado) || 0) + (parseFloat(selectedOrden.total_gastos) || 0))}
+                        </Typography>
+                      </>
+                    )}
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                       Anticipo: {formatCurrency(formData.anticipo || 0)}
                     </Typography>
                     <Typography variant="h6" sx={{ mt: 1 }}>
-                      Saldo Pendiente Estimado: {formatCurrency((parseFloat(formData.precio_estimado) || 0) - (parseFloat(formData.anticipo) || 0))}
+                      Saldo Pendiente Estimado: {formatCurrency(
+                        (parseFloat(formData.precio_estimado) || 0) + (parseFloat(selectedOrden?.total_gastos) || 0) - (parseFloat(formData.anticipo) || 0)
+                      )}
                     </Typography>
                   </Paper>
                 </Grid>

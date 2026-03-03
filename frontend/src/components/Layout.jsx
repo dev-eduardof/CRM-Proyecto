@@ -28,6 +28,7 @@ import {
   Receipt as ReceiptIcon,
   Build as BuildIcon,
   AttachMoney as AttachMoneyIcon,
+  MoneyOff as MoneyOffIcon,
   BarChart as BarChartIcon,
   Settings as SettingsIcon,
   ExitToApp as ExitToAppIcon,
@@ -68,7 +69,8 @@ const Layout = ({ children }) => {
     { text: 'Usuarios', icon: <PeopleIcon />, path: '/users', roles: ['ADMIN'] },
     { text: 'Mis Vacaciones', icon: <BeachAccessIcon />, path: '/vacaciones', roles: ['ADMIN', 'RECEPCION', 'CAJA', 'AUXILIAR', 'JEFE_TALLER'] },
     { text: 'Clientes', icon: <PersonAddIcon />, path: '/clientes', roles: ['ADMIN', 'RECEPCION'] },
-    { text: 'Órdenes de Trabajo', icon: <ReceiptIcon />, path: '/ordenes', roles: ['ADMIN', 'RECEPCION'] },
+    { text: 'Órdenes de Trabajo', icon: <ReceiptIcon />, path: '/ordenes', roles: ['ADMIN', 'RECEPCION', 'TECNICO'] },
+    { text: 'Gastos', icon: <MoneyOffIcon />, path: '/gastos', roles: ['ADMIN'] },
     { text: 'Caja', icon: <AttachMoneyIcon />, path: '/cashier', roles: ['ADMIN', 'CAJA'] },
     { text: 'Reportes', icon: <BarChartIcon />, path: '/reports', roles: ['ADMIN'] },
   ];

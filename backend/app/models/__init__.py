@@ -9,6 +9,7 @@ from app.models.categoria_orden import CategoriaOrden, SubcategoriaOrden
 from app.models.subtarea_orden import SubtareaOrden, EstadoSubtareaEnum
 from app.models.orden_trabajo import OrdenTrabajo, EstadoOrdenEnum, PrioridadEnum, TipoPermisoEnum
 from app.models.orden_foto_entrada import OrdenFotoEntrada
+from app.models.gasto import Gasto, TipoGastoEnum
 
 __all__ = [
     "User", 
@@ -37,5 +38,7 @@ __all__ = [
     "EstadoOrdenEnum",
     "PrioridadEnum",
     "TipoPermisoEnum",
-    "OrdenFotoEntrada"
+    "OrdenFotoEntrada",
+    "Gasto",
+    "TipoGastoEnum"
 ]

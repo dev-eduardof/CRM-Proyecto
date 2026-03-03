@@ -30,11 +30,14 @@ if ! command -v docker-compose &> /dev/null; then
     exit 1
 fi
 
-# Verificar que existe el archivo .env
+# Verificar que existe el archivo .env y cargarlo
 if [ ! -f .env ]; then
     print_error "Archivo .env no encontrado. Crea uno basado en .env.example"
     exit 1
 fi
+set -a
+source .env
+set +a
 
 # Función para iniciar los servicios
 start_services() {
@@ -70,10 +73,14 @@ show_logs() {
 update_project() {
     print_message "Actualizando proyecto..."
     
-    # Backup de la base de datos
+    # Backup de la base de datos (con root para evitar fallos de permisos)
     print_message "Creando backup de la base de datos..."
-    docker exec crm_db mysqldump -u ${DB_USER:-crm_user} -p${DB_PASSWORD:-crm_password} ${DB_NAME:-crm_talleres} > backup_$(date +%Y%m%d_%H%M%S).sql
-    print_message "Backup creado: backup_$(date +%Y%m%d_%H%M%S).sql"
+    BACKUP_FILE="backup_$(date +%Y%m%d_%H%M%S).sql"
+    if docker exec crm_db mysqldump -u root -p"${DB_ROOT_PASSWORD:-}" "${DB_NAME:-crm_talleres}" > "$BACKUP_FILE" 2>/dev/null; then
+        print_message "Backup creado: $BACKUP_FILE"
+    else
+        print_warning "No se pudo crear el backup (contenedor o credenciales). Continuando..."
+    fi
     
     # Si existe git, hacer pull
     if [ -d .git ]; then

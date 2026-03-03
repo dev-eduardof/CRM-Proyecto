@@ -14,7 +14,8 @@ import {
   PersonAdd,
   BeachAccess,
   ExpandMore,
-  ExpandLess
+  ExpandLess,
+  MoneyOff
 } from '@mui/icons-material';
 
 const Dashboard = () => {
@@ -292,6 +293,35 @@ const Dashboard = () => {
             </Grid>
           )}
 
+          {/* Gastos - Solo ADMIN */}
+          {user?.rol === 'ADMIN' && (
+            <Grid item xs={12} sm={6} md={4}>
+              <Card 
+                sx={{ 
+                  cursor: 'pointer',
+                  transition: 'all 0.3s',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: 6
+                  }
+                }}
+                onClick={() => navigate('/gastos')}
+              >
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <MoneyOff sx={{ fontSize: 40, color: 'warning.main', mr: 2 }} />
+                    <Typography variant="h6">
+                      Gastos
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary">
+                    Registro de gastos por trabajo y gastos generales
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          )}
+
           {/* Próximos módulos */}
           <Grid item xs={12}>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
@@ -300,7 +330,6 @@ const Dashboard = () => {
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
               <Chip label="Materiales" variant="outlined" />
               <Chip label="Pagos" variant="outlined" />
-              <Chip label="Gastos" variant="outlined" />
               <Chip label="Reportes" variant="outlined" />
             </Box>
           </Grid>
