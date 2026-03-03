@@ -42,42 +42,69 @@ _ORDEN_RESPONSE_KEYS = {
 }
 
 
-def _orden_to_response_dict(db: Session, orden, subtareas_with_tech=True) -> dict:
+def _orden_to_response_dict(db: Session, orden, subtareas_with_tech=True, include_gastos=False) -> dict:
     """Construye un dict seguro para OrdenTrabajoResponse (solo columnas, enums serializados)."""
     d = {}
     for k, v in orden.__dict__.items():
         if k not in _ORDEN_RESPONSE_KEYS or k == "_sa_instance_state":
             continue
         if k == "estatus":
-            d[k] = v.value if hasattr(v, "value") else str(v)
+            d[k] = v.value if hasattr(v, "value") else str(v) if v is not None else "RECIBIDO"
         elif k == "prioridad":
-            d[k] = v.value if hasattr(v, "value") else str(v)
-        elif k == "tipo_permiso" and v is not None and hasattr(v, "value"):
-            d[k] = v.value
+            d[k] = v.value if hasattr(v, "value") else str(v) if v is not None else "NORMAL"
+        elif k == "tipo_permiso":
+            if v is not None and v != "" and hasattr(v, "value"):
+                d[k] = v.value
+            else:
+                d[k] = None
         else:
             d[k] = v
     d["fotos_entrada_list"] = _fotos_entrada_list(db, orden)
-    d["cliente_nombre"] = orden.cliente.nombre_completo if orden.cliente else None
-    d["sucursal_nombre"] = orden.sucursal.nombre_sucursal if orden.sucursal else None
-    d["categoria_nombre"] = orden.categoria.nombre if orden.categoria else None
-    d["subcategoria_nombre"] = orden.subcategoria.nombre if orden.subcategoria else None
-    d["tecnico_nombre"] = orden.tecnico.nombre_completo if orden.tecnico else None
-    d["usuario_recepcion_nombre"] = orden.usuario_recepcion.nombre_completo if orden.usuario_recepcion else None
-    d["dias_desde_recepcion"] = orden.dias_desde_recepcion
-    d["esta_retrasada"] = orden.esta_retrasada
-    d["saldo_pendiente"] = orden.saldo_pendiente
-    d["porcentaje_completado"] = orden.porcentaje_completado
+    d["cliente_nombre"] = getattr(orden.cliente, "nombre_completo", None) if getattr(orden, "cliente", None) else None
+    d["sucursal_nombre"] = getattr(orden.sucursal, "nombre_sucursal", None) if getattr(orden, "sucursal", None) else None
+    d["categoria_nombre"] = getattr(orden.categoria, "nombre", None) if getattr(orden, "categoria", None) else None
+    d["subcategoria_nombre"] = getattr(orden.subcategoria, "nombre", None) if getattr(orden, "subcategoria", None) else None
+    d["tecnico_nombre"] = getattr(orden.tecnico, "nombre_completo", None) if getattr(orden, "tecnico", None) else None
+    d["usuario_recepcion_nombre"] = getattr(orden.usuario_recepcion, "nombre_completo", None) if getattr(orden, "usuario_recepcion", None) else None
+    try:
+        d["dias_desde_recepcion"] = orden.dias_desde_recepcion
+        d["esta_retrasada"] = orden.esta_retrasada
+        d["saldo_pendiente"] = orden.saldo_pendiente
+        d["porcentaje_completado"] = orden.porcentaje_completado
+    except Exception:
+        d["dias_desde_recepcion"] = 0
+        d["esta_retrasada"] = False
+        d["saldo_pendiente"] = 0.0
+        d["porcentaje_completado"] = 0
     if subtareas_with_tech:
         _st_keys = {"id", "orden_trabajo_id", "titulo", "descripcion", "tecnico_asignado_id", "orden",
                     "fecha_inicio", "fecha_completada", "created_at", "updated_at"}
         d["subtareas"] = []
         for st in orden.subtareas:
             st_d = {k: getattr(st, k, None) for k in _st_keys}
-            st_d["estado"] = st.estado.value if hasattr(getattr(st, "estado", None), "value") else getattr(st, "estado", None)
+            est = st.estado
+            st_d["estado"] = est.value if hasattr(est, "value") else (est if est and str(est).strip() else "PENDIENTE")
             st_d["tecnico_nombre"] = st.tecnico.nombre_completo if st.tecnico else None
             d["subtareas"].append(st_d)
     else:
         d["subtareas"] = []
+    # Gastos de la OT (solo si se pide y están cargados)
+    if include_gastos and getattr(orden, "gastos", None) is not None:
+        gastos_list = []
+        total_gastos = 0
+        for g in orden.gastos:
+            gastos_list.append({
+                "id": g.id,
+                "descripcion": g.descripcion,
+                "monto": float(g.monto),
+                "fecha_gasto": g.fecha_gasto.isoformat() if g.fecha_gasto else None,
+            })
+            total_gastos += float(g.monto)
+        d["gastos"] = gastos_list
+        d["total_gastos"] = total_gastos
+    else:
+        d["gastos"] = []
+        d["total_gastos"] = 0
     return d
 
 
@@ -181,6 +208,7 @@ def get_ordenes(
     skip: int = 0,
     limit: int = 100,
     estatus: Optional[str] = None,
+    solo_activas: bool = Query(False, description="Solo OT no entregadas/finalizadas (para gastos, etc.)"),
     cliente_id: Optional[int] = None,
     tecnico_id: Optional[int] = None,
     categoria_id: Optional[int] = None,
@@ -206,6 +234,11 @@ def get_ordenes(
         tecnico_id = None  # Ignorar filtro por técnico: un técnico no puede listar órdenes de otros
     
     # Filtros (tecnico_id solo aplica para ADMIN/RECEPCION)
+    if solo_activas:
+        query = query.filter(
+            OrdenTrabajo.estatus != EstadoOrdenEnum.ENTREGADO,
+            OrdenTrabajo.estatus != EstadoOrdenEnum.FINALIZADO
+        )
     if estatus:
         query = query.filter(OrdenTrabajo.estatus == estatus)
     
@@ -231,30 +264,40 @@ def get_ordenes(
     
     ordenes = query.order_by(OrdenTrabajo.fecha_recepcion.desc()).offset(skip).limit(limit).all()
     
-    # Preparar respuesta
+    # Preparar respuesta (estatus/prioridad pueden ser enum o string según cómo los guarde la BD)
+    def _estatus_val(o):
+        return getattr(o.estatus, "value", None) or str(o.estatus) if o.estatus is not None else None
+    def _prioridad_val(o):
+        return getattr(o.prioridad, "value", None) or str(o.prioridad) if o.prioridad is not None else None
+
     result = []
     for orden in ordenes:
-        orden_dict = {
-            "id": orden.id,
-            "folio": orden.folio,
-            "cliente_id": orden.cliente_id,
-            "cliente_nombre": orden.cliente.nombre_completo if orden.cliente else None,
-            "sucursal_id": orden.sucursal_id,
-            "sucursal_nombre": orden.sucursal.nombre_sucursal if orden.sucursal else None,
-            "categoria_nombre": orden.categoria.nombre if orden.categoria else None,
-            "subcategoria_nombre": orden.subcategoria.nombre if orden.subcategoria else None,
-            "descripcion": orden.descripcion,
-            "estatus": orden.estatus.value,
-            "prioridad": orden.prioridad.value,
-            "fecha_recepcion": orden.fecha_recepcion,
-            "fecha_promesa": orden.fecha_promesa,
-            "tecnico_nombre": orden.tecnico.nombre_completo if orden.tecnico else None,
-            "precio_final": orden.precio_final,
-            "dias_desde_recepcion": orden.dias_desde_recepcion,
-            "esta_retrasada": orden.esta_retrasada,
-            "porcentaje_completado": orden.porcentaje_completado
-        }
-        result.append(OrdenTrabajoListResponse(**orden_dict))
+        try:
+            orden_dict = {
+                "id": orden.id,
+                "folio": orden.folio,
+                "cliente_id": orden.cliente_id,
+                "cliente_nombre": orden.cliente.nombre_completo if orden.cliente else None,
+                "sucursal_id": orden.sucursal_id,
+                "sucursal_nombre": orden.sucursal.nombre_sucursal if orden.sucursal else None,
+                "categoria_nombre": orden.categoria.nombre if orden.categoria else None,
+                "subcategoria_nombre": orden.subcategoria.nombre if orden.subcategoria else None,
+                "descripcion": orden.descripcion,
+                "estatus": _estatus_val(orden),
+                "prioridad": _prioridad_val(orden),
+                "fecha_recepcion": orden.fecha_recepcion,
+                "fecha_promesa": orden.fecha_promesa,
+                "tecnico_nombre": orden.tecnico.nombre_completo if orden.tecnico else None,
+                "precio_final": orden.precio_final,
+                "dias_desde_recepcion": orden.dias_desde_recepcion,
+                "esta_retrasada": orden.esta_retrasada,
+                "porcentaje_completado": orden.porcentaje_completado
+            }
+            result.append(OrdenTrabajoListResponse(**orden_dict))
+        except Exception as e:
+            logging.exception("Error building list item for orden id=%s: %s", getattr(orden, "id", None), e)
+            # omitir esta fila para no devolver 500; el resto se muestra
+            continue
     
     return result
 
@@ -273,7 +316,8 @@ def get_orden(
         joinedload(OrdenTrabajo.usuario_recepcion),
         joinedload(OrdenTrabajo.categoria),
         joinedload(OrdenTrabajo.subcategoria),
-        joinedload(OrdenTrabajo.subtareas).joinedload(SubtareaOrden.tecnico)
+        joinedload(OrdenTrabajo.subtareas).joinedload(SubtareaOrden.tecnico),
+        joinedload(OrdenTrabajo.gastos)
     ).filter(OrdenTrabajo.id == orden_id).first()
     
     if not orden:
@@ -283,7 +327,7 @@ def get_orden(
     if current_user.rol.value == "TECNICO" and orden.tecnico_asignado_id != current_user.id:
         raise HTTPException(status_code=403, detail="No tienes permiso para ver esta orden")
     
-    orden_dict = _orden_to_response_dict(db, orden)
+    orden_dict = _orden_to_response_dict(db, orden, include_gastos=True)
     return OrdenTrabajoResponse(**orden_dict)
 
 
@@ -377,48 +421,93 @@ def update_orden(
     else:
         update_data = orden_update.model_dump(exclude_unset=True)
     
-    # Convertir enums y no actualizar fotos por PUT (se suben por endpoint /foto)
-    if "estatus" in update_data and update_data["estatus"] is not None:
-        try:
-            update_data["estatus"] = EstadoOrdenEnum(update_data["estatus"])
-        except ValueError:
-            raise HTTPException(status_code=400, detail="Estado no válido")
-    if "prioridad" in update_data and update_data["prioridad"] is not None:
-        try:
-            update_data["prioridad"] = PrioridadEnum(update_data["prioridad"])
-        except ValueError:
-            raise HTTPException(status_code=400, detail="Prioridad no válida")
-    update_data.pop("foto_entrada", None)
-    update_data.pop("foto_salida", None)
-    
-    # Normalizar fechas vacías o inválidas a None para evitar error en BD
-    for date_field in ("fecha_promesa", "fecha_inicio_trabajo", "fecha_terminado", "fecha_entrega"):
-        if date_field in update_data and (update_data[date_field] is None or update_data[date_field] == ""):
-            update_data[date_field] = None
-    
-    for field, value in update_data.items():
-        setattr(db_orden, field, value)
-    
-    db.commit()
-    db.refresh(db_orden)
-    
-    # Cargar relaciones
-    db_orden = db.query(OrdenTrabajo).options(
-        joinedload(OrdenTrabajo.cliente),
-        joinedload(OrdenTrabajo.sucursal),
-        joinedload(OrdenTrabajo.tecnico),
-        joinedload(OrdenTrabajo.usuario_recepcion),
-        joinedload(OrdenTrabajo.categoria),
-        joinedload(OrdenTrabajo.subcategoria),
-        joinedload(OrdenTrabajo.subtareas).joinedload(SubtareaOrden.tecnico)
-    ).filter(OrdenTrabajo.id == db_orden.id).first()
-    
     try:
-        orden_dict = _orden_to_response_dict(db, db_orden)
+        logging.info("PUT orden %s: aplicando actualización", orden_id)
+        # Convertir enums (aceptar mayúsculas o minúsculas del frontend)
+        if "estatus" in update_data and update_data["estatus"] is not None and str(update_data["estatus"]).strip():
+            raw = str(update_data["estatus"]).strip().upper()
+            try:
+                update_data["estatus"] = EstadoOrdenEnum(raw)
+            except ValueError:
+                raise HTTPException(status_code=400, detail=f"Estado no válido: {update_data['estatus']}")
+        if "prioridad" in update_data and update_data["prioridad"] is not None and str(update_data["prioridad"]).strip():
+            raw = str(update_data["prioridad"]).strip().upper()
+            try:
+                update_data["prioridad"] = PrioridadEnum(raw)
+            except ValueError:
+                raise HTTPException(status_code=400, detail=f"Prioridad no válida: {update_data['prioridad']}")
+        update_data.pop("foto_entrada", None)
+        update_data.pop("foto_salida", None)
+
+        for date_field in ("fecha_promesa", "fecha_inicio_trabajo", "fecha_terminado", "fecha_entrega"):
+            if date_field in update_data and (update_data[date_field] is None or update_data[date_field] == ""):
+                update_data[date_field] = None
+
+        # tipo_permiso en MySQL es ENUM: no acepta ''. Enviar None para dejar NULL en BD.
+        if update_data.get("tipo_permiso") == "" or (isinstance(update_data.get("tipo_permiso"), str) and not update_data.get("tipo_permiso", "").strip()):
+            update_data["tipo_permiso"] = None
+        if update_data.get("numero_permiso") == "":
+            update_data["numero_permiso"] = None
+
+        for field, value in update_data.items():
+            setattr(db_orden, field, value)
+
+        db.commit()
+        db.refresh(db_orden)
+
+        db_orden = db.query(OrdenTrabajo).options(
+            joinedload(OrdenTrabajo.cliente),
+            joinedload(OrdenTrabajo.sucursal),
+            joinedload(OrdenTrabajo.tecnico),
+            joinedload(OrdenTrabajo.usuario_recepcion),
+            joinedload(OrdenTrabajo.categoria),
+            joinedload(OrdenTrabajo.subcategoria),
+            joinedload(OrdenTrabajo.subtareas).joinedload(SubtareaOrden.tecnico),
+            joinedload(OrdenTrabajo.gastos)
+        ).filter(OrdenTrabajo.id == db_orden.id).first()
+
+        logging.info("PUT orden %s: construyendo respuesta", orden_id)
+        orden_dict = _orden_to_response_dict(db, db_orden, include_gastos=True)
+        for key in ("tipo_permiso", "numero_permiso", "nombre_contacto_notificacion", "telefono_contacto_notificacion", "foto_entrada", "foto_salida"):
+            if orden_dict.get(key) == "":
+                orden_dict[key] = None
+        for st in orden_dict.get("subtareas", []):
+            if st.get("estado") is None or st.get("estado") == "":
+                st["estado"] = "PENDIENTE"
+        if orden_dict.get("fecha_recepcion") is None:
+            from datetime import datetime, timezone
+            orden_dict["fecha_recepcion"] = datetime.now(timezone.utc)
+        if orden_dict.get("created_at") is None:
+            from datetime import datetime, timezone
+            orden_dict["created_at"] = datetime.now(timezone.utc)
+        # Campos requeridos que la BD puede tener NULL
+        from decimal import Decimal
+        if orden_dict.get("anticipo") is None:
+            orden_dict["anticipo"] = Decimal("0.00")
+        desc = (orden_dict.get("descripcion") or "").strip()
+        if not desc or len(desc) < 10:
+            orden_dict["descripcion"] = "Sin descripción"
+        if orden_dict.get("estatus") is None or orden_dict.get("estatus") == "":
+            orden_dict["estatus"] = "RECIBIDO"
+        if orden_dict.get("prioridad") is None or orden_dict.get("prioridad") == "":
+            orden_dict["prioridad"] = "NORMAL"
         return OrdenTrabajoResponse(**orden_dict)
+
+    except HTTPException:
+        raise
     except PydanticValidationError as e:
-        logging.exception("Error construyendo respuesta PUT orden: %s", e.errors())
-        raise HTTPException(status_code=500, detail="Error al serializar la orden actualizada")
+        err_list = e.errors()
+        logging.exception("Error validación PUT orden: %s", err_list)
+        raise HTTPException(
+            status_code=500,
+            detail={"message": "Error al serializar la orden actualizada", "validation_errors": err_list}
+        )
+    except Exception as e:
+        logging.exception("Error PUT orden: %s", e)
+        raise HTTPException(
+            status_code=500,
+            detail={"message": "Error al actualizar orden", "error": str(e), "type": type(e).__name__}
+        )
 
 
 @router.patch("/ordenes/{orden_id}/estado", response_model=OrdenTrabajoResponse)
@@ -473,10 +562,11 @@ def cambiar_estado_orden(
         joinedload(OrdenTrabajo.usuario_recepcion),
         joinedload(OrdenTrabajo.categoria),
         joinedload(OrdenTrabajo.subcategoria),
-        joinedload(OrdenTrabajo.subtareas).joinedload(SubtareaOrden.tecnico)
+        joinedload(OrdenTrabajo.subtareas).joinedload(SubtareaOrden.tecnico),
+        joinedload(OrdenTrabajo.gastos)
     ).filter(OrdenTrabajo.id == db_orden.id).first()
     
-    orden_dict = _orden_to_response_dict(db, db_orden)
+    orden_dict = _orden_to_response_dict(db, db_orden, include_gastos=True)
     return OrdenTrabajoResponse(**orden_dict)
 
 

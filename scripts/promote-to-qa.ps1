@@ -5,8 +5,10 @@ $ErrorActionPreference = "Stop"
 
 Write-Host "Promoviendo cambios de DESARROLLO a QA (testeo)..." -ForegroundColor Cyan
 
+# Ignorar solo archivos no rastreados (??); fallar si hay modificados sin commit
 $status = git status -s
-if ($status) {
+$modified = $status | Where-Object { $_ -match '^\s*[MADRCU]' }
+if ($modified) {
     Write-Host "Error: Tienes cambios sin commitear." -ForegroundColor Red
     Write-Host "Por favor, commitea o descarta tus cambios primero." -ForegroundColor Red
     git status -s

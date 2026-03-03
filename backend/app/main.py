@@ -9,17 +9,23 @@ import pathlib
 import traceback
 
 # Importar routers
-from app.api.v1 import auth, users, vacaciones, incidencias, clientes, ordenes, sucursales
+from app.api.v1 import auth, users, vacaciones, incidencias, clientes, ordenes, sucursales, gastos
 from app.database import engine
 from app.models import OrdenFotoEntrada
 
-# Orígenes permitidos para CORS (desarrollo)
-CORS_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
+# Orígenes permitidos para CORS
+# En producción definir CORS_ORIGINS en .env (ej: CORS_ORIGINS=http://16.148.80.123:3000,https://tudominio.com)
+_origins_env = os.getenv("CORS_ORIGINS", "").strip()
+if _origins_env:
+    CORS_ORIGINS = [o.strip() for o in _origins_env.split(",") if o.strip()]
+else:
+    CORS_ORIGINS = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://16.148.80.123:3000",  # Producción
+    ]
 
 
 def _add_cors_headers(response, origin: str):
@@ -139,6 +145,7 @@ app.include_router(incidencias.router, prefix="/api/v1")
 app.include_router(clientes.router, prefix="/api/v1")
 app.include_router(sucursales.router, prefix="/api/v1")
 app.include_router(ordenes.router, prefix="/api/v1")
+app.include_router(gastos.router, prefix="/api/v1")
 
 # Servir frontend estático al final (debe ser lo último)
 frontend_dist = pathlib.Path(__file__).parent.parent.parent / "frontend" / "dist"

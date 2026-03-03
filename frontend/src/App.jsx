@@ -10,6 +10,7 @@ import Vacaciones from './pages/Vacaciones';
 import Clientes from './pages/Clientes';
 import Ordenes from './pages/Ordenes';
 import DashboardTaller from './pages/DashboardTaller';
+import Gastos from './pages/Gastos';
 // import Recepcion from './pages/Recepcion';
 // import Tecnicos from './pages/Tecnicos';
 // import Caja from './pages/Caja';
@@ -79,6 +80,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['ADMIN', 'RECEPCION', 'TECNICO']}>
                   <Ordenes />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/gastos"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <Gastos />
                 </ProtectedRoute>
               }
             />

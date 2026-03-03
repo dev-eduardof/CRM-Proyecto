@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List
 from datetime import datetime
 from decimal import Decimal
@@ -52,6 +52,13 @@ class SubtareaOrdenBase(BaseModel):
     estado: str = "PENDIENTE"
     orden: int = 0
 
+    @field_validator("estado", mode="before")
+    @classmethod
+    def estado_default(cls, v):
+        if v is None or (isinstance(v, str) and not v.strip()):
+            return "PENDIENTE"
+        return v
+
 
 class SubtareaOrdenCreate(SubtareaOrdenBase):
     orden_trabajo_id: int
@@ -99,6 +106,17 @@ class OrdenTrabajoBase(BaseModel):
     # Tipo de permiso/documento
     tipo_permiso: Optional[TipoPermisoEnum] = Field(None, description="Tipo de permiso o documento")
     numero_permiso: Optional[str] = Field(None, max_length=50, description="Número de OC, cotización, etc.")
+
+    @field_validator("tipo_permiso", mode="before")
+    @classmethod
+    def tipo_permiso_empty_to_none(cls, v):
+        if v is None or v == "" or (isinstance(v, str) and not v.strip()):
+            return None
+        if hasattr(v, "value"):
+            return v
+        if isinstance(v, str) and v.strip().upper() in ("COTIZACION", "ORDEN_COMPRA", "REQUISICION", "SERVICIO_DIRECTO"):
+            return v.strip().upper()
+        return v
     
     # Precios
     precio_estimado: Optional[Decimal] = Field(None, ge=0, description="Precio estimado/sugerido")
@@ -145,7 +163,10 @@ class OrdenTrabajoResponse(OrdenTrabajoBase):
     id: int
     folio: str
     usuario_recepcion_id: int
-    
+
+    # En respuesta aceptamos string o None para evitar errores con BD (enum opcional)
+    tipo_permiso: Optional[str] = None
+
     # Fotos
     foto_entrada: Optional[str] = None
     fotos_entrada_list: Optional[List[str]] = None  # Todas las URLs de fotos de entrada
@@ -173,6 +194,10 @@ class OrdenTrabajoResponse(OrdenTrabajoBase):
     
     # Subtareas
     subtareas: List[SubtareaOrdenResponse] = []
+
+    # Gastos asociados a esta OT (solo al obtener una orden)
+    gastos: Optional[List[dict]] = None  # [{ id, descripcion, monto, fecha_gasto }, ...]
+    total_gastos: Optional[Decimal] = None  # suma de montos de gastos
 
     class Config:
         from_attributes = True
