@@ -97,3 +97,51 @@ git pull origin main
    docker build -f frontend/Dockerfile.prod.nginx-only -t crm-proyecto_frontend .
    docker-compose -f docker-compose.prod.yml up -d
    ```
+
+---
+
+## 4. Validar que producción = local (16.148.80.123:3000)
+
+Si en http://16.148.80.123:3000/dashboard no se ve lo mismo que en local, el servidor no tiene el último build. Comprueba lo siguiente.
+
+### En el servidor (SSH)
+
+```bash
+cd /ruta/del/proyecto
+git branch
+git log -1 --oneline
+git fetch origin
+git pull origin main
+./deploy.sh update
+```
+
+- Debe estar en rama **main** y el último commit debe ser el que subiste (ej. "feat: modulo Caja...").
+- **`./deploy.sh update`** es obligatorio: hace **build de las imágenes Docker** y reinicia contenedores. Solo `git pull` no actualiza el frontend hasta que no reconstruyas la imagen.
+
+### Qué debe verse en producción (igual que en local)
+
+| Dónde | Qué comprobar |
+|-------|----------------|
+| **Menú lateral** | Entradas: Dashboard, Usuarios, Mis Vacaciones, Clientes, Órdenes de Trabajo, **Bodega / Almacén**, Compras, Gastos, **Caja**, Reportes |
+| **Rutas** | `/caja` debe abrir la página "Sistemas de caja"; `/bodega` debe abrir Bodega |
+| **Dashboard** | Mismo contenido y enlaces que en local |
+| **Footer** | Texto "© 2026 CRM Talleres" y línea **Build: prod** (o el valor de `VITE_APP_VERSION` si lo defines en `.env`) |
+
+Si falta **Caja** o **Bodega** en el menú, o `/caja` da 404, el frontend desplegado es una versión antigua: hay que ejecutar **`./deploy.sh update`** en el servidor (o volver a construir y subir el frontend como en la sección 3).
+
+### Opcional: versión visible en el footer
+
+En el servidor, en el `.env` del proyecto, puedes definir:
+
+```env
+VITE_APP_VERSION=2025-03-16
+```
+
+Luego ejecuta `./deploy.sh update`. En el footer de la app verás **Build: 2025-03-16**. Así confirmas que se desplegó el build nuevo. Si no defines esta variable, se mostrará **Build: prod**.
+
+### Forzar reconstrucción completa (sin caché)
+
+```bash
+docker-compose -f docker-compose.prod.yml build --no-cache
+docker-compose -f docker-compose.prod.yml up -d
+```
