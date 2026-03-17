@@ -1,3 +1,4 @@
+"""Movimientos de caja: entradas (pagos) y salidas (gastos caja chica)."""
 from sqlalchemy import Column, Integer, String, Numeric, DateTime, Date, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -7,7 +8,6 @@ import enum
 
 
 class _EnumStringType(TypeDecorator):
-    """Acepta en BD valores en mayúsculas o minúsculas y los convierte al enum en Python."""
     impl = VARCHAR(20)
     cache_ok = True
 
@@ -37,35 +37,27 @@ class _EnumStringType(TypeDecorator):
             return None
 
 
-class TipoGastoEnum(str, enum.Enum):
-    TRABAJO = "TRABAJO"   # Gasto asociado a una OT
-    GENERAL = "GENERAL"  # Gasto general del negocio
+class TipoMovimientoCajaEnum(str, enum.Enum):
+    ENTRADA = "ENTRADA"   # Pago por entrega OT, etc.
+    SALIDA = "SALIDA"     # Caja chica, gasto menor
 
 
-class CategoriaGastoEnum(str, enum.Enum):
-    COMPRAS = "COMPRAS"
-    MATERIALES = "MATERIALES"
-    OTRO = "OTRO"
-
-
-class Gasto(Base):
-    __tablename__ = "gastos"
+class MovimientoCaja(Base):
+    __tablename__ = "movimientos_caja"
 
     id = Column(Integer, primary_key=True, index=True)
+    fecha = Column(Date, nullable=False, index=True)
+    tipo = Column(_EnumStringType(TipoMovimientoCajaEnum), nullable=False, index=True)
+    concepto = Column(String(255), nullable=False)
+    monto = Column(Numeric(12, 2), nullable=False)
     orden_trabajo_id = Column(Integer, ForeignKey("ordenes_trabajo.id", ondelete="SET NULL"), nullable=True, index=True)
-    sub_orden_id = Column(Integer, ForeignKey("sub_ordenes_trabajo.id", ondelete="SET NULL"), nullable=True, index=True)
-    descripcion = Column(String(255), nullable=False)
-    monto = Column(Numeric(10, 2), nullable=False)
-    tipo = Column(_EnumStringType(TipoGastoEnum), nullable=False, index=True)
-    categoria = Column(_EnumStringType(CategoriaGastoEnum), nullable=True, index=True)
-    usuario_registro_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)
-    fecha_gasto = Column(Date, nullable=False, index=True)
+    corte_id = Column(Integer, ForeignKey("cortes_caja.id", ondelete="SET NULL"), nullable=True, index=True)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
-    # Relaciones
-    orden_trabajo = relationship("OrdenTrabajo", backref="gastos")
-    sub_orden = relationship("SubOrdenTrabajo", back_populates="gastos")
-    usuario_registro = relationship("User", foreign_keys=[usuario_registro_id], backref="gastos_registrados")
+    orden_trabajo = relationship("OrdenTrabajo", backref="movimientos_caja")
+    corte = relationship("CorteCaja", back_populates="movimientos")
+    usuario = relationship("User", foreign_keys=[usuario_id])
 
     def __repr__(self):
-        return f"<Gasto {self.id} {self.descripcion[:30]} {self.monto}>"
+        return f"<MovimientoCaja {self.tipo} {self.monto} {self.concepto[:30]}>"

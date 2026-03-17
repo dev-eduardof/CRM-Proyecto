@@ -15,7 +15,8 @@ import {
   BeachAccess,
   ExpandMore,
   ExpandLess,
-  MoneyOff
+  MoneyOff,
+  Inventory2
 } from '@mui/icons-material';
 
 const Dashboard = () => {
@@ -293,6 +294,35 @@ const Dashboard = () => {
             </Grid>
           )}
 
+          {/* Bodega / Almacén - ADMIN, RECEPCION, TECNICO */}
+          {(user?.rol === 'ADMIN' || user?.rol === 'RECEPCION' || user?.rol === 'TECNICO') && (
+            <Grid item xs={12} sm={6} md={4}>
+              <Card 
+                sx={{ 
+                  cursor: 'pointer',
+                  transition: 'all 0.3s',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: 6
+                  }
+                }}
+                onClick={() => navigate('/bodega')}
+              >
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Inventory2 sx={{ fontSize: 40, color: 'info.main', mr: 2 }} />
+                    <Typography variant="h6">
+                      Bodega / Almacén
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary">
+                    Materiales, catálogo y stock para el taller
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          )}
+
           {/* Gastos - Solo ADMIN */}
           {user?.rol === 'ADMIN' && (
             <Grid item xs={12} sm={6} md={4}>
@@ -328,7 +358,6 @@ const Dashboard = () => {
               Próximos módulos disponibles:
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
-              <Chip label="Materiales" variant="outlined" />
               <Chip label="Pagos" variant="outlined" />
               <Chip label="Reportes" variant="outlined" />
             </Box>

@@ -9,7 +9,8 @@ from pydantic import ValidationError as PydanticValidationError
 from app.database import get_db
 from app.models import (
     OrdenTrabajo, Cliente, User, CategoriaOrden, SubcategoriaOrden,
-    SubtareaOrden, EstadoOrdenEnum, PrioridadEnum, OrdenFotoEntrada
+    SubtareaOrden, SubOrdenTrabajo, EstadoOrdenEnum, PrioridadEnum, OrdenFotoEntrada, OrdenTrabajoPieza,
+    SubtareaFotoEntrada,
 )
 from app.schemas import (
     OrdenTrabajoCreate,
@@ -24,7 +25,10 @@ from app.schemas import (
     SubtareaOrdenBase,
     SubtareaOrdenCreate,
     SubtareaOrdenUpdate,
-    SubtareaOrdenResponse
+    SubtareaOrdenResponse,
+    SubOrdenTrabajoCreate,
+    SubOrdenTrabajoUpdate,
+    SubOrdenTrabajoResponse,
 )
 from app.core.dependencies import get_current_user, require_role
 
@@ -42,7 +46,7 @@ _ORDEN_RESPONSE_KEYS = {
 }
 
 
-def _orden_to_response_dict(db: Session, orden, subtareas_with_tech=True, include_gastos=False) -> dict:
+def _orden_to_response_dict(db: Session, orden, subtareas_with_tech=True, include_gastos=False, mask_piezas_price=False) -> dict:
     """Construye un dict seguro para OrdenTrabajoResponse (solo columnas, enums serializados)."""
     d = {}
     for k, v in orden.__dict__.items():
@@ -85,26 +89,95 @@ def _orden_to_response_dict(db: Session, orden, subtareas_with_tech=True, includ
             est = st.estado
             st_d["estado"] = est.value if hasattr(est, "value") else (est if est and str(est).strip() else "PENDIENTE")
             st_d["tecnico_nombre"] = st.tecnico.nombre_completo if st.tecnico else None
+            fotos_st = db.query(SubtareaFotoEntrada).filter(SubtareaFotoEntrada.subtarea_id == st.id).all()
+            st_d["fotos_entrada_list"] = [f.url for f in fotos_st]
             d["subtareas"].append(st_d)
     else:
         d["subtareas"] = []
+    # Sub-órdenes (sub trabajos)
+    sub_ordenes_raw = getattr(orden, "sub_ordenes", None) or []
+    d["sub_ordenes"] = [
+        {
+            "id": s.id,
+            "orden_trabajo_id": s.orden_trabajo_id,
+            "titulo": s.titulo,
+            "descripcion": s.descripcion,
+            "orden": getattr(s, "orden", 0),
+            "created_at": getattr(s, "created_at", None),
+            "updated_at": getattr(s, "updated_at", None),
+        }
+        for s in sorted(sub_ordenes_raw, key=lambda x: (getattr(x, "orden", 0), x.id))
+    ]
     # Gastos de la OT (solo si se pide y están cargados)
     if include_gastos and getattr(orden, "gastos", None) is not None:
         gastos_list = []
         total_gastos = 0
+        total_compras = 0
+        total_materiales = 0
         for g in orden.gastos:
+            categoria = getattr(getattr(g, "categoria", None), "value", None) or str(getattr(g, "categoria", "") or "").upper() or "OTRO"
+            try:
+                monto_num = float(g.monto)
+            except Exception:
+                monto_num = 0.0
             gastos_list.append({
                 "id": g.id,
+                "sub_orden_id": getattr(g, "sub_orden_id", None),
                 "descripcion": g.descripcion,
-                "monto": float(g.monto),
+                "monto": monto_num,
                 "fecha_gasto": g.fecha_gasto.isoformat() if g.fecha_gasto else None,
+                "categoria": categoria,
             })
-            total_gastos += float(g.monto)
+            total_gastos += monto_num
+            if str(categoria).upper() == "COMPRAS":
+                total_compras += monto_num
+            elif str(categoria).upper() == "MATERIALES":
+                total_materiales += monto_num
         d["gastos"] = gastos_list
         d["total_gastos"] = total_gastos
+        d["total_compras"] = total_compras
+        d["total_materiales"] = total_materiales
+        # Piezas usadas en la OT (bodega). Solo ADMIN ve precios; taller/recepción ven 0.
+        piezas_list = []
+        total_piezas = 0.0
+        for u in getattr(orden, "piezas_usadas", None) or []:
+            try:
+                sub = float(getattr(u, "precio_unitario", 0) or 0) * int(getattr(u, "cantidad", 0) or 0)
+            except (TypeError, ValueError):
+                sub = 0.0
+            if mask_piezas_price:
+                sub = 0.0
+            piezas_list.append({
+                "id": getattr(u, "id", None),
+                "sub_orden_id": getattr(u, "sub_orden_id", None),
+                "pieza_id": getattr(u, "pieza_id", None),
+                "pieza_nombre": getattr(u.pieza, "nombre", None) if getattr(u, "pieza", None) else None,
+                "pieza_codigo": getattr(u.pieza, "codigo", None) if getattr(u, "pieza", None) else None,
+                "cantidad": getattr(u, "cantidad", 0),
+                "precio_unitario": 0.0 if mask_piezas_price else float(getattr(u, "precio_unitario", 0) or 0),
+                "subtotal": round(sub, 2),
+            })
+            total_piezas += sub
+        d["piezas_usadas"] = piezas_list
+        d["total_piezas"] = round(total_piezas, 2)
+        base = float(getattr(orden, "precio_final", None) or getattr(orden, "precio_estimado", None) or 0)
+        anticipo = float(getattr(orden, "anticipo", None) or 0)
+        total_final = float(base) + float(total_gastos) + float(total_piezas)
+        d["total_final"] = total_final
+        d["saldo_pendiente_total"] = float(total_final - anticipo)
     else:
         d["gastos"] = []
         d["total_gastos"] = 0
+        d["total_compras"] = 0
+        d["total_materiales"] = 0
+        d["piezas_usadas"] = []
+        d["total_piezas"] = 0
+        if "sub_ordenes" not in d:
+            d["sub_ordenes"] = []
+        base = float(getattr(orden, "precio_final", None) or getattr(orden, "precio_estimado", None) or 0)
+        anticipo = float(getattr(orden, "anticipo", None) or 0)
+        d["total_final"] = float(base)
+        d["saldo_pendiente_total"] = float(float(base) - anticipo)
     return d
 
 
@@ -317,7 +390,9 @@ def get_orden(
         joinedload(OrdenTrabajo.categoria),
         joinedload(OrdenTrabajo.subcategoria),
         joinedload(OrdenTrabajo.subtareas).joinedload(SubtareaOrden.tecnico),
-        joinedload(OrdenTrabajo.gastos)
+        joinedload(OrdenTrabajo.sub_ordenes),
+        joinedload(OrdenTrabajo.gastos),
+        joinedload(OrdenTrabajo.piezas_usadas).joinedload(OrdenTrabajoPieza.pieza),
     ).filter(OrdenTrabajo.id == orden_id).first()
     
     if not orden:
@@ -327,7 +402,8 @@ def get_orden(
     if current_user.rol.value == "TECNICO" and orden.tecnico_asignado_id != current_user.id:
         raise HTTPException(status_code=403, detail="No tienes permiso para ver esta orden")
     
-    orden_dict = _orden_to_response_dict(db, orden, include_gastos=True)
+    mask_piezas = getattr(current_user.rol, "value", None) != "ADMIN"
+    orden_dict = _orden_to_response_dict(db, orden, include_gastos=True, mask_piezas_price=mask_piezas)
     return OrdenTrabajoResponse(**orden_dict)
 
 
@@ -462,12 +538,15 @@ def update_orden(
             joinedload(OrdenTrabajo.usuario_recepcion),
             joinedload(OrdenTrabajo.categoria),
             joinedload(OrdenTrabajo.subcategoria),
-            joinedload(OrdenTrabajo.subtareas).joinedload(SubtareaOrden.tecnico),
-            joinedload(OrdenTrabajo.gastos)
-        ).filter(OrdenTrabajo.id == db_orden.id).first()
+        joinedload(OrdenTrabajo.subtareas).joinedload(SubtareaOrden.tecnico),
+        joinedload(OrdenTrabajo.sub_ordenes),
+        joinedload(OrdenTrabajo.gastos),
+        joinedload(OrdenTrabajo.piezas_usadas).joinedload(OrdenTrabajoPieza.pieza),
+    ).filter(OrdenTrabajo.id == db_orden.id).first()
 
         logging.info("PUT orden %s: construyendo respuesta", orden_id)
-        orden_dict = _orden_to_response_dict(db, db_orden, include_gastos=True)
+        mask_piezas = current_user.rol.value != "ADMIN"
+        orden_dict = _orden_to_response_dict(db, db_orden, include_gastos=True, mask_piezas_price=mask_piezas)
         for key in ("tipo_permiso", "numero_permiso", "nombre_contacto_notificacion", "telefono_contacto_notificacion", "foto_entrada", "foto_salida"):
             if orden_dict.get(key) == "":
                 orden_dict[key] = None
@@ -532,7 +611,20 @@ def cambiar_estado_orden(
         nuevo_estado = EstadoOrdenEnum(cambio_estado.estatus)
     except ValueError:
         raise HTTPException(status_code=400, detail="Estado no válido")
-    
+
+    # No se puede entregar/finalizar la OT si tiene sub tareas pendientes o en proceso
+    if nuevo_estado in (EstadoOrdenEnum.ENTREGADO, EstadoOrdenEnum.FINALIZADO):
+        subtareas = db.query(SubtareaOrden).filter(SubtareaOrden.orden_trabajo_id == orden_id).all()
+        incompletas = [
+            st for st in subtareas
+            if (getattr(st.estado, "value", None) or str(st.estado or "").upper()) not in ("COMPLETADA", "CANCELADA")
+        ]
+        if incompletas:
+            raise HTTPException(
+                status_code=400,
+                detail="No se puede finalizar la orden: hay sub tareas pendientes o en proceso. Completa o cancela todas las sub tareas primero."
+            )
+
     # Actualizar estado
     db_orden.estatus = nuevo_estado
     
@@ -563,11 +655,123 @@ def cambiar_estado_orden(
         joinedload(OrdenTrabajo.categoria),
         joinedload(OrdenTrabajo.subcategoria),
         joinedload(OrdenTrabajo.subtareas).joinedload(SubtareaOrden.tecnico),
-        joinedload(OrdenTrabajo.gastos)
+        joinedload(OrdenTrabajo.sub_ordenes),
+        joinedload(OrdenTrabajo.gastos),
+        joinedload(OrdenTrabajo.piezas_usadas).joinedload(OrdenTrabajoPieza.pieza),
     ).filter(OrdenTrabajo.id == db_orden.id).first()
     
-    orden_dict = _orden_to_response_dict(db, db_orden, include_gastos=True)
+    mask_piezas = current_user.rol.value != "ADMIN"
+    orden_dict = _orden_to_response_dict(db, db_orden, include_gastos=True, mask_piezas_price=mask_piezas)
     return OrdenTrabajoResponse(**orden_dict)
+
+
+# --- Sub-órdenes (sub trabajos dentro de una OT) ---
+
+@router.get("/ordenes/{orden_id}/sub-ordenes", response_model=List[SubOrdenTrabajoResponse])
+def list_sub_ordenes(
+    orden_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(["ADMIN", "RECEPCION", "TECNICO"])),
+):
+    """Listar sub-órdenes (sub trabajos) de una OT."""
+    orden = db.query(OrdenTrabajo).filter(OrdenTrabajo.id == orden_id).first()
+    if not orden:
+        raise HTTPException(status_code=404, detail="Orden de trabajo no encontrada")
+    if current_user.rol.value == "TECNICO" and orden.tecnico_asignado_id != current_user.id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para ver esta orden")
+    subs = db.query(SubOrdenTrabajo).filter(SubOrdenTrabajo.orden_trabajo_id == orden_id).order_by(SubOrdenTrabajo.orden, SubOrdenTrabajo.id).all()
+    return subs
+
+
+@router.post("/ordenes/{orden_id}/sub-ordenes", response_model=SubOrdenTrabajoResponse, status_code=status.HTTP_201_CREATED)
+def create_sub_orden(
+    orden_id: int,
+    body: SubOrdenTrabajoCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(["ADMIN", "RECEPCION", "TECNICO"])),
+):
+    """Crear una sub-orden (sub trabajo) dentro de la OT."""
+    orden = db.query(OrdenTrabajo).filter(OrdenTrabajo.id == orden_id).first()
+    if not orden:
+        raise HTTPException(status_code=404, detail="Orden de trabajo no encontrada")
+    if current_user.rol.value == "TECNICO" and orden.tecnico_asignado_id != current_user.id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para modificar esta orden")
+    sub = SubOrdenTrabajo(orden_trabajo_id=orden_id, **body.model_dump())
+    db.add(sub)
+    db.commit()
+    db.refresh(sub)
+    return sub
+
+
+@router.get("/ordenes/{orden_id}/sub-ordenes/{sub_id}", response_model=SubOrdenTrabajoResponse)
+def get_sub_orden(
+    orden_id: int,
+    sub_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(["ADMIN", "RECEPCION", "TECNICO"])),
+):
+    """Obtener una sub-orden por ID."""
+    sub = db.query(SubOrdenTrabajo).filter(
+        SubOrdenTrabajo.id == sub_id,
+        SubOrdenTrabajo.orden_trabajo_id == orden_id,
+    ).first()
+    if not sub:
+        raise HTTPException(status_code=404, detail="Sub-orden no encontrada")
+    orden = db.query(OrdenTrabajo).filter(OrdenTrabajo.id == orden_id).first()
+    if current_user.rol.value == "TECNICO" and orden.tecnico_asignado_id != current_user.id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para ver esta orden")
+    return sub
+
+
+@router.put("/ordenes/{orden_id}/sub-ordenes/{sub_id}", response_model=SubOrdenTrabajoResponse)
+def update_sub_orden(
+    orden_id: int,
+    sub_id: int,
+    body: SubOrdenTrabajoUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(["ADMIN", "RECEPCION", "TECNICO"])),
+):
+    """Actualizar una sub-orden."""
+    sub = db.query(SubOrdenTrabajo).filter(
+        SubOrdenTrabajo.id == sub_id,
+        SubOrdenTrabajo.orden_trabajo_id == orden_id,
+    ).first()
+    if not sub:
+        raise HTTPException(status_code=404, detail="Sub-orden no encontrada")
+    orden = db.query(OrdenTrabajo).filter(OrdenTrabajo.id == orden_id).first()
+    if current_user.rol.value == "TECNICO" and orden.tecnico_asignado_id != current_user.id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para modificar esta orden")
+    for k, v in body.model_dump(exclude_unset=True).items():
+        setattr(sub, k, v)
+    db.commit()
+    db.refresh(sub)
+    return sub
+
+
+@router.delete("/ordenes/{orden_id}/sub-ordenes/{sub_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_sub_orden(
+    orden_id: int,
+    sub_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(["ADMIN", "RECEPCION", "TECNICO"])),
+):
+    """Eliminar una sub-orden. Los materiales/gastos asociados quedan en la OT principal (sub_orden_id=NULL)."""
+    sub = db.query(SubOrdenTrabajo).filter(
+        SubOrdenTrabajo.id == sub_id,
+        SubOrdenTrabajo.orden_trabajo_id == orden_id,
+    ).first()
+    if not sub:
+        raise HTTPException(status_code=404, detail="Sub-orden no encontrada")
+    orden = db.query(OrdenTrabajo).filter(OrdenTrabajo.id == orden_id).first()
+    if current_user.rol.value == "TECNICO" and orden.tecnico_asignado_id != current_user.id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para modificar esta orden")
+    # Reasignar piezas y gastos de esta sub-OT a la OT principal (sub_orden_id = NULL)
+    db.query(OrdenTrabajoPieza).filter(OrdenTrabajoPieza.sub_orden_id == sub_id).update({"sub_orden_id": None})
+    from app.models import Gasto
+    db.query(Gasto).filter(Gasto.sub_orden_id == sub_id).update({"sub_orden_id": None})
+    db.delete(sub)
+    db.commit()
+    return None
 
 
 @router.post("/ordenes/{orden_id}/foto")
@@ -713,6 +917,47 @@ def delete_subtarea(
     db.commit()
     
     return None
+
+
+@router.get("/subtareas/{subtarea_id}/fotos")
+def get_subtarea_fotos(
+    subtarea_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(["ADMIN", "RECEPCION", "TECNICO"]))
+):
+    """Lista de URLs de fotos de entrada de la subtarea."""
+    st = db.query(SubtareaOrden).options(joinedload(SubtareaOrden.orden_trabajo)).filter(SubtareaOrden.id == subtarea_id).first()
+    if not st:
+        raise HTTPException(status_code=404, detail="Subtarea no encontrada")
+    if current_user.rol.value == "TECNICO" and st.orden_trabajo.tecnico_asignado_id != current_user.id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para ver esta subtarea")
+    fotos = db.query(SubtareaFotoEntrada).filter(SubtareaFotoEntrada.subtarea_id == subtarea_id).all()
+    return {"fotos_entrada_list": [f.url for f in fotos]}
+
+
+@router.post("/subtareas/{subtarea_id}/foto")
+async def upload_subtarea_foto(
+    subtarea_id: int,
+    file: UploadFile = File(..., description="Archivo de imagen"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(["ADMIN", "RECEPCION", "TECNICO"]))
+):
+    """Subir foto a una subtarea (como en la OT principal)."""
+    st = db.query(SubtareaOrden).options(joinedload(SubtareaOrden.orden_trabajo)).filter(SubtareaOrden.id == subtarea_id).first()
+    if not st:
+        raise HTTPException(status_code=404, detail="Subtarea no encontrada")
+    if current_user.rol.value == "TECNICO" and st.orden_trabajo.tecnico_asignado_id != current_user.id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para subir fotos a esta subtarea")
+    folio = getattr(st.orden_trabajo, "folio", "OT") or "OT"
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"{folio}_subtarea_{subtarea_id}_{timestamp}_{file.filename}"
+    file_path = os.path.join(UPLOAD_DIR, filename)
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    url = f"/uploads/ordenes/{filename}"
+    db.add(SubtareaFotoEntrada(subtarea_id=subtarea_id, url=url))
+    db.commit()
+    return {"message": "Foto subida correctamente", "url": url}
 
 
 @router.delete("/ordenes/{orden_id}", status_code=status.HTTP_204_NO_CONTENT)

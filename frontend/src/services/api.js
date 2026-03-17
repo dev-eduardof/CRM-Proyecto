@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Configuración de la URL del backend desde variables de entorno
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+// Configuración de la URL del backend desde variables de entorno (fallback para desarrollo)
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -112,6 +112,29 @@ export const ordenesAPI = {
   delete: (id) => api.delete(`/api/v1/ordenes/${id}`),
   getCategorias: () => api.get('/api/v1/categorias'),
   getSubcategorias: (categoriaId) => api.get(`/api/v1/categorias/${categoriaId}/subcategorias`),
+  getSubOrdenes: (ordenId) => api.get(`/api/v1/ordenes/${ordenId}/sub-ordenes`),
+  createSubOrden: (ordenId, data) => api.post(`/api/v1/ordenes/${ordenId}/sub-ordenes`, data),
+  updateSubOrden: (ordenId, subId, data) => api.put(`/api/v1/ordenes/${ordenId}/sub-ordenes/${subId}`, data),
+  deleteSubOrden: (ordenId, subId) => api.delete(`/api/v1/ordenes/${ordenId}/sub-ordenes/${subId}`),
+  createSubtarea: (ordenId, data) => api.post(`/api/v1/ordenes/${ordenId}/subtareas`, data),
+  updateSubtarea: (subtareaId, data) => api.put(`/api/v1/subtareas/${subtareaId}`, data),
+  deleteSubtarea: (subtareaId) => api.delete(`/api/v1/subtareas/${subtareaId}`),
+  getSubtareaFotos: (subtareaId) => api.get(`/api/v1/subtareas/${subtareaId}/fotos`),
+  uploadSubtareaFoto: async (subtareaId, formData) => {
+    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${baseURL}/api/v1/subtareas/${subtareaId}/foto`, {
+      method: 'POST',
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      body: formData
+    });
+    if (!res.ok) {
+      const err = new Error(res.statusText || 'Error al subir foto');
+      err.response = { status: res.status, data: await res.json().catch(() => ({})) };
+      throw err;
+    }
+    return { data: await res.json() };
+  },
   uploadFoto: async (ordenId, tipo, formData) => {
     const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
     const token = localStorage.getItem('token');
@@ -137,6 +160,42 @@ export const gastosAPI = {
   create: (data) => api.post('/api/v1/gastos', data),
   update: (id, data) => api.put(`/api/v1/gastos/${id}`, data),
   delete: (id) => api.delete(`/api/v1/gastos/${id}`)
+};
+
+// API de piezas (bodega/almacén)
+export const piezasAPI = {
+  getAll: (params) => api.get('/api/v1/piezas', { params }),
+  getById: (id) => api.get(`/api/v1/piezas/${id}`),
+  create: (data) => api.post('/api/v1/piezas', data),
+  update: (id, data) => api.put(`/api/v1/piezas/${id}`, data),
+  delete: (id) => api.delete(`/api/v1/piezas/${id}`),
+  getByOrden: (ordenId) => api.get(`/api/v1/ordenes/${ordenId}/piezas`),
+  addToOrden: (ordenId, data) => api.post(`/api/v1/ordenes/${ordenId}/piezas`, data),
+  removeFromOrden: (ordenId, usoId) => api.delete(`/api/v1/ordenes/${ordenId}/piezas/${usoId}`),
+  updateUso: (ordenId, usoId, data) => api.patch(`/api/v1/ordenes/${ordenId}/piezas/${usoId}`, data),
+  // Catálogos (mecánico)
+  getCatalogos: (params) => api.get('/api/v1/catalogos-pieza', { params }),
+  createCatalogo: (data) => api.post('/api/v1/catalogos-pieza', data),
+  updateCatalogo: (id, data) => api.put(`/api/v1/catalogos-pieza/${id}`, data),
+  deleteCatalogo: (id) => api.delete(`/api/v1/catalogos-pieza/${id}`),
+  deleteAllCatalogos: () => api.delete('/api/v1/catalogos-pieza/eliminar-todos'),
+  getSubcatalogos: (catalogoId, params) => api.get(`/api/v1/catalogos-pieza/${catalogoId}/subcatalogos`, { params }),
+  createSubcatalogo: (data) => api.post('/api/v1/subcatalogos-pieza', data),
+  updateSubcatalogo: (id, data) => api.put(`/api/v1/subcatalogos-pieza/${id}`, data),
+  deleteSubcatalogo: (id) => api.delete(`/api/v1/subcatalogos-pieza/${id}`)
+};
+
+// API de caja (sistemas de caja)
+export const cajaAPI = {
+  getMovimientos: (params) => api.get('/api/v1/caja/movimientos', { params }),
+  createMovimiento: (data) => api.post('/api/v1/caja/movimientos', data),
+  getApertura: (fecha) => api.get('/api/v1/caja/apertura', { params: { fecha } }),
+  createApertura: (data) => api.post('/api/v1/caja/apertura', data),
+  getResumenDia: (fecha) => api.get('/api/v1/caja/resumen-dia', { params: { fecha } }),
+  getCortes: (params) => api.get('/api/v1/caja/cortes', { params }),
+  getCorte: (id) => api.get(`/api/v1/caja/cortes/${id}`),
+  createCorte: (data) => api.post('/api/v1/caja/cortes', data),
+  getAnalisisOrden: (ordenId) => api.get(`/api/v1/caja/analisis-orden/${ordenId}`)
 };
 
 export default api;
