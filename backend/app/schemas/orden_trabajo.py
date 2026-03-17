@@ -87,6 +87,33 @@ class SubtareaOrdenResponse(SubtareaOrdenBase):
         from_attributes = True
 
 
+# Schemas para Sub-Órdenes (sub trabajos dentro de una OT)
+class SubOrdenTrabajoBase(BaseModel):
+    titulo: str = Field(..., min_length=1, max_length=200)
+    descripcion: Optional[str] = None
+    orden: int = 0
+
+
+class SubOrdenTrabajoCreate(SubOrdenTrabajoBase):
+    pass
+
+
+class SubOrdenTrabajoUpdate(BaseModel):
+    titulo: Optional[str] = Field(None, min_length=1, max_length=200)
+    descripcion: Optional[str] = None
+    orden: Optional[int] = None
+
+
+class SubOrdenTrabajoResponse(SubOrdenTrabajoBase):
+    id: int
+    orden_trabajo_id: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
 # Schemas para Órdenes de Trabajo
 class OrdenTrabajoBase(BaseModel):
     cliente_id: int = Field(..., description="ID del cliente")
@@ -195,9 +222,19 @@ class OrdenTrabajoResponse(OrdenTrabajoBase):
     # Subtareas
     subtareas: List[SubtareaOrdenResponse] = []
 
+    # Sub-órdenes (sub trabajos con sus propios materiales/costos)
+    sub_ordenes: Optional[List[dict]] = None  # [{ id, orden_trabajo_id, titulo, descripcion, orden }, ...]
+
     # Gastos asociados a esta OT (solo al obtener una orden)
     gastos: Optional[List[dict]] = None  # [{ id, descripcion, monto, fecha_gasto }, ...]
     total_gastos: Optional[Decimal] = None  # suma de montos de gastos
+    total_compras: Optional[Decimal] = None
+    total_materiales: Optional[Decimal] = None
+    # Piezas usadas en la OT (bodega)
+    piezas_usadas: Optional[List[dict]] = None  # [{ id, pieza_id, pieza_nombre, cantidad, precio_unitario, subtotal }, ...]
+    total_piezas: Optional[Decimal] = None
+    total_final: Optional[Decimal] = None
+    saldo_pendiente_total: Optional[Decimal] = None
 
     class Config:
         from_attributes = True

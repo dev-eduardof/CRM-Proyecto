@@ -42,11 +42,12 @@ import {
   CameraAlt as CameraIcon,
   Image as ImageIcon,
   PhotoCamera as PhotoCameraIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
+  Inventory2 as InventoryIcon
 } from '@mui/icons-material';
 import Layout from '../components/Layout';
 import ImageEditor from '../components/ImageEditor';
-import { ordenesAPI, clientesAPI, usersAPI, sucursalesAPI } from '../services/api';
+import { ordenesAPI, clientesAPI, usersAPI, sucursalesAPI, piezasAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -90,6 +91,34 @@ const Ordenes = () => {
   const [openEstadoDialog, setOpenEstadoDialog] = useState(false);
   const [selectedOrden, setSelectedOrden] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  // Agregar pieza a OT
+  const [openAddPiezaDialog, setOpenAddPiezaDialog] = useState(false);
+  const [piezasDisponibles, setPiezasDisponibles] = useState([]);
+  const [addPiezaPiezaId, setAddPiezaPiezaId] = useState('');
+  const [addPiezaCantidad, setAddPiezaCantidad] = useState(1);
+  const [addPiezaPrecio, setAddPiezaPrecio] = useState(''); // Solo ADMIN puede asignar precio al agregar a OT
+  const [addPiezaError, setAddPiezaError] = useState('');
+  // Crear material (desde OT, sin precio; solo taller/recepción/admin)
+  const [openCrearMaterial, setOpenCrearMaterial] = useState(false);
+  const [crearMaterialData, setCrearMaterialData] = useState({
+    codigo: '', nombre: '', descripcion: '', stock: 0, unidad: 'pza'
+  });
+  const [crearMaterialError, setCrearMaterialError] = useState('');
+  // Editar uso de pieza en OT (solo ADMIN: cantidad + precio)
+  const [openEditUsoPieza, setOpenEditUsoPieza] = useState(false);
+  const [editUsoPiezaRow, setEditUsoPiezaRow] = useState(null);
+  const [editUsoCantidad, setEditUsoCantidad] = useState(1);
+  const [editUsoPrecio, setEditUsoPrecio] = useState('');
+  const [editUsoError, setEditUsoError] = useState('');
+  // Sub-OT (sub trabajos)
+  const [openSubOrdenDialog, setOpenSubOrdenDialog] = useState(false);
+  const [formSubOrden, setFormSubOrden] = useState({ titulo: '', descripcion: '' });
+  const [addPiezaSubOrdenId, setAddPiezaSubOrdenId] = useState('');
+  // Subtareas (épica / board Jira)
+  const [openNuevaSubtareaDialog, setOpenNuevaSubtareaDialog] = useState(false);
+  const [formNuevaSubtarea, setFormNuevaSubtarea] = useState({ titulo: '', descripcion: '' });
+  const [subtareaDetalle, setSubtareaDetalle] = useState(null);
+  const [openSubtareaDetalleDialog, setOpenSubtareaDetalleDialog] = useState(false);
   
   // Foto states - Múltiples secciones (foto + información)
   const [seccionesFotos, setSeccionesFotos] = useState([{
@@ -566,13 +595,18 @@ const Ordenes = () => {
     }
   };
 
-  const handleOpenEstadoDialog = (orden) => {
-    setSelectedOrden(orden);
+  const handleOpenEstadoDialog = async (orden) => {
     setCambioEstado({
       estatus: orden.estatus,
       observaciones: ''
     });
     setOpenEstadoDialog(true);
+    try {
+      const res = await ordenesAPI.getById(orden.id);
+      setSelectedOrden(res.data);
+    } catch {
+      setSelectedOrden(orden);
+    }
   };
 
   const handleCambiarEstado = async () => {
@@ -978,20 +1012,29 @@ const Ordenes = () => {
     <Layout>
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
         {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 1 }}>
           <Typography variant="h4" component="h1">
             <BuildIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
             Órdenes de Trabajo - Taller de Torno
           </Typography>
-          {canCreate && (
+          <Box sx={{ display: 'flex', gap: 1 }}>
             <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => handleOpenDialog()}
+              variant="outlined"
+              startIcon={<InventoryIcon />}
+              onClick={() => setOpenCrearMaterial(true)}
             >
-              Nueva Orden
+              Crear material
             </Button>
-          )}
+            {canCreate && (
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => handleOpenDialog()}
+              >
+                Nueva Orden
+              </Button>
+            )}
+          </Box>
         </Box>
 
         {/* Mensaje para técnicos: solo ven sus órdenes asignadas */}
@@ -1173,6 +1216,117 @@ const Ordenes = () => {
             {isEditing ? 'Editar Orden de Trabajo' : 'Nueva Orden de Trabajo'}
           </DialogTitle>
           <DialogContent>
+            {/* Sub tareas (épica) - tipo Jira: arriba de la tarea */}
+            {isEditing && selectedOrden && (
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
+                  Épica: {selectedOrden.folio}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  Sub tareas — arrastra o mueve el estado con el botón
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 1 }}>
+                  {[
+                    { key: 'PENDIENTE', label: 'Pendiente', color: 'grey.200' },
+                    { key: 'EN_PROCESO', label: 'En proceso', color: 'info.light' },
+                    { key: 'COMPLETADA', label: 'Completada', color: 'success.light' },
+                    { key: 'CANCELADA', label: 'Cancelada', color: 'grey.300' }
+                  ].map((col) => (
+                    <Paper key={col.key} variant="outlined" sx={{ flex: 1, minWidth: 160, p: 1.5, bgcolor: col.color }}>
+                      <Typography variant="caption" fontWeight={600} color="text.secondary">{col.label}</Typography>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1 }}>
+                        {((selectedOrden.subtareas) || []).filter((st) => (st.estado || '').toUpperCase() === col.key).map((st) => (
+                          <Paper
+                            key={st.id}
+                            elevation={0}
+                            sx={{
+                              p: 1.5,
+                              cursor: 'pointer',
+                              border: '1px solid',
+                              borderColor: 'divider',
+                              '&:hover': { bgcolor: 'action.hover' }
+                            }}
+                            onClick={() => { setSubtareaDetalle(st); setOpenSubtareaDetalleDialog(true); }}
+                          >
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                              <Box>
+                                <Typography variant="body2" fontWeight={500}>{st.titulo}</Typography>
+                                {st.tecnico_nombre && <Typography variant="caption" color="text.secondary">{st.tecnico_nombre}</Typography>}
+                              </Box>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }} onClick={(e) => e.stopPropagation()}>
+                                {col.key === 'PENDIENTE' && (
+                                  <Button size="small" variant="outlined" onClick={async () => {
+                                    try {
+                                      await ordenesAPI.updateSubtarea(st.id, { estado: 'EN_PROCESO' });
+                                      const res = await ordenesAPI.getById(selectedOrden.id);
+                                      setSelectedOrden(res.data);
+                                    } catch (err) { setError(err.response?.data?.detail || 'Error'); }
+                                  }}>→</Button>
+                                )}
+                                {col.key === 'EN_PROCESO' && (
+                                  <>
+                                    <Button size="small" variant="outlined" onClick={async () => {
+                                      try {
+                                        await ordenesAPI.updateSubtarea(st.id, { estado: 'PENDIENTE' });
+                                        const res = await ordenesAPI.getById(selectedOrden.id);
+                                        setSelectedOrden(res.data);
+                                      } catch (err) { setError(err.response?.data?.detail || 'Error'); }
+                                    }}>←</Button>
+                                    <Button size="small" variant="outlined" onClick={async () => {
+                                      try {
+                                        await ordenesAPI.updateSubtarea(st.id, { estado: 'COMPLETADA' });
+                                        const res = await ordenesAPI.getById(selectedOrden.id);
+                                        setSelectedOrden(res.data);
+                                      } catch (err) { setError(err.response?.data?.detail || 'Error'); }
+                                    }}>→</Button>
+                                  </>
+                                )}
+                                {col.key === 'COMPLETADA' && (
+                                  <>
+                                    <Button size="small" variant="outlined" onClick={async () => {
+                                      try {
+                                        await ordenesAPI.updateSubtarea(st.id, { estado: 'EN_PROCESO' });
+                                        const res = await ordenesAPI.getById(selectedOrden.id);
+                                        setSelectedOrden(res.data);
+                                      } catch (err) { setError(err.response?.data?.detail || 'Error'); }
+                                    }}>←</Button>
+                                    <Button size="small" variant="outlined" color="error" onClick={async () => {
+                                      try {
+                                        await ordenesAPI.updateSubtarea(st.id, { estado: 'CANCELADA' });
+                                        const res = await ordenesAPI.getById(selectedOrden.id);
+                                        setSelectedOrden(res.data);
+                                      } catch (err) { setError(err.response?.data?.detail || 'Error'); }
+                                    }}>✕</Button>
+                                  </>
+                                )}
+                                {col.key === 'CANCELADA' && (
+                                  <Button size="small" variant="outlined" onClick={async () => {
+                                    try {
+                                      await ordenesAPI.updateSubtarea(st.id, { estado: 'COMPLETADA' });
+                                      const res = await ordenesAPI.getById(selectedOrden.id);
+                                      setSelectedOrden(res.data);
+                                    } catch (err) { setError(err.response?.data?.detail || 'Error'); }
+                                  }}>←</Button>
+                                )}
+                              </Box>
+                            </Box>
+                            {(st.fotos_entrada_list?.length > 0) && (
+                              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                                📷 {st.fotos_entrada_list.length} foto(s)
+                              </Typography>
+                            )}
+                          </Paper>
+                        ))}
+                      </Box>
+                    </Paper>
+                  ))}
+                </Box>
+                <Button size="small" variant="outlined" startIcon={<AddIcon />} onClick={() => { setFormNuevaSubtarea({ titulo: '', descripcion: '' }); setOpenNuevaSubtareaDialog(true); }}>
+                  Agregar sub tarea
+                </Button>
+              </Box>
+            )}
+
             <Tabs 
               value={tabValue} 
               onChange={(e, newValue) => setTabValue(newValue)} 
@@ -1539,6 +1693,35 @@ const Ordenes = () => {
                     InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
                   />
                 </Grid>
+                {isEditing && selectedOrden && (
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                      Sub trabajos (sub-OT)
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center', mb: 1 }}>
+                      {(selectedOrden.sub_ordenes || []).map((sub) => (
+                        <Chip
+                          key={sub.id}
+                          label={sub.titulo}
+                          onDelete={async () => {
+                            if (!window.confirm(`¿Eliminar sub trabajo "${sub.titulo}"? Los materiales y gastos pasarán al trabajo principal.`)) return;
+                            try {
+                              await ordenesAPI.deleteSubOrden(selectedOrden.id, sub.id);
+                              const res = await ordenesAPI.getById(selectedOrden.id);
+                              setSelectedOrden(res.data);
+                            } catch (err) {
+                              setError(err.response?.data?.detail || 'Error al eliminar sub-OT');
+                            }
+                          }}
+                          sx={{ mb: 0.5 }}
+                        />
+                      ))}
+                      <Button size="small" variant="outlined" startIcon={<AddIcon />} onClick={() => { setFormSubOrden({ titulo: '', descripcion: '' }); setOpenSubOrdenDialog(true); }}>
+                        Agregar sub trabajo
+                      </Button>
+                    </Box>
+                  </Grid>
+                )}
                 {isEditing && selectedOrden && (selectedOrden.gastos?.length > 0 || (selectedOrden.total_gastos != null && selectedOrden.total_gastos > 0)) && (
                   <Grid item xs={12}>
                     <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
@@ -1548,7 +1731,9 @@ const Ordenes = () => {
                       <Table size="small">
                         <TableHead>
                           <TableRow>
+                            <TableCell>Sub-OT</TableCell>
                             <TableCell>Descripción</TableCell>
+                            <TableCell>Categoría</TableCell>
                             <TableCell>Fecha</TableCell>
                             <TableCell align="right">Monto</TableCell>
                           </TableRow>
@@ -1556,7 +1741,9 @@ const Ordenes = () => {
                         <TableBody>
                           {(selectedOrden.gastos || []).map((g) => (
                             <TableRow key={g.id}>
+                              <TableCell>{(selectedOrden.sub_ordenes || []).find(s => s.id === g.sub_orden_id)?.titulo || 'Principal'}</TableCell>
                               <TableCell>{g.descripcion}</TableCell>
+                              <TableCell>{(g.categoria || 'OTRO').toUpperCase()}</TableCell>
                               <TableCell>{g.fecha_gasto || '—'}</TableCell>
                               <TableCell align="right">{formatCurrency(g.monto)}</TableCell>
                             </TableRow>
@@ -1566,18 +1753,149 @@ const Ordenes = () => {
                     </TableContainer>
                   </Grid>
                 )}
+                {isEditing && selectedOrden && (selectedOrden.piezas_usadas?.length > 0 || (selectedOrden.total_piezas != null && selectedOrden.total_piezas > 0)) && (
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                      Piezas de bodega usadas en esta OT
+                    </Typography>
+                    <TableContainer component={Paper} variant="outlined" sx={{ mb: 2 }}>
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>Sub-OT</TableCell>
+                            <TableCell>Pieza</TableCell>
+                            <TableCell align="right">Cantidad</TableCell>
+                            {user?.rol === 'ADMIN' && (
+                              <>
+                                <TableCell align="right">P. unit.</TableCell>
+                                <TableCell align="right">Subtotal</TableCell>
+                              </>
+                            )}
+                            <TableCell align="right">Quitar</TableCell>
+                            {user?.rol === 'ADMIN' && <TableCell align="right">Editar</TableCell>}
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {(selectedOrden.piezas_usadas || []).map((u) => (
+                            <TableRow key={u.id}>
+                              <TableCell>{(selectedOrden.sub_ordenes || []).find(s => s.id === u.sub_orden_id)?.titulo || 'Principal'}</TableCell>
+                              <TableCell>{u.pieza_nombre || `Pieza #${u.pieza_id}`}{u.pieza_codigo ? ` (${u.pieza_codigo})` : ''}</TableCell>
+                              <TableCell align="right">{u.cantidad}</TableCell>
+                              {user?.rol === 'ADMIN' && (
+                                <>
+                                  <TableCell align="right">{formatCurrency(u.precio_unitario)}</TableCell>
+                                  <TableCell align="right">{formatCurrency(u.subtotal)}</TableCell>
+                                </>
+                              )}
+                              <TableCell align="right">
+                                <IconButton
+                                  size="small"
+                                  color="error"
+                                  onClick={async () => {
+                                    try {
+                                      await piezasAPI.removeFromOrden(selectedOrden.id, u.id);
+                                      const res = await ordenesAPI.getById(selectedOrden.id);
+                                      setSelectedOrden(res.data);
+                                    } catch (err) {
+                                      setError(err.response?.data?.detail || 'Error al quitar pieza');
+                                    }
+                                  }}
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </TableCell>
+                              {user?.rol === 'ADMIN' && (
+                                <TableCell align="right">
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => {
+                                      setEditUsoPiezaRow(u);
+                                      setEditUsoCantidad(u.cantidad);
+                                      setEditUsoPrecio(String(u.precio_unitario ?? ''));
+                                      setEditUsoError('');
+                                      setOpenEditUsoPieza(true);
+                                    }}
+                                  >
+                                    <EditIcon fontSize="small" />
+                                  </IconButton>
+                                </TableCell>
+                              )}
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<AddIcon />}
+                      onClick={async () => {
+                        try {
+                          const res = await piezasAPI.getAll({ activo: true, limit: 300 });
+                          setPiezasDisponibles(res.data || []);
+                          setAddPiezaPiezaId('');
+                          setAddPiezaSubOrdenId('');
+                          setAddPiezaCantidad(1);
+                          setAddPiezaPrecio('');
+                          setAddPiezaError('');
+                          setOpenAddPiezaDialog(true);
+                        } catch (e) {
+                          setError('Error al cargar piezas');
+                        }
+                      }}
+                    >
+                      Agregar pieza de bodega
+                    </Button>
+                  </Grid>
+                )}
+                {isEditing && selectedOrden && (!selectedOrden.piezas_usadas || selectedOrden.piezas_usadas.length === 0) && (
+                  <Grid item xs={12}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<AddIcon />}
+                      onClick={async () => {
+                        try {
+                          const res = await piezasAPI.getAll({ activo: true, limit: 300 });
+                          setPiezasDisponibles(res.data || []);
+                          setAddPiezaPiezaId('');
+                          setAddPiezaSubOrdenId('');
+                          setAddPiezaCantidad(1);
+                          setAddPiezaPrecio('');
+                          setAddPiezaError('');
+                          setOpenAddPiezaDialog(true);
+                        } catch (e) {
+                          setError('Error al cargar piezas');
+                        }
+                      }}
+                    >
+                      Agregar pieza de bodega
+                    </Button>
+                  </Grid>
+                )}
                 <Grid item xs={12}>
                   <Paper sx={{ p: 2, bgcolor: 'grey.100' }}>
                     <Typography variant="body2" color="text.secondary">
                       Precio Estimado: {formatCurrency(formData.precio_estimado || 0)}
                     </Typography>
-                    {isEditing && selectedOrden && (selectedOrden.total_gastos != null && selectedOrden.total_gastos > 0) && (
+                    {isEditing && selectedOrden && (
                       <>
                         <Typography variant="body2" color="text.secondary">
-                          Total Gastos OT: {formatCurrency(selectedOrden.total_gastos)}
+                          Compras: {formatCurrency(selectedOrden.total_compras || 0)}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Materiales: {formatCurrency(selectedOrden.total_materiales || 0)}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Total Extra OT: {formatCurrency(selectedOrden.total_gastos || 0)}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Piezas (bodega): {formatCurrency(selectedOrden.total_piezas || 0)}
                         </Typography>
                         <Typography variant="body1" sx={{ mt: 0.5, fontWeight: 600 }}>
-                          Precio Estimado + Gastos: {formatCurrency((parseFloat(formData.precio_estimado) || 0) + (parseFloat(selectedOrden.total_gastos) || 0))}
+                          Total Estimado (con extras y piezas): {formatCurrency(
+                            (parseFloat(formData.precio_estimado) || 0) + (parseFloat(selectedOrden.total_gastos) || 0) + (parseFloat(selectedOrden.total_piezas) || 0)
+                          )}
                         </Typography>
                       </>
                     )}
@@ -1585,8 +1903,8 @@ const Ordenes = () => {
                       Anticipo: {formatCurrency(formData.anticipo || 0)}
                     </Typography>
                     <Typography variant="h6" sx={{ mt: 1 }}>
-                      Saldo Pendiente Estimado: {formatCurrency(
-                        (parseFloat(formData.precio_estimado) || 0) + (parseFloat(selectedOrden?.total_gastos) || 0) - (parseFloat(formData.anticipo) || 0)
+                      Saldo Pendiente (con extras): {formatCurrency(
+                        (parseFloat(formData.precio_estimado) || 0) + (parseFloat(selectedOrden?.total_gastos) || 0) + (parseFloat(selectedOrden?.total_piezas) || 0) - (parseFloat(formData.anticipo) || 0)
                       )}
                     </Typography>
                   </Paper>
@@ -2063,6 +2381,49 @@ const Ordenes = () => {
                     <Typography>{selectedOrden.observaciones}</Typography>
                   </Grid>
                 )}
+                {(selectedOrden.piezas_usadas?.length > 0 || selectedOrden.total_piezas > 0) && (
+                  <Grid item xs={12}>
+                    <Typography variant="h6" sx={{ mb: 1 }}>Piezas de bodega</Typography>
+                    <TableContainer component={Paper} variant="outlined">
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>Pieza</TableCell>
+                            <TableCell align="right">Cant.</TableCell>
+                            {user?.rol === 'ADMIN' && (
+                              <>
+                                <TableCell align="right">P. unit.</TableCell>
+                                <TableCell align="right">Subtotal</TableCell>
+                              </>
+                            )}
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {(selectedOrden.piezas_usadas || []).map((u) => (
+                            <TableRow key={u.id}>
+                              <TableCell>{u.pieza_nombre || `#${u.pieza_id}`}</TableCell>
+                              <TableCell align="right">{u.cantidad}</TableCell>
+                              {user?.rol === 'ADMIN' && (
+                                <>
+                                  <TableCell align="right">{formatCurrency(u.precio_unitario)}</TableCell>
+                                  <TableCell align="right">{formatCurrency(u.subtotal)}</TableCell>
+                                </>
+                              )}
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                    {user?.rol === 'ADMIN' && (
+                      <>
+                        <Typography variant="body2" sx={{ mt: 1 }}>Total piezas: {formatCurrency(selectedOrden.total_piezas || 0)}</Typography>
+                        {selectedOrden.total_final != null && (
+                          <Typography variant="body2">Total orden (con piezas): {formatCurrency(selectedOrden.total_final)}</Typography>
+                        )}
+                      </>
+                    )}
+                  </Grid>
+                )}
                 <Grid item xs={12}>
                   <Typography variant="h6" sx={{ mb: 2 }}>Fotos de entrada y detalles</Typography>
                   {(() => {
@@ -2134,10 +2495,449 @@ const Ordenes = () => {
           </DialogActions>
         </Dialog>
 
+        {/* Dialog Crear material (almacén, sin precio; lo asigna admin después) */}
+        <Dialog open={openCrearMaterial} onClose={() => setOpenCrearMaterial(false)} maxWidth="xs" fullWidth>
+          <DialogTitle>Crear material</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              El material se guarda en almacén. El precio lo asigna el administrador al usarlo en una OT o en la lista de materiales.
+            </Typography>
+            {crearMaterialError && <Alert severity="error" sx={{ mb: 1 }}>{crearMaterialError}</Alert>}
+            <TextField
+              fullWidth
+              label="Código"
+              value={crearMaterialData.codigo}
+              onChange={(e) => setCrearMaterialData({ ...crearMaterialData, codigo: e.target.value })}
+              size="small"
+              sx={{ mt: 1 }}
+              placeholder="Opcional"
+            />
+            <TextField
+              fullWidth
+              label="Nombre"
+              value={crearMaterialData.nombre}
+              onChange={(e) => setCrearMaterialData({ ...crearMaterialData, nombre: e.target.value })}
+              size="small"
+              required
+              sx={{ mt: 2 }}
+            />
+            <TextField
+              fullWidth
+              label="Descripción"
+              value={crearMaterialData.descripcion}
+              onChange={(e) => setCrearMaterialData({ ...crearMaterialData, descripcion: e.target.value })}
+              size="small"
+              multiline
+              rows={2}
+              sx={{ mt: 2 }}
+            />
+            <TextField
+              fullWidth
+              label="Stock inicial"
+              type="number"
+              value={crearMaterialData.stock}
+              onChange={(e) => setCrearMaterialData({ ...crearMaterialData, stock: Math.max(0, parseInt(e.target.value, 10) || 0) })}
+              size="small"
+              inputProps={{ min: 0 }}
+              sx={{ mt: 2 }}
+            />
+            <TextField
+              fullWidth
+              select
+              label="Unidad"
+              value={crearMaterialData.unidad}
+              onChange={(e) => setCrearMaterialData({ ...crearMaterialData, unidad: e.target.value })}
+              size="small"
+              sx={{ mt: 2 }}
+            >
+              <MenuItem value="pza">pza</MenuItem>
+              <MenuItem value="kg">kg</MenuItem>
+              <MenuItem value="m">m</MenuItem>
+              <MenuItem value="lt">lt</MenuItem>
+              <MenuItem value="caja">caja</MenuItem>
+            </TextField>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => { setOpenCrearMaterial(false); setCrearMaterialError(''); }}>Cancelar</Button>
+            <Button
+              variant="contained"
+              disabled={!crearMaterialData.nombre?.trim()}
+              onClick={async () => {
+                setCrearMaterialError('');
+                try {
+                  await piezasAPI.create({
+                    codigo: crearMaterialData.codigo?.trim() || null,
+                    nombre: crearMaterialData.nombre.trim(),
+                    descripcion: crearMaterialData.descripcion?.trim() || null,
+                    precio: 0,
+                    stock: crearMaterialData.stock || 0,
+                    unidad: crearMaterialData.unidad || 'pza',
+                    activo: true
+                  });
+                  setSuccess('Material creado. Aparecerá en Bodega / Almacén.');
+                  setOpenCrearMaterial(false);
+                  setCrearMaterialData({ codigo: '', nombre: '', descripcion: '', stock: 0, unidad: 'pza' });
+                } catch (err) {
+                  setCrearMaterialError(err.response?.data?.detail || 'Error al crear material');
+                }
+              }}
+            >
+              Crear
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Dialog Agregar pieza a OT */}
+        <Dialog open={openAddPiezaDialog} onClose={() => setOpenAddPiezaDialog(false)} maxWidth="xs" fullWidth>
+          <DialogTitle>Agregar pieza de bodega</DialogTitle>
+          <DialogContent>
+            {addPiezaError && <Alert severity="error" sx={{ mb: 1 }}>{addPiezaError}</Alert>}
+            {selectedOrden && (selectedOrden.sub_ordenes?.length > 0) && (
+              <TextField
+                select
+                fullWidth
+                label="Asignar a"
+                value={addPiezaSubOrdenId}
+                onChange={(e) => setAddPiezaSubOrdenId(e.target.value)}
+                sx={{ mt: 1 }}
+                size="small"
+              >
+                <MenuItem value="">Trabajo principal</MenuItem>
+                {(selectedOrden.sub_ordenes || []).map((sub) => (
+                  <MenuItem key={sub.id} value={sub.id}>{sub.titulo}</MenuItem>
+                ))}
+              </TextField>
+            )}
+            <TextField
+              select
+              fullWidth
+              label="Pieza"
+              value={addPiezaPiezaId}
+              onChange={(e) => setAddPiezaPiezaId(e.target.value)}
+              sx={{ mt: 2 }}
+              size="small"
+            >
+              <MenuItem value="">Seleccionar...</MenuItem>
+              {piezasDisponibles.map((p) => (
+                <MenuItem key={p.id} value={p.id}>
+                  {p.nombre} {p.codigo ? `(${p.codigo})` : ''} — Stock: {p.stock}
+                  {user?.rol === 'ADMIN' && ` — $${Number(p.precio).toFixed(2)}`}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              fullWidth
+              label="Cantidad"
+              type="number"
+              value={addPiezaCantidad}
+              onChange={(e) => setAddPiezaCantidad(Math.max(1, parseInt(e.target.value, 10) || 1))}
+              inputProps={{ min: 1 }}
+              sx={{ mt: 2 }}
+              size="small"
+            />
+            {user?.rol === 'ADMIN' && (
+              <TextField
+                fullWidth
+                label="Precio unitario (opcional; si no se pone, usa el de la pieza)"
+                type="number"
+                value={addPiezaPrecio}
+                onChange={(e) => setAddPiezaPrecio(e.target.value)}
+                inputProps={{ min: 0, step: 0.01 }}
+                sx={{ mt: 2 }}
+                size="small"
+              />
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenAddPiezaDialog(false)}>Cancelar</Button>
+            <Button
+              variant="contained"
+              disabled={!addPiezaPiezaId || addPiezaCantidad < 1}
+              onClick={async () => {
+                if (!selectedOrden?.id || !addPiezaPiezaId) return;
+                setAddPiezaError('');
+                try {
+                  const payload = { pieza_id: Number(addPiezaPiezaId), cantidad: Number(addPiezaCantidad) };
+                  if (addPiezaSubOrdenId) payload.sub_orden_id = Number(addPiezaSubOrdenId);
+                  if (user?.rol === 'ADMIN' && addPiezaPrecio !== '' && addPiezaPrecio != null) {
+                    const p = parseFloat(addPiezaPrecio);
+                    if (!Number.isNaN(p) && p >= 0) payload.precio_unitario = p;
+                  }
+                  await piezasAPI.addToOrden(selectedOrden.id, payload);
+                  const res = await ordenesAPI.getById(selectedOrden.id);
+                  setSelectedOrden(res.data);
+                  setOpenAddPiezaDialog(false);
+                } catch (err) {
+                  setAddPiezaError(err.response?.data?.detail || 'Error al agregar pieza');
+                }
+              }}
+            >
+              Agregar
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Dialog Editar uso de pieza en OT (solo ADMIN: cantidad y precio) */}
+        <Dialog open={openEditUsoPieza} onClose={() => setOpenEditUsoPieza(false)} maxWidth="xs" fullWidth>
+          <DialogTitle>Editar material en la OT</DialogTitle>
+          <DialogContent>
+            {editUsoPiezaRow && (
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                {editUsoPiezaRow.pieza_nombre}
+              </Typography>
+            )}
+            {editUsoError && <Alert severity="error" sx={{ mb: 1 }}>{editUsoError}</Alert>}
+            <TextField
+              fullWidth
+              label="Cantidad"
+              type="number"
+              value={editUsoCantidad}
+              onChange={(e) => setEditUsoCantidad(Math.max(1, parseInt(e.target.value, 10) || 1))}
+              inputProps={{ min: 1 }}
+              sx={{ mt: 1 }}
+              size="small"
+            />
+            {user?.rol === 'ADMIN' && (
+              <TextField
+                fullWidth
+                label="Precio unitario"
+                type="number"
+                value={editUsoPrecio}
+                onChange={(e) => setEditUsoPrecio(e.target.value)}
+                inputProps={{ min: 0, step: 0.01 }}
+                sx={{ mt: 2 }}
+                size="small"
+              />
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenEditUsoPieza(false)}>Cancelar</Button>
+            <Button
+              variant="contained"
+              onClick={async () => {
+                if (!selectedOrden?.id || !editUsoPiezaRow?.id) return;
+                setEditUsoError('');
+                try {
+                  const payload = { cantidad: Number(editUsoCantidad) };
+                  if (user?.rol === 'ADMIN' && editUsoPrecio !== '' && editUsoPrecio != null) {
+                    const p = parseFloat(editUsoPrecio);
+                    if (!Number.isNaN(p) && p >= 0) payload.precio_unitario = p;
+                  }
+                  await piezasAPI.updateUso(selectedOrden.id, editUsoPiezaRow.id, payload);
+                  const res = await ordenesAPI.getById(selectedOrden.id);
+                  setSelectedOrden(res.data);
+                  setOpenEditUsoPieza(false);
+                } catch (err) {
+                  setEditUsoError(err.response?.data?.detail || 'Error al actualizar');
+                }
+              }}
+            >
+              Guardar
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Dialog Nueva sub-OT */}
+        <Dialog open={openSubOrdenDialog} onClose={() => setOpenSubOrdenDialog(false)} maxWidth="xs" fullWidth>
+          <DialogTitle>Nuevo sub trabajo</DialogTitle>
+          <DialogContent>
+            <TextField
+              fullWidth
+              label="Título del sub trabajo"
+              value={formSubOrden.titulo}
+              onChange={(e) => setFormSubOrden({ ...formSubOrden, titulo: e.target.value })}
+              sx={{ mt: 1 }}
+              size="small"
+              required
+            />
+            <TextField
+              fullWidth
+              label="Descripción (opcional)"
+              value={formSubOrden.descripcion}
+              onChange={(e) => setFormSubOrden({ ...formSubOrden, descripcion: e.target.value })}
+              sx={{ mt: 2 }}
+              size="small"
+              multiline
+              rows={2}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenSubOrdenDialog(false)}>Cancelar</Button>
+            <Button
+              variant="contained"
+              disabled={!formSubOrden.titulo?.trim()}
+              onClick={async () => {
+                if (!selectedOrden?.id) return;
+                try {
+                  await ordenesAPI.createSubOrden(selectedOrden.id, {
+                    titulo: formSubOrden.titulo.trim(),
+                    descripcion: formSubOrden.descripcion?.trim() || null,
+                    orden: (selectedOrden.sub_ordenes?.length || 0)
+                  });
+                  const res = await ordenesAPI.getById(selectedOrden.id);
+                  setSelectedOrden(res.data);
+                  setOpenSubOrdenDialog(false);
+                  setFormSubOrden({ titulo: '', descripcion: '' });
+                } catch (err) {
+                  setError(err.response?.data?.detail || 'Error al crear sub trabajo');
+                }
+              }}
+            >
+              Crear
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Dialog Nueva sub tarea */}
+        <Dialog open={openNuevaSubtareaDialog} onClose={() => setOpenNuevaSubtareaDialog(false)} maxWidth="xs" fullWidth>
+          <DialogTitle>Nueva sub tarea</DialogTitle>
+          <DialogContent>
+            <TextField
+              fullWidth
+              label="Título *"
+              value={formNuevaSubtarea.titulo}
+              onChange={(e) => setFormNuevaSubtarea({ ...formNuevaSubtarea, titulo: e.target.value })}
+              sx={{ mt: 1 }}
+              size="small"
+              required
+            />
+            <TextField
+              fullWidth
+              label="Descripción (opcional)"
+              value={formNuevaSubtarea.descripcion}
+              onChange={(e) => setFormNuevaSubtarea({ ...formNuevaSubtarea, descripcion: e.target.value })}
+              sx={{ mt: 2 }}
+              size="small"
+              multiline
+              rows={2}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenNuevaSubtareaDialog(false)}>Cancelar</Button>
+            <Button
+              variant="contained"
+              disabled={!formNuevaSubtarea.titulo?.trim()}
+              onClick={async () => {
+                if (!selectedOrden?.id) return;
+                try {
+                  await ordenesAPI.createSubtarea(selectedOrden.id, {
+                    titulo: formNuevaSubtarea.titulo.trim(),
+                    descripcion: formNuevaSubtarea.descripcion?.trim() || null,
+                    estado: 'PENDIENTE',
+                    orden: (selectedOrden.subtareas?.length || 0)
+                  });
+                  const res = await ordenesAPI.getById(selectedOrden.id);
+                  setSelectedOrden(res.data);
+                  setOpenNuevaSubtareaDialog(false);
+                  setFormNuevaSubtarea({ titulo: '', descripcion: '' });
+                } catch (err) {
+                  setError(err.response?.data?.detail || 'Error al crear sub tarea');
+                }
+              }}
+            >
+              Crear
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Dialog Detalle sub tarea (imágenes como OT principal) */}
+        <Dialog open={openSubtareaDetalleDialog} onClose={() => { setOpenSubtareaDetalleDialog(false); setSubtareaDetalle(null); }} maxWidth="sm" fullWidth>
+          <DialogTitle>{subtareaDetalle?.titulo || 'Sub tarea'}</DialogTitle>
+          <DialogContent>
+            {subtareaDetalle && (
+              <>
+                {subtareaDetalle.descripcion && (
+                  <Typography variant="body2" sx={{ mb: 2 }}>{subtareaDetalle.descripcion}</Typography>
+                )}
+                <TextField
+                  select
+                  fullWidth
+                  size="small"
+                  label="Estado"
+                  value={(subtareaDetalle.estado || 'PENDIENTE').toUpperCase()}
+                  onChange={async (e) => {
+                    const nuevo = e.target.value;
+                    try {
+                      await ordenesAPI.updateSubtarea(subtareaDetalle.id, { estado: nuevo });
+                      const res = await ordenesAPI.getById(selectedOrden?.id);
+                      if (res?.data) setSelectedOrden(res.data);
+                      setSubtareaDetalle(prev => prev ? { ...prev, estado: nuevo } : null);
+                    } catch (err) { setError(err.response?.data?.detail || 'Error'); }
+                  }}
+                  sx={{ mb: 2 }}
+                >
+                  <MenuItem value="PENDIENTE">Pendiente</MenuItem>
+                  <MenuItem value="EN_PROCESO">En proceso</MenuItem>
+                  <MenuItem value="COMPLETADA">Completada</MenuItem>
+                  <MenuItem value="CANCELADA">Cancelada</MenuItem>
+                </TextField>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>Fotos (como en la OT principal)</Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                  {(subtareaDetalle.fotos_entrada_list || []).map((url, idx) => (
+                    <Box key={idx} sx={{ width: 120, height: 90 }}>
+                      <img
+                        src={`${API_BASE_URL}${url.startsWith('/') ? url : '/' + url}`}
+                        alt={`Subtarea ${idx + 1}`}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8, border: '1px solid #ddd' }}
+                      />
+                    </Box>
+                  ))}
+                </Box>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  component="label"
+                  startIcon={<PhotoCameraIcon />}
+                >
+                  Subir foto
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file || !subtareaDetalle?.id) return;
+                      try {
+                        const fd = new FormData();
+                        fd.append('file', file);
+                        await ordenesAPI.uploadSubtareaFoto(subtareaDetalle.id, fd);
+                        const res = await ordenesAPI.getById(selectedOrden?.id);
+                        if (res?.data) {
+                          setSelectedOrden(res.data);
+                          const st = (res.data.subtareas || []).find(s => s.id === subtareaDetalle.id);
+                          if (st) setSubtareaDetalle(st);
+                        }
+                        e.target.value = '';
+                      } catch (err) { setError(err.response?.data?.detail || 'Error al subir foto'); }
+                    }}
+                  />
+                </Button>
+              </>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => { setOpenSubtareaDetalleDialog(false); setSubtareaDetalle(null); }}>Cerrar</Button>
+          </DialogActions>
+        </Dialog>
+
         {/* Dialog Cambiar Estado */}
         <Dialog open={openEstadoDialog} onClose={() => setOpenEstadoDialog(false)} maxWidth="sm" fullWidth>
           <DialogTitle>Cambiar Estado de la Orden</DialogTitle>
           <DialogContent>
+            {(() => {
+              const subtareas = selectedOrden?.subtareas || [];
+              const incompletas = subtareas.filter((st) => {
+                const e = (st.estado || '').toUpperCase();
+                return e !== 'COMPLETADA' && e !== 'CANCELADA';
+              });
+              const quiereFinalizar = cambioEstado.estatus === 'ENTREGADO' || cambioEstado.estatus === 'FINALIZADO';
+              const bloqueado = subtareas.length > 0 && incompletas.length > 0 && quiereFinalizar;
+              return bloqueado ? (
+                <Alert severity="warning" sx={{ mb: 2 }}>
+                  No se puede entregar ni finalizar la orden hasta que todas las sub tareas estén completadas o canceladas. Quedan {incompletas.length} sub tarea(s) pendiente(s) o en proceso.
+                </Alert>
+              ) : null;
+            })()}
             <Grid container spacing={2} sx={{ mt: 1 }}>
               <Grid item xs={12}>
                 <TextField
@@ -2168,7 +2968,19 @@ const Ordenes = () => {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setOpenEstadoDialog(false)}>Cancelar</Button>
-            <Button onClick={handleCambiarEstado} variant="contained">
+            <Button
+              onClick={handleCambiarEstado}
+              variant="contained"
+              disabled={(() => {
+                const subtareas = selectedOrden?.subtareas || [];
+                const incompletas = subtareas.filter((st) => {
+                  const e = (st.estado || '').toUpperCase();
+                  return e !== 'COMPLETADA' && e !== 'CANCELADA';
+                });
+                const quiereFinalizar = cambioEstado.estatus === 'ENTREGADO' || cambioEstado.estatus === 'FINALIZADO';
+                return subtareas.length > 0 && incompletas.length > 0 && quiereFinalizar;
+              })()}
+            >
               Cambiar Estado
             </Button>
           </DialogActions>

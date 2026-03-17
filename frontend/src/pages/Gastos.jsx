@@ -23,7 +23,9 @@ import {
   Alert,
   CircularProgress,
   Grid,
-  InputAdornment
+  InputAdornment,
+  Tabs,
+  Tab
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -35,9 +37,11 @@ import {
 } from '@mui/icons-material';
 import { gastosAPI, ordenesAPI } from '../services/api';
 
-const Gastos = () => {
+const Gastos = ({ mode = 'gastos' }) => {
+  const isCompras = mode === 'compras';
   const [gastos, setGastos] = useState([]);
   const [resumen, setResumen] = useState({ por_tipo: {}, total: 0 });
+  const [resumenCompras, setResumenCompras] = useState({ compras: 0, materiales: 0, total: 0 });
   const [ordenes, setOrdenes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -47,9 +51,11 @@ const Gastos = () => {
   const [editingGasto, setEditingGasto] = useState(null);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [gastoToDelete, setGastoToDelete] = useState(null);
+  const [comprasTab, setComprasTab] = useState(0);
 
   const [filtros, setFiltros] = useState({
     tipo: '',
+    orden_trabajo_id: '',
     fecha_desde: '',
     fecha_hasta: ''
   });
@@ -57,19 +63,50 @@ const Gastos = () => {
   const [formData, setFormData] = useState({
     descripcion: '',
     monto: '',
-    tipo: 'GENERAL',
+    tipo: isCompras ? 'TRABAJO' : 'GENERAL',
+    categoria: isCompras ? 'COMPRAS' : 'OTRO',
     orden_trabajo_id: '',
     fecha_gasto: new Date().toISOString().slice(0, 10)
   });
   const [formErrors, setFormErrors] = useState({});
 
+  const currentCategoriaCompras = comprasTab === 0 ? 'COMPRAS' : 'MATERIALES';
+
+  const getCurrentMonthRange = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const fechaDesde = new Date(Date.UTC(year, month, 1)).toISOString().slice(0, 10);
+    const fechaHasta = new Date(Date.UTC(year, month + 1, 0)).toISOString().slice(0, 10);
+    return { fechaDesde, fechaHasta };
+  };
+
+  const shouldApplyDefaultMonthFilter = () => {
+    const hasDateFilters = Boolean(filtros.fecha_desde || filtros.fecha_hasta);
+    const hasOtFilter = Boolean(filtros.orden_trabajo_id);
+    const hasTipoFilter = !isCompras && Boolean(filtros.tipo);
+    return !hasDateFilters && !hasOtFilter && !hasTipoFilter;
+  };
+
   const loadGastos = async () => {
     try {
       setLoading(true);
       const params = {};
-      if (filtros.tipo) params.tipo = filtros.tipo;
-      if (filtros.fecha_desde) params.fecha_desde = filtros.fecha_desde;
-      if (filtros.fecha_hasta) params.fecha_hasta = filtros.fecha_hasta;
+      if (isCompras) {
+        params.tipo = 'TRABAJO';
+        params.categoria = currentCategoriaCompras;
+      } else if (filtros.tipo) {
+        params.tipo = filtros.tipo;
+      }
+      if (filtros.orden_trabajo_id) params.orden_trabajo_id = filtros.orden_trabajo_id;
+      if (shouldApplyDefaultMonthFilter()) {
+        const { fechaDesde, fechaHasta } = getCurrentMonthRange();
+        params.fecha_desde = fechaDesde;
+        params.fecha_hasta = fechaHasta;
+      } else {
+        if (filtros.fecha_desde) params.fecha_desde = filtros.fecha_desde;
+        if (filtros.fecha_hasta) params.fecha_hasta = filtros.fecha_hasta;
+      }
       const res = await gastosAPI.getAll(params);
       setGastos(res.data || []);
       setError('');
@@ -84,14 +121,48 @@ const Gastos = () => {
 
   const loadResumen = async () => {
     try {
+      if (isCompras) {
+        const baseParams = {};
+        if (filtros.orden_trabajo_id) baseParams.orden_trabajo_id = filtros.orden_trabajo_id;
+        if (shouldApplyDefaultMonthFilter()) {
+          const { fechaDesde, fechaHasta } = getCurrentMonthRange();
+          baseParams.fecha_desde = fechaDesde;
+          baseParams.fecha_hasta = fechaHasta;
+        } else {
+          if (filtros.fecha_desde) baseParams.fecha_desde = filtros.fecha_desde;
+          if (filtros.fecha_hasta) baseParams.fecha_hasta = filtros.fecha_hasta;
+        }
+        const [rCompras, rMateriales] = await Promise.all([
+          gastosAPI.getResumen({ ...baseParams, tipo: 'TRABAJO', categoria: 'COMPRAS' }),
+          gastosAPI.getResumen({ ...baseParams, tipo: 'TRABAJO', categoria: 'MATERIALES' })
+        ]);
+        const totalCompras = rCompras.data?.total || 0;
+        const totalMateriales = rMateriales.data?.total || 0;
+        setResumenCompras({
+          compras: totalCompras,
+          materiales: totalMateriales,
+          total: totalCompras + totalMateriales
+        });
+        return;
+      }
       const params = {};
-      if (filtros.fecha_desde) params.fecha_desde = filtros.fecha_desde;
-      if (filtros.fecha_hasta) params.fecha_hasta = filtros.fecha_hasta;
+      if (shouldApplyDefaultMonthFilter()) {
+        const { fechaDesde, fechaHasta } = getCurrentMonthRange();
+        params.fecha_desde = fechaDesde;
+        params.fecha_hasta = fechaHasta;
+      } else {
+        if (filtros.fecha_desde) params.fecha_desde = filtros.fecha_desde;
+        if (filtros.fecha_hasta) params.fecha_hasta = filtros.fecha_hasta;
+      }
       if (filtros.tipo) params.tipo = filtros.tipo;
       const res = await gastosAPI.getResumen(params);
       setResumen(res.data || { por_tipo: {}, total: 0 });
     } catch {
-      setResumen({ por_tipo: {}, total: 0 });
+      if (isCompras) {
+        setResumenCompras({ compras: 0, materiales: 0, total: 0 });
+      } else {
+        setResumen({ por_tipo: {}, total: 0 });
+      }
     }
   };
 
@@ -107,11 +178,11 @@ const Gastos = () => {
 
   useEffect(() => {
     loadGastos();
-  }, [filtros.tipo, filtros.fecha_desde, filtros.fecha_hasta]);
+  }, [isCompras, comprasTab, filtros.tipo, filtros.orden_trabajo_id, filtros.fecha_desde, filtros.fecha_hasta]);
 
   useEffect(() => {
     loadResumen();
-  }, [filtros.tipo, filtros.fecha_desde, filtros.fecha_hasta]);
+  }, [isCompras, comprasTab, filtros.tipo, filtros.orden_trabajo_id, filtros.fecha_desde, filtros.fecha_hasta]);
 
   useEffect(() => {
     loadOrdenes();
@@ -124,6 +195,7 @@ const Gastos = () => {
         descripcion: gasto.descripcion || '',
         monto: gasto.monto?.toString() || '',
         tipo: gasto.tipo || 'GENERAL',
+        categoria: (gasto.categoria || 'OTRO').toUpperCase(),
         orden_trabajo_id: gasto.orden_trabajo_id || '',
         fecha_gasto: gasto.fecha_gasto || new Date().toISOString().slice(0, 10)
       });
@@ -132,7 +204,8 @@ const Gastos = () => {
       setFormData({
         descripcion: '',
         monto: '',
-        tipo: 'GENERAL',
+        tipo: isCompras ? 'TRABAJO' : 'GENERAL',
+        categoria: isCompras ? currentCategoriaCompras : 'OTRO',
         orden_trabajo_id: '',
         fecha_gasto: new Date().toISOString().slice(0, 10)
       });
@@ -147,7 +220,8 @@ const Gastos = () => {
     setFormData({
       descripcion: '',
       monto: '',
-      tipo: 'GENERAL',
+      tipo: isCompras ? 'TRABAJO' : 'GENERAL',
+      categoria: isCompras ? currentCategoriaCompras : 'OTRO',
       orden_trabajo_id: '',
       fecha_gasto: new Date().toISOString().slice(0, 10)
     });
@@ -158,7 +232,7 @@ const Gastos = () => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     if (name === 'tipo' && value === 'GENERAL') {
-      setFormData(prev => ({ ...prev, orden_trabajo_id: '' }));
+      setFormData(prev => ({ ...prev, orden_trabajo_id: '', categoria: 'OTRO' }));
     }
   };
 
@@ -182,6 +256,7 @@ const Gastos = () => {
         descripcion: formData.descripcion.trim(),
         monto: parseFloat(formData.monto),
         tipo: formData.tipo,
+        categoria: formData.categoria || 'OTRO',
         fecha_gasto: formData.fecha_gasto,
         orden_trabajo_id: formData.tipo === 'TRABAJO' && formData.orden_trabajo_id ? parseInt(formData.orden_trabajo_id, 10) : null
       };
@@ -235,14 +310,14 @@ const Gastos = () => {
       <Container maxWidth="xl" sx={{ py: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h4" component="h1">
-            Panel de Gastos
+            {isCompras ? 'Compras' : 'Panel de Gastos'}
           </Typography>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => handleOpenDialog()}
           >
-            Nuevo gasto
+            {isCompras ? 'Nueva compra/material' : 'Nuevo gasto'}
           </Button>
         </Box>
 
@@ -250,40 +325,87 @@ const Gastos = () => {
         {successMessage && <Alert severity="success" sx={{ mb: 2 }}>{successMessage}</Alert>}
 
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={4}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography color="text.secondary">Total gastos</Typography>
-              <Typography variant="h5">{formatMoney(resumen.total)}</Typography>
-            </Paper>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography color="text.secondary">Por trabajo</Typography>
-              <Typography variant="h5">{formatMoney(resumen.por_tipo?.TRABAJO || 0)}</Typography>
-            </Paper>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography color="text.secondary">Generales</Typography>
-              <Typography variant="h5">{formatMoney(resumen.por_tipo?.GENERAL || 0)}</Typography>
-            </Paper>
-          </Grid>
+          {isCompras ? (
+            <>
+              <Grid item xs={12} sm={4}>
+                <Paper sx={{ p: 2, textAlign: 'center' }}>
+                  <Typography color="text.secondary">Compras</Typography>
+                  <Typography variant="h5">{formatMoney(resumenCompras.compras)}</Typography>
+                </Paper>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <Paper sx={{ p: 2, textAlign: 'center' }}>
+                  <Typography color="text.secondary">Materiales</Typography>
+                  <Typography variant="h5">{formatMoney(resumenCompras.materiales)}</Typography>
+                </Paper>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <Paper sx={{ p: 2, textAlign: 'center' }}>
+                  <Typography color="text.secondary">Total</Typography>
+                  <Typography variant="h5">{formatMoney(resumenCompras.total)}</Typography>
+                </Paper>
+              </Grid>
+            </>
+          ) : (
+            <>
+              <Grid item xs={12} sm={4}>
+                <Paper sx={{ p: 2, textAlign: 'center' }}>
+                  <Typography color="text.secondary">Total gastos</Typography>
+                  <Typography variant="h5">{formatMoney(resumen.total)}</Typography>
+                </Paper>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <Paper sx={{ p: 2, textAlign: 'center' }}>
+                  <Typography color="text.secondary">Por trabajo</Typography>
+                  <Typography variant="h5">{formatMoney(resumen.por_tipo?.TRABAJO || 0)}</Typography>
+                </Paper>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <Paper sx={{ p: 2, textAlign: 'center' }}>
+                  <Typography color="text.secondary">Generales</Typography>
+                  <Typography variant="h5">{formatMoney(resumen.por_tipo?.GENERAL || 0)}</Typography>
+                </Paper>
+              </Grid>
+            </>
+          )}
         </Grid>
 
         <Paper sx={{ p: 2, mb: 2 }}>
           <Typography variant="subtitle2" gutterBottom>Filtros</Typography>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
+            {isCompras ? (
+              <Tabs value={comprasTab} onChange={(e, v) => setComprasTab(v)}>
+                <Tab label="Compras" />
+                <Tab label="Materiales" />
+              </Tabs>
+            ) : (
+              <TextField
+                select
+                size="small"
+                label="Tipo"
+                sx={{ minWidth: 140 }}
+                value={filtros.tipo}
+                onChange={(e) => setFiltros(f => ({ ...f, tipo: e.target.value }))}
+              >
+                <MenuItem value="">Todos</MenuItem>
+                <MenuItem value="TRABAJO">Por trabajo</MenuItem>
+                <MenuItem value="GENERAL">General</MenuItem>
+              </TextField>
+            )}
             <TextField
               select
               size="small"
-              label="Tipo"
-              sx={{ minWidth: 140 }}
-              value={filtros.tipo}
-              onChange={(e) => setFiltros(f => ({ ...f, tipo: e.target.value }))}
+              label="OT"
+              sx={{ minWidth: 220 }}
+              value={filtros.orden_trabajo_id}
+              onChange={(e) => setFiltros(f => ({ ...f, orden_trabajo_id: e.target.value }))}
             >
-              <MenuItem value="">Todos</MenuItem>
-              <MenuItem value="TRABAJO">Por trabajo</MenuItem>
-              <MenuItem value="GENERAL">General</MenuItem>
+              <MenuItem value="">Todas</MenuItem>
+              {ordenes.map((ot) => (
+                <MenuItem key={ot.id} value={ot.id}>
+                  {ot.folio} – {(ot.descripcion || '').slice(0, 50)}{(ot.descripcion?.length || 0) > 50 ? '…' : ''}
+                </MenuItem>
+              ))}
             </TextField>
             <TextField
               size="small"
@@ -316,6 +438,7 @@ const Gastos = () => {
                   <TableCell>Fecha</TableCell>
                   <TableCell>Descripción</TableCell>
                   <TableCell>Tipo</TableCell>
+                  <TableCell>Categoría</TableCell>
                   <TableCell>OT</TableCell>
                   <TableCell align="right">Monto</TableCell>
                   <TableCell>Registrado por</TableCell>
@@ -325,7 +448,7 @@ const Gastos = () => {
               <TableBody>
                 {gastos.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} align="center">No hay gastos registrados</TableCell>
+                    <TableCell colSpan={8} align="center">No hay registros</TableCell>
                   </TableRow>
                 ) : (
                   gastos.map((g) => (
@@ -338,6 +461,13 @@ const Gastos = () => {
                           icon={g.tipo === 'TRABAJO' ? <BuildIcon /> : <CategoryIcon />}
                           label={g.tipo === 'TRABAJO' ? 'Por trabajo' : 'General'}
                           color={g.tipo === 'TRABAJO' ? 'primary' : 'default'}
+                          variant="outlined"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          size="small"
+                          label={(g.categoria || 'OTRO').toUpperCase()}
                           variant="outlined"
                         />
                       </TableCell>
@@ -362,7 +492,7 @@ const Gastos = () => {
       </Container>
 
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>{editingGasto ? 'Editar gasto' : 'Nuevo gasto'}</DialogTitle>
+        <DialogTitle>{editingGasto ? (isCompras ? 'Editar compra/material' : 'Editar gasto') : (isCompras ? 'Nueva compra/material' : 'Nuevo gasto')}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
             <TextField
@@ -395,9 +525,23 @@ const Gastos = () => {
               value={formData.tipo}
               onChange={handleFormChange}
               fullWidth
+              disabled={isCompras}
             >
               <MenuItem value="GENERAL">General</MenuItem>
               <MenuItem value="TRABAJO">Por trabajo (OT)</MenuItem>
+            </TextField>
+            <TextField
+              select
+              label="Categoría"
+              name="categoria"
+              value={formData.categoria}
+              onChange={handleFormChange}
+              fullWidth
+              disabled={formData.tipo === 'GENERAL'}
+            >
+              <MenuItem value="OTRO">Otro</MenuItem>
+              <MenuItem value="COMPRAS">Compras</MenuItem>
+              <MenuItem value="MATERIALES">Materiales</MenuItem>
             </TextField>
             {formData.tipo === 'TRABAJO' && (
               <TextField

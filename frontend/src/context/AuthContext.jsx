@@ -39,10 +39,14 @@ export const AuthProvider = ({ children }) => {
       setUser(userResponse.data);
       return { success: true };
     } catch (error) {
-      return {
-        success: false,
-        message: error.response?.data?.detail || 'Error al iniciar sesión'
-      };
+      const msg = !error.response
+        ? 'No se pudo conectar al servidor. Comprueba que el backend esté en marcha y la URL en .env (VITE_API_URL).'
+        : (typeof error.response?.data?.detail === 'string'
+          ? error.response.data.detail
+          : Array.isArray(error.response?.data?.detail)
+            ? error.response.data.detail.map((e) => e.msg || e).join(', ')
+            : 'Error al iniciar sesión');
+      return { success: false, message: msg };
     }
   };
 
@@ -56,10 +60,12 @@ export const AuthProvider = ({ children }) => {
       setUser(userResponse.data);
       return { success: true };
     } catch (error) {
-      return {
-        success: false,
-        message: error.response?.data?.detail || 'Código incorrecto o no corresponde a un técnico activo'
-      };
+      const msg = !error.response
+        ? 'No se pudo conectar al servidor. Comprueba que el backend esté en marcha.'
+        : (typeof error.response?.data?.detail === 'string'
+          ? error.response.data.detail
+          : 'Código incorrecto o no corresponde a un técnico activo');
+      return { success: false, message: msg };
     }
   };
 

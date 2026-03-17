@@ -60,8 +60,9 @@ pip-delete-this-directory.txt
 .coverage
 htmlcov/
 
-# Build outputs
+# Build outputs (pero incluir frontend/dist para Dockerfile.prod.nginx-only)
 dist/
+!frontend/dist
 build/
 *.egg-info/
 

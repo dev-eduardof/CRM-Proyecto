@@ -11,9 +11,10 @@ import Clientes from './pages/Clientes';
 import Ordenes from './pages/Ordenes';
 import DashboardTaller from './pages/DashboardTaller';
 import Gastos from './pages/Gastos';
+import Bodega from './pages/Bodega';
+import Caja from './pages/Caja';
 // import Recepcion from './pages/Recepcion';
 // import Tecnicos from './pages/Tecnicos';
-// import Caja from './pages/Caja';
 // import Reportes from './pages/Reportes';
 
 const theme = createTheme({
@@ -31,7 +32,7 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Router>
+      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
@@ -84,17 +85,40 @@ function App() {
               }
             />
             <Route
+              path="/bodega"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN', 'RECEPCION', 'TECNICO']}>
+                  <Bodega />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/caja"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN', 'RECEPCION', 'TECNICO']}>
+                  <Caja />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/gastos"
               element={
                 <ProtectedRoute allowedRoles={['ADMIN']}>
-                  <Gastos />
+                  <Gastos mode="gastos" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/compras"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN', 'RECEPCION']}>
+                  <Gastos mode="compras" />
                 </ProtectedRoute>
               }
             />
             {/* 
             <Route path="/recepcion" element={<Recepcion />} />
             <Route path="/tecnicos" element={<Tecnicos />} />
-            <Route path="/caja" element={<Caja />} />
             <Route path="/reportes" element={<Reportes />} />
             */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />

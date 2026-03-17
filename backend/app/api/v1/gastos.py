@@ -6,7 +6,7 @@ from decimal import Decimal
 
 from app.database import get_db
 from app.models.user import User
-from app.models.gasto import Gasto, TipoGastoEnum
+from app.models.gasto import Gasto, TipoGastoEnum, CategoriaGastoEnum
 from app.models.orden_trabajo import OrdenTrabajo, EstadoOrdenEnum
 from app.schemas.gasto import GastoCreate, GastoUpdate, GastoResponse
 from app.core.dependencies import get_current_active_user, require_role
@@ -21,6 +21,7 @@ def _gasto_to_response(g: Gasto) -> dict:
         "descripcion": g.descripcion,
         "monto": g.monto,
         "tipo": (g.tipo.value if g.tipo else "GENERAL").upper(),
+        "categoria": (g.categoria.value if getattr(g, "categoria", None) else "OTRO").upper(),
         "usuario_registro_id": g.usuario_registro_id,
         "fecha_gasto": g.fecha_gasto.isoformat() if g.fecha_gasto else None,
         "created_at": g.created_at,
@@ -37,10 +38,11 @@ def _gasto_to_response(g: Gasto) -> dict:
 @router.get("/gastos", response_model=List[dict])
 def list_gastos(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(["ADMIN"])),
+    current_user: User = Depends(require_role(["ADMIN", "RECEPCION"])),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     tipo: Optional[str] = Query(None, description="TRABAJO o GENERAL"),
+    categoria: Optional[str] = Query(None, description="COMPRAS, MATERIALES u OTRO"),
     orden_trabajo_id: Optional[int] = Query(None),
     fecha_desde: Optional[date] = Query(None),
     fecha_hasta: Optional[date] = Query(None),
@@ -49,6 +51,8 @@ def list_gastos(
     q = db.query(Gasto)
     if tipo:
         q = q.filter(Gasto.tipo == (tipo.upper() if tipo else None))
+    if categoria:
+        q = q.filter(Gasto.categoria == (categoria.upper() if categoria else None))
     if orden_trabajo_id is not None:
         q = q.filter(Gasto.orden_trabajo_id == orden_trabajo_id)
     if fecha_desde:
@@ -62,10 +66,11 @@ def list_gastos(
 @router.get("/gastos/resumen")
 def resumen_gastos(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(["ADMIN"])),
+    current_user: User = Depends(require_role(["ADMIN", "RECEPCION"])),
     fecha_desde: Optional[date] = Query(None),
     fecha_hasta: Optional[date] = Query(None),
     tipo: Optional[str] = Query(None),
+    categoria: Optional[str] = Query(None),
 ):
     """Resumen de totales por tipo y total general."""
     from sqlalchemy import func
@@ -76,6 +81,8 @@ def resumen_gastos(
         q = q.filter(Gasto.fecha_gasto <= fecha_hasta)
     if tipo:
         q = q.filter(Gasto.tipo == tipo.upper())
+    if categoria:
+        q = q.filter(Gasto.categoria == categoria.upper())
     rows = q.all()
     by_tipo = { (r.tipo.value if r.tipo else "GENERAL").upper(): float(r.total) for r in rows }
     total = sum(by_tipo.values())
@@ -86,7 +93,7 @@ def resumen_gastos(
 def get_gasto(
     gasto_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(["ADMIN"])),
+    current_user: User = Depends(require_role(["ADMIN", "RECEPCION"])),
 ):
     """Obtener un gasto por ID."""
     g = db.query(Gasto).filter(Gasto.id == gasto_id).first()
@@ -99,12 +106,17 @@ def get_gasto(
 def create_gasto(
     body: GastoCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(["ADMIN"])),
+    current_user: User = Depends(require_role(["ADMIN", "RECEPCION"])),
 ):
     """Registrar un nuevo gasto."""
     tipo_str = (body.tipo or "GENERAL").upper()
     if tipo_str not in ("TRABAJO", "GENERAL"):
         raise HTTPException(status_code=400, detail="tipo debe ser TRABAJO o GENERAL")
+    categoria_str = (body.categoria or "OTRO").upper()
+    if categoria_str not in ("COMPRAS", "MATERIALES", "OTRO"):
+        raise HTTPException(status_code=400, detail="categoria debe ser COMPRAS, MATERIALES u OTRO")
+    if categoria_str in ("COMPRAS", "MATERIALES") and tipo_str != "TRABAJO":
+        raise HTTPException(status_code=400, detail="categoria COMPRAS/MATERIALES solo aplica para tipo TRABAJO")
     if tipo_str == "TRABAJO" and body.orden_trabajo_id:
         ot = db.query(OrdenTrabajo).filter(OrdenTrabajo.id == body.orden_trabajo_id).first()
         if not ot:
@@ -114,6 +126,8 @@ def create_gasto(
                 status_code=400,
                 detail="Solo se pueden agregar gastos a órdenes activas (no entregadas ni finalizadas)"
             )
+    if tipo_str == "TRABAJO" and not body.orden_trabajo_id:
+        raise HTTPException(status_code=400, detail="orden_trabajo_id es requerido cuando tipo es TRABAJO")
     orden_id = body.orden_trabajo_id if tipo_str == "TRABAJO" else None
     if tipo_str == "GENERAL":
         orden_id = None
@@ -121,6 +135,7 @@ def create_gasto(
         descripcion=body.descripcion.strip(),
         monto=body.monto,
         tipo=TipoGastoEnum(tipo_str),
+        categoria=CategoriaGastoEnum(categoria_str),
         orden_trabajo_id=orden_id,
         usuario_registro_id=current_user.id,
         fecha_gasto=body.fecha_gasto,
@@ -136,7 +151,7 @@ def update_gasto(
     gasto_id: int,
     body: GastoUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(["ADMIN"])),
+    current_user: User = Depends(require_role(["ADMIN", "RECEPCION"])),
 ):
     """Actualizar un gasto."""
     g = db.query(Gasto).filter(Gasto.id == gasto_id).first()
@@ -147,8 +162,13 @@ def update_gasto(
         data["tipo"] = TipoGastoEnum(data["tipo"].upper())
         if data["tipo"] == TipoGastoEnum.GENERAL:
             data["orden_trabajo_id"] = None
+            data["categoria"] = CategoriaGastoEnum.OTRO
     elif "orden_trabajo_id" in data and g.tipo == TipoGastoEnum.GENERAL:
         data["orden_trabajo_id"] = None
+    if "categoria" in data and data["categoria"]:
+        data["categoria"] = CategoriaGastoEnum(data["categoria"].upper())
+        if data["categoria"] in (CategoriaGastoEnum.COMPRAS, CategoriaGastoEnum.MATERIALES) and (data.get("tipo") or g.tipo) != TipoGastoEnum.TRABAJO:
+            raise HTTPException(status_code=400, detail="categoria COMPRAS/MATERIALES solo aplica para tipo TRABAJO")
     # Si se asocia o cambia la OT, validar que esté activa
     if "orden_trabajo_id" in data and data["orden_trabajo_id"]:
         ot = db.query(OrdenTrabajo).filter(OrdenTrabajo.id == data["orden_trabajo_id"]).first()
@@ -157,6 +177,8 @@ def update_gasto(
                 status_code=400,
                 detail="Solo se pueden asociar gastos a órdenes activas (no entregadas ni finalizadas)"
             )
+    if (data.get("tipo") or g.tipo) == TipoGastoEnum.TRABAJO and (data.get("orden_trabajo_id") or g.orden_trabajo_id) is None:
+        raise HTTPException(status_code=400, detail="orden_trabajo_id es requerido cuando tipo es TRABAJO")
     for k, v in data.items():
         setattr(g, k, v)
     db.commit()

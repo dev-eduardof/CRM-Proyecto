@@ -2,7 +2,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { CircularProgress, Box } from '@mui/material';
 
-const ProtectedRoute = ({ children, requiredRole }) => {
+const ProtectedRoute = ({ children, requiredRole, allowedRoles }) => {
   const { isAuthenticated, user, loading } = useAuth();
 
   if (loading) {
@@ -25,6 +25,9 @@ const ProtectedRoute = ({ children, requiredRole }) => {
   }
 
   // Verificar rol si es requerido
+  if (Array.isArray(allowedRoles) && allowedRoles.length > 0 && !allowedRoles.includes(user?.rol)) {
+    return <Navigate to="/dashboard" replace />;
+  }
   if (requiredRole && user?.rol !== requiredRole) {
     return <Navigate to="/dashboard" replace />;
   }

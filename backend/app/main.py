@@ -9,9 +9,9 @@ import pathlib
 import traceback
 
 # Importar routers
-from app.api.v1 import auth, users, vacaciones, incidencias, clientes, ordenes, sucursales, gastos
+from app.api.v1 import auth, users, vacaciones, incidencias, clientes, ordenes, sucursales, gastos, piezas, caja
 from app.database import engine
-from app.models import OrdenFotoEntrada
+from app.models import OrdenFotoEntrada, Pieza, OrdenTrabajoPieza, CatalogoPieza, SubcatalogoPieza, SubOrdenTrabajo, SubtareaFotoEntrada, CorteCaja, MovimientoCaja, AperturaCaja
 
 # Orígenes permitidos para CORS
 # En producción definir CORS_ORIGINS en .env (ej: CORS_ORIGINS=http://16.148.80.123:3000,https://tudominio.com)
@@ -74,12 +74,64 @@ app = FastAPI(
 @app.on_event("startup")
 def startup_create_tables():
     """Crea tablas/columnas que puedan faltar (sin alterar datos existentes)."""
+    from sqlalchemy import text
     try:
         OrdenFotoEntrada.__table__.create(engine, checkfirst=True)
     except Exception as e:
         print(f"Nota: orden_fotos_entrada (puede existir ya): {e}")
+    try:
+        SubOrdenTrabajo.__table__.create(engine, checkfirst=True)
+    except Exception as e:
+        print(f"Nota: tabla sub_ordenes_trabajo (puede existir ya): {e}")
+    try:
+        SubtareaFotoEntrada.__table__.create(engine, checkfirst=True)
+    except Exception as e:
+        print(f"Nota: tabla subtarea_fotos_entrada (puede existir ya): {e}")
+    try:
+        CatalogoPieza.__table__.create(engine, checkfirst=True)
+        SubcatalogoPieza.__table__.create(engine, checkfirst=True)
+        Pieza.__table__.create(engine, checkfirst=True)
+        OrdenTrabajoPieza.__table__.create(engine, checkfirst=True)
+    except Exception as e:
+        print(f"Nota: tablas catalogos/subcatalogos/piezas (pueden existir ya): {e}")
+    try:
+        CorteCaja.__table__.create(engine, checkfirst=True)
+        MovimientoCaja.__table__.create(engine, checkfirst=True)
+        AperturaCaja.__table__.create(engine, checkfirst=True)
+    except Exception as e:
+        print(f"Nota: tablas caja (pueden existir ya): {e}")
+    for col in ("sub_orden_id",):
+        try:
+            with engine.begin() as conn:
+                conn.execute(text(f"ALTER TABLE orden_trabajo_piezas ADD COLUMN {col} INT NULL"))
+            print(f"Columna orden_trabajo_piezas.{col} creada.")
+        except Exception as e:
+            err = str(e).lower()
+            if "duplicate column" in err or "already exists" in err or "duplicate column name" in err:
+                pass
+            else:
+                print(f"Nota al añadir orden_trabajo_piezas.{col}: {e}")
+    try:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE gastos ADD COLUMN sub_orden_id INT NULL"))
+        print("Columna gastos.sub_orden_id creada correctamente.")
+    except Exception as e:
+        if "Duplicate column" in str(e) or "already exists" in str(e).lower():
+            print("Columna gastos.sub_orden_id ya existe.")
+        else:
+            print(f"Nota al añadir sub_orden_id a gastos (puede existir ya): {e}")
+    for col in ("catalogo_id", "subcatalogo_id"):
+        try:
+            with engine.begin() as conn:
+                conn.execute(text(f"ALTER TABLE piezas ADD COLUMN {col} INT NULL"))
+            print(f"Columna piezas.{col} creada.")
+        except Exception as e:
+            err = str(e).lower()
+            if "duplicate column" in err or "already exists" in err or "duplicate column name" in err:
+                pass
+            else:
+                print(f"Nota al añadir piezas.{col}: {e}")
     # Columna codigo en usuarios (login técnicos): añadir si no existe
-    from sqlalchemy import text
     try:
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE usuarios ADD COLUMN codigo VARCHAR(4) NULL UNIQUE"))
@@ -89,6 +141,15 @@ def startup_create_tables():
             print("Columna usuarios.codigo ya existe.")
         else:
             print(f"Nota al añadir codigo a usuarios (puede existir ya): {e}")
+    try:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE gastos ADD COLUMN categoria VARCHAR(20) NULL"))
+        print("Columna gastos.categoria creada correctamente.")
+    except Exception as e:
+        if "Duplicate column" in str(e) or "already exists" in str(e).lower():
+            print("Columna gastos.categoria ya existe.")
+        else:
+            print(f"Nota al añadir categoria a gastos (puede existir ya): {e}")
 
 
 @app.exception_handler(Exception)
@@ -146,6 +207,8 @@ app.include_router(clientes.router, prefix="/api/v1")
 app.include_router(sucursales.router, prefix="/api/v1")
 app.include_router(ordenes.router, prefix="/api/v1")
 app.include_router(gastos.router, prefix="/api/v1")
+app.include_router(piezas.router, prefix="/api/v1")
+app.include_router(caja.router, prefix="/api/v1")
 
 # Servir frontend estático al final (debe ser lo último)
 frontend_dist = pathlib.Path(__file__).parent.parent.parent / "frontend" / "dist"

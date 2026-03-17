@@ -33,7 +33,8 @@ import {
   Settings as SettingsIcon,
   ExitToApp as ExitToAppIcon,
   BeachAccess as BeachAccessIcon,
-  PersonAdd as PersonAddIcon
+  PersonAdd as PersonAddIcon,
+  Inventory2 as InventoryIcon
 } from '@mui/icons-material';
 
 const Layout = ({ children }) => {
@@ -70,8 +71,10 @@ const Layout = ({ children }) => {
     { text: 'Mis Vacaciones', icon: <BeachAccessIcon />, path: '/vacaciones', roles: ['ADMIN', 'RECEPCION', 'CAJA', 'AUXILIAR', 'JEFE_TALLER'] },
     { text: 'Clientes', icon: <PersonAddIcon />, path: '/clientes', roles: ['ADMIN', 'RECEPCION'] },
     { text: 'Órdenes de Trabajo', icon: <ReceiptIcon />, path: '/ordenes', roles: ['ADMIN', 'RECEPCION', 'TECNICO'] },
+    { text: 'Bodega / Almacén', icon: <InventoryIcon />, path: '/bodega', roles: ['ADMIN', 'RECEPCION', 'TECNICO'] },
+    { text: 'Compras', icon: <BuildIcon />, path: '/compras', roles: ['ADMIN', 'RECEPCION'] },
     { text: 'Gastos', icon: <MoneyOffIcon />, path: '/gastos', roles: ['ADMIN'] },
-    { text: 'Caja', icon: <AttachMoneyIcon />, path: '/cashier', roles: ['ADMIN', 'CAJA'] },
+    { text: 'Caja', icon: <AttachMoneyIcon />, path: '/caja', roles: ['ADMIN', 'RECEPCION', 'TECNICO'] },
     { text: 'Reportes', icon: <BarChartIcon />, path: '/reports', roles: ['ADMIN'] },
   ];
 

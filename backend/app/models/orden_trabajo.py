@@ -119,6 +119,8 @@ class OrdenTrabajo(Base):
     usuario_recepcion = relationship("User", foreign_keys=[usuario_recepcion_id], backref="ordenes_recepcionadas")
     tecnico = relationship("User", foreign_keys=[tecnico_asignado_id], backref="ordenes_asignadas")
     subtareas = relationship("SubtareaOrden", back_populates="orden_trabajo", cascade="all, delete-orphan")
+    sub_ordenes = relationship("SubOrdenTrabajo", back_populates="orden_trabajo", cascade="all, delete-orphan", order_by="SubOrdenTrabajo.orden")
+    piezas_usadas = relationship("OrdenTrabajoPieza", back_populates="orden_trabajo", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<OrdenTrabajo {self.folio} - {self.estatus}>"
@@ -166,13 +168,34 @@ class OrdenTrabajo(Base):
         return now > promesa
 
     @property
-    def saldo_pendiente(self):
-        """Calcula el saldo pendiente"""
-        if self.precio_final is None:
+    def total_piezas(self):
+        """Suma del costo de piezas usadas en esta OT."""
+        try:
+            usos = getattr(self, "piezas_usadas", None) or []
+            return sum(
+                float(getattr(u, "precio_unitario", 0) or 0) * int(getattr(u, "cantidad", 0) or 0)
+                for u in usos
+            )
+        except (TypeError, ValueError):
             return 0.0
+
+    @property
+    def saldo_pendiente(self):
+        """Calcula el saldo pendiente (base + gastos + piezas - anticipo)"""
         try:
             anticipo = self.anticipo if self.anticipo is not None else 0
-            return float(self.precio_final - anticipo)
+            base = self.precio_final if self.precio_final is not None else (self.precio_estimado if self.precio_estimado is not None else 0)
+            total_gastos = 0
+            gastos = getattr(self, "gastos", None)
+            if gastos:
+                for g in gastos:
+                    try:
+                        total_gastos += float(getattr(g, "monto", 0) or 0)
+                    except (TypeError, ValueError):
+                        continue
+            total_piezas = self.total_piezas
+            total = float(base) + float(total_gastos) + float(total_piezas)
+            return float(total - float(anticipo or 0))
         except (TypeError, ValueError):
             return 0.0
 
