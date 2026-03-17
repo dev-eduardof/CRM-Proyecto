@@ -52,6 +52,7 @@ services:
       dockerfile: Dockerfile.prod
       args:
         VITE_API_URL: ${VITE_API_URL}
+        VITE_APP_VERSION: ${VITE_APP_VERSION:-prod}
     container_name: crm_frontend
     restart: always
     ports:

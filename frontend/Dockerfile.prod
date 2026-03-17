@@ -13,9 +13,11 @@ RUN npm ci
 # Copiar código fuente
 COPY . .
 
-# Argumento para la URL del API
+# Argumentos de build (API URL y versión para mostrar en footer)
 ARG VITE_API_URL
+ARG VITE_APP_VERSION
 ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_APP_VERSION=$VITE_APP_VERSION
 
 # Limitar memoria de Node para servidores con poca RAM (ej. 1GB)
 ENV NODE_OPTIONS="--max-old-space-size=460"

@@ -217,6 +217,11 @@ const Layout = ({ children }) => {
           <Typography variant="body2" color="text.secondary" align="center">
             © 2026 CRM Talleres - Sistema de Gestión de Talleres
           </Typography>
+          {import.meta.env.VITE_APP_VERSION && (
+            <Typography variant="caption" display="block" color="text.secondary" align="center" sx={{ mt: 0.5 }}>
+              Build: {import.meta.env.VITE_APP_VERSION}
+            </Typography>
+          )}
         </Container>
       </Box>
     </Box>
